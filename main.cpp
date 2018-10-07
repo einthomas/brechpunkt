@@ -18,7 +18,8 @@ int main() {
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 
     window = glfwCreateWindow(
-        mode->width, mode->height, "demo", nullptr, nullptr
+        //mode->width, mode->height,
+		1280, 720, "Brechpunkt", nullptr, nullptr
     );
     if (!window) {
         glfwTerminate();
