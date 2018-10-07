@@ -15,12 +15,15 @@ using namespace std;
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
 
+Shader mainShader;
 vector<Mesh> meshes;
 
 GLuint loadTexture(std::string textureFileName);
 void loadObj(std::string basedir, std::string objFileName);
 GLFWwindow *initGLFW();
 bool initGLEW();
+void mouseCallback(GLFWwindow* window, double xPos, double yPos);
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 int main() {
     GLFWwindow* window = initGLFW();
@@ -30,6 +33,8 @@ int main() {
     if (!initGLEW()) {
 		return -1;
 	}
+    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetKeyCallback(window, keyCallback);
 
     loadObj("scenes/scene1/", "demolevel.obj");
 
@@ -39,16 +44,16 @@ int main() {
     glm::vec3 cameraPos(0.0f, 0.5f, 4.0f);
     glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    Shader shader("shaders/shader.vert", "shaders/shader.frag");
+    mainShader = Shader("shaders/shader.vert", "shaders/shader.frag");
 
     while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.use();
+        mainShader.use();
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
-        shader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
+        mainShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
         for (int i = 0; i < meshes.size(); i++) {
-            meshes[i].draw(shader);
+            meshes[i].draw(mainShader);
         }
 
         glfwSwapBuffers(window);
@@ -57,6 +62,19 @@ int main() {
 
 	glfwTerminate();
     return 0;
+}
+
+void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
+}
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
+        mainShader = Shader("shaders/shader.vert", "shaders/shader.frag");
+    }
+
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
 }
 
 void loadObj(std::string basedir, std::string objFileName) {
