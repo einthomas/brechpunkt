@@ -2,6 +2,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include <iostream>
+#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -9,6 +10,7 @@
 
 #include "RessourceManager.h"
 #include "Mesh.h"
+#include "Animation.h"
 
 using namespace std;
 
@@ -68,19 +70,30 @@ int main() {
     float near = 0.1f;
     float far = 100.0f;
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, near, far);
-    glm::vec3 cameraPos(0.0f, 0.5f, 4.0f);
-    glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    Animation<glm::vec3> cameraPosition {
+        {0, {0, 0.5, 4}},
+        {4, {3, 0.5, 4}},
+        {8, {0, 0.5, 4}},
+    };
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
 
     while (!glfwWindowShouldClose(window)) {
+        cameraPosition.update(1.0f / 60); // TODO: get delta from music playback
+        glm::mat4 viewMatrix = glm::lookAt(
+            cameraPosition.get(),
+            cameraPosition.get() + glm::vec3(0.0f, 0.0f, 1.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
         gBufferShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
+
         for (int i = 0; i < meshes.size(); i++) {
             meshes[i].draw(gBufferShader);
         }
