@@ -9,8 +9,8 @@ public:
     GLuint VAO;
     std::string materialName;
     int numTriangles;
+    glm::vec3 position;
     
-    Mesh(GLuint VAO, std::string materialName, int numTriangles);
-    void draw(Shader *shader, glm::mat4 &modelMatrix);
-    void update(glm::mat4 &modelMatrix);
+    Mesh(GLuint VAO, std::string materialName, int numTriangles, glm::vec3 position);
+    void draw(Shader &shader);
 };

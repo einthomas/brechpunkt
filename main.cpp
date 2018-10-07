@@ -20,25 +20,26 @@ void loadObj(std::string basedir, std::string objFileName);
 int main() {
     GLFWwindow* window;
 
-    if (!glfwInit())
+    if (!glfwInit()) {
         return -1;
+    }
 
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwSwapInterval(1);
 
-    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-
+    //GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    //const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    float width = 1280;
+    float height = 720;
     window = glfwCreateWindow(
         //mode->width, mode->height,
-		1280, 720, "Brechpunkt", nullptr, nullptr
+		width, height, "Brechpunkt", nullptr, nullptr
     );
     if (!window) {
         glfwTerminate();
         return -1;
     }
-
     glfwMakeContextCurrent(window);
 
     if (glewInit() != GLEW_OK) {
@@ -47,8 +48,23 @@ int main() {
 
     loadObj("scenes/scene1/", "demolevel.obj");
 
+    float near = 0.1f;
+    float far = 100.0f;
+    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, near, far);
+    glm::vec3 cameraPos(0.0f, 0.5f, 4.0f);
+    glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    Shader shader("shaders/shader.vert", "shaders/shader.frag");
+
     while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        shader.use();
+        glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+        shader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
+        for (int i = 0; i < meshes.size(); i++) {
+            meshes[i].draw(shader);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -132,7 +148,8 @@ void loadObj(std::string basedir, std::string objFileName) {
         meshes.push_back(Mesh(
             VAO,
             materials[shapes[i].mesh.material_ids[0]].name,
-            meshData.size() / 8.0f
+            meshData.size() / 8.0f,
+            glm::vec3(0.0f)
         ));
     }
 }
