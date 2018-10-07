@@ -15,13 +15,18 @@ using namespace std;
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
 
-Shader mainShader;
+Shader gBufferShader;
+Shader composeShader;
 vector<Mesh> meshes;
 
 GLuint loadTexture(std::string textureFileName);
 void loadObj(std::string basedir, std::string objFileName);
 GLFWwindow *initGLFW();
 bool initGLEW();
+GLuint getScreenQuadVAO();
+GLuint generateTexture();
+GLuint generateTexture(int width, int height);
+void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
@@ -36,6 +41,28 @@ int main() {
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
 
+    GLuint gBuffer;
+    glGenFramebuffers(1, &gBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+    GLuint gColor = generateTexture();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gColor, 0);
+    GLuint gWorldPos = generateTexture();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gWorldPos, 0);
+    GLuint gNormal = generateTexture();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gNormal, 0);
+    GLuint gReflection = generateTexture();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gReflection, 0);
+    GLuint gBufferAttachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(4, gBufferAttachments);
+    GLuint depthRBO;
+    glGenRenderbuffers(1, &depthRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    GLuint screenQuadVAO = getScreenQuadVAO();
+
     loadObj("scenes/scene1/", "demolevel.obj");
 
     float near = 0.1f;
@@ -44,17 +71,25 @@ int main() {
     glm::vec3 cameraPos(0.0f, 0.5f, 4.0f);
     glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    mainShader = Shader("shaders/shader.vert", "shaders/shader.frag");
+    gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
+    composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
 
     while (!glfwWindowShouldClose(window)) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        mainShader.use();
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
-        mainShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gBufferShader.use();
+        gBufferShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
         for (int i = 0; i < meshes.size(); i++) {
-            meshes[i].draw(mainShader);
+            meshes[i].draw(gBufferShader);
         }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        composeShader.use();
+        composeShader.setTexture2D("colorTex", GL_TEXTURE0, gColor, 0);
+        drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -69,7 +104,8 @@ void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-        mainShader = Shader("shaders/shader.vert", "shaders/shader.frag");
+        gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
+        composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
     }
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -177,6 +213,23 @@ GLuint loadTexture(std::string textureFileName) {
     return texture;
 }
 
+GLuint generateTexture() {
+    return generateTexture(WINDOW_WIDTH, WINDOW_HEIGHT);
+}
+
+GLuint generateTexture(int width, int height) {
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+    return texture;
+}
+
 GLFWwindow *initGLFW() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -212,4 +265,44 @@ bool initGLEW() {
     }
 
     return true;
+}
+
+GLuint getScreenQuadVAO() {
+    GLfloat quadVertices[] = {
+        // Positions        // Texture Coords
+        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+        1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 0.0f, 1.0f, 0.0f
+    };
+
+    // create and bind VAO
+    GLuint screenQuadVAO;
+    glGenVertexArrays(1, &screenQuadVAO);
+    glBindVertexArray(screenQuadVAO);
+
+    // create and bind VBO
+    GLuint quadVBO;
+    glGenBuffers(1, &quadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+
+    // copy vertices array to VBO
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+    // set vertex attribute pointers
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+
+    // unbind VAO
+    glBindVertexArray(0);
+
+    return screenQuadVAO;
+}
+
+void drawScreenQuad(GLuint screenQuadVAO) {
+    glBindVertexArray(screenQuadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }
