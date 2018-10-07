@@ -20,7 +20,7 @@ void main() {
     if (useDiffuseTex) {
         color = texture(diffuseTex, texCoord).xyz;
     } else {
-        color = vec3(0.0f);
+        color = vec3(1.0f);
     }
     colorOut = vec4(color, 1.0f);
 

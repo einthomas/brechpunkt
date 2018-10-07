@@ -22,6 +22,7 @@ public:
     Animation(std::initializer_list<KeyFrame<T>> keyFrames);
 
     void update(float delta);
+    void reset();
 
     T get() const;
 
@@ -48,6 +49,12 @@ void Animation<T>::update(float delta) {
     while (index < keyFrames.size() && keyFrames[index].time < time) {
         index++;
     }
+}
+
+template<class T>
+void Animation<T>::reset() {
+    time = 0.0f;
+    index = 0;
 }
 
 template<class T>

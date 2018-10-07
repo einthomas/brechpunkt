@@ -11,15 +11,20 @@
 #include "RessourceManager.h"
 #include "Mesh.h"
 #include "Animation.h"
+#include "Camera.h"
 
 using namespace std;
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
+const float CAMERA_SPEED = 10.0f;
 
+Camera camera;
 Shader gBufferShader;
 Shader composeShader;
 vector<Mesh> meshes;
+float deltaTime;
+bool useAnimatedCamera = false;
 
 GLuint loadTexture(std::string textureFileName);
 void loadObj(std::string basedir, std::string objFileName);
@@ -72,7 +77,7 @@ int main() {
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, near, far);
 
     Animation<glm::vec3> cameraPosition {
-        {0, {0, 0.5, 4}},
+        {0, {0.8, 0.5, 4}},
         {4, {3, 0.5, 4}},
         {8, {0, 0.5, 4}},
     };
@@ -80,13 +85,50 @@ int main() {
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
 
+    camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
-        cameraPosition.update(1.0f / 60); // TODO: get delta from music playback
-        glm::mat4 viewMatrix = glm::lookAt(
-            cameraPosition.get(),
-            cameraPosition.get() + glm::vec3(0.0f, 0.0f, 1.0f),
-            glm::vec3(0.0f, 1.0f, 0.0f)
-        );
+        float currentTime = glfwGetTime();
+        deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        glm::mat4 viewMatrix;
+        if (useAnimatedCamera) {
+            cameraPosition.update(1.0f / 60); // TODO: get delta from music playback
+            viewMatrix = glm::lookAt(
+                cameraPosition.get(),
+                cameraPosition.get() + glm::vec3(0.0f, 0.0f, 1.0f),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+        } else {
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                camera.pos += camera.front * CAMERA_SPEED * deltaTime;
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                camera.pos -= camera.front * CAMERA_SPEED * deltaTime;
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                camera.pos -= camera.right * CAMERA_SPEED * deltaTime;
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                camera.pos += camera.right * CAMERA_SPEED * deltaTime;
+            }
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+                camera.pos += glm::vec3(0.0f, 1.0f, 0.0f) * CAMERA_SPEED * deltaTime;
+            }
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+                camera.pos -= glm::vec3(0.0f, 1.0f, 0.0f) * CAMERA_SPEED * deltaTime;
+            }
+            camera.update();
+
+            viewMatrix = camera.getViewMatrix();
+            cameraPosition.reset();
+        }
+        
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -113,6 +155,7 @@ int main() {
 }
 
 void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
+    camera.processMouseMovement(xPos, yPos);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -123,6 +166,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
+        useAnimatedCamera = !useAnimatedCamera;
     }
 }
 
