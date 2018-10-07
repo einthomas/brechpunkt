@@ -11,6 +11,7 @@ int main() {
     if (!glfwInit())
         return -1;
 
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwSwapInterval(1);
 
