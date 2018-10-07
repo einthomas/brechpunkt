@@ -12,45 +12,30 @@
 
 using namespace std;
 
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 720;
+
 vector<Mesh> meshes;
 
 GLuint loadTexture(std::string textureFileName);
 void loadObj(std::string basedir, std::string objFileName);
+GLFWwindow *initGLFW();
+bool initGLEW();
 
 int main() {
-    GLFWwindow* window;
-
-    if (!glfwInit()) {
+    GLFWwindow* window = initGLFW();
+    if (window == nullptr) {
         return -1;
     }
-
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwSwapInterval(1);
-
-    //GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    //const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    float width = 1280;
-    float height = 720;
-    window = glfwCreateWindow(
-        //mode->width, mode->height,
-		width, height, "Brechpunkt", nullptr, nullptr
-    );
-    if (!window) {
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    if (glewInit() != GLEW_OK) {
-        return -1;
-    }
+    if (!initGLEW()) {
+		return -1;
+	}
 
     loadObj("scenes/scene1/", "demolevel.obj");
 
     float near = 0.1f;
     float far = 100.0f;
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, near, far);
+    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, near, far);
     glm::vec3 cameraPos(0.0f, 0.5f, 4.0f);
     glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -172,4 +157,41 @@ GLuint loadTexture(std::string textureFileName) {
     stbi_image_free(data);
 
     return texture;
+}
+
+GLFWwindow *initGLFW() {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
+
+    //GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    //const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    GLFWwindow *window = glfwCreateWindow(
+        //mode->width, mode->height
+        WINDOW_WIDTH, WINDOW_HEIGHT, "Brechpunkt", nullptr, nullptr
+    );
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+    if (window == nullptr) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return window;
+    }
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    return window;
+}
+
+bool initGLEW() {
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        std::cout << "Failed to initialize GLEW" << std::endl;
+        return false;
+    }
+
+    return true;
 }
