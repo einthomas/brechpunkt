@@ -1,0 +1,14 @@
+*.*
+
+!*.cpp
+!*.h
+!*.c
+!*.md
+!*.glsl
+!*.glsl
+
+!*.txt
+
+!.gitignore
+!.gitattributes
+!.gitkeep
