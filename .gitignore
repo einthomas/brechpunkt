@@ -13,3 +13,13 @@
 !.gitignore
 !.gitattributes
 !.gitkeep
+
+!*.jpg
+!*.jpeg
+!*.png
+!*.blend
+!*.mtl
+!*.obj
+
+x64
+Debug
