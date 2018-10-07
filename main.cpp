@@ -68,6 +68,8 @@ int main() {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRBO);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    glEnable(GL_DEPTH_TEST);
+
     GLuint screenQuadVAO = getScreenQuadVAO();
 
     loadObj("scenes/scene1/", "demolevel.obj");
@@ -77,9 +79,12 @@ int main() {
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, near, far);
 
     Animation<glm::vec3> cameraPosition {
-        {0, {0.8, 0.5, 4}},
+        {0, {0, 0.5, 4}, HandleType::STOP},
         {4, {3, 0.5, 4}},
-        {8, {0, 0.5, 4}},
+        {10, {3, 0.5, 7}, HandleType::SMOOTH_IN},
+        {10, {0, 0.5, 4}, HandleType::SMOOTH_OUT},
+        {14, {3, 0.5, 4}},
+        {20, {3, 0.5, 7}, HandleType::STOP},
     };
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
