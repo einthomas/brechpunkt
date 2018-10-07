@@ -171,6 +171,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
         useAnimatedCamera = !useAnimatedCamera;
     }
+
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
+        std::cout << "Camera position: " << camera.pos.x << ", " << camera.pos.y << ", " << camera.pos.z << std::endl;
+    }
 }
 
 void loadObj(std::string basedir, std::string objFileName) {
