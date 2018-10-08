@@ -15,3 +15,9 @@ GLuint generateFramebuffer(
     std::initializer_list<FramebufferAttachementParameters> textures,
     std::initializer_list<FramebufferAttachementParameters> renderbuffers
 );
+
+GLuint generateFramebufferMultisample(
+    int width, int height, int samples,
+    std::initializer_list<FramebufferAttachementParameters> textures,
+    std::initializer_list<FramebufferAttachementParameters> renderbuffers
+);

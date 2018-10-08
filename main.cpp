@@ -54,14 +54,14 @@ int main(int argc, const char** argv) {
         return -1;
     }
     if (!initGLEW()) {
-		return -1;
-	}
+        return -1;
+    }
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
 
     GLuint gColor, gWorldPos, gNormal, gReflection, depthRBO;
-    GLuint gBuffer = generateFramebuffer(
-        window_width, window_height, {
+    GLuint gBuffer = generateFramebufferMultisample(
+        window_width, window_height, 4, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB8},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
@@ -97,6 +97,13 @@ int main(int argc, const char** argv) {
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
+
+    composeShader.use();
+    GLint composeColorUniform = glGetUniformLocation(
+        composeShader.program, "colorTex"
+    );
+    GLint colorTextureUnit = 0;
+    glUniform1i(composeColorUniform, colorTextureUnit);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -141,11 +148,11 @@ int main(int argc, const char** argv) {
             viewMatrix = camera.getViewMatrix();
             cameraPosition.reset();
         }
-        
+
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
         gBufferShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
 
@@ -155,15 +162,16 @@ int main(int argc, const char** argv) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glBindTextureUnit(colorTextureUnit, gColor);
         composeShader.use();
-        composeShader.setTexture2D("colorTex", GL_TEXTURE0, gColor, 0);
         drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-	glfwTerminate();
+    glfwTerminate();
     return 0;
 }
 
@@ -313,7 +321,7 @@ GLFWwindow *initGLFW() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 0);
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
@@ -327,7 +335,7 @@ GLFWwindow *initGLFW() {
 
         window = glfwCreateWindow(
             window_width, window_height, "Brechpunkt", nullptr, nullptr
-    );
+        );
     } else {
         window = glfwCreateWindow(
             window_width, window_height, "Brechpunkt", monitor, nullptr
