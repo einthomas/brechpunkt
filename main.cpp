@@ -16,9 +16,13 @@
 
 using namespace std;
 
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 720;
+static bool debug_flag = false;
+
+const int DEFAULT_WIDTH = 1280;
+const int DEFAULT_HEIGHT = 720;
 const float CAMERA_SPEED = 10.0f;
+
+static int window_width = 0, window_height = 0;
 
 Camera camera;
 Shader gBufferShader;
@@ -38,7 +42,13 @@ void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-int main() {
+int main(int argc, const char** argv) {
+    if (argc >= 2) {
+        if (strcmp(argv[1], "--debug") == 0) {
+            debug_flag = true;
+        }
+    }
+
     GLFWwindow* window = initGLFW();
     if (window == nullptr) {
         return -1;
@@ -51,7 +61,7 @@ int main() {
 
     GLuint gColor, gWorldPos, gNormal, gReflection, depthRBO;
     GLuint gBuffer = generateFramebuffer(
-        WINDOW_WIDTH, WINDOW_HEIGHT, {
+        window_width, window_height, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB8},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
@@ -72,7 +82,9 @@ int main() {
 
     float near = 0.1f;
     float far = 100.0f;
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, near, far);
+    glm::mat4 projectionMatrix = glm::perspective(
+        glm::radians(45.0f), (float)window_width / (float)window_height, near, far
+    );
 
     Animation<glm::vec3> cameraPosition {
         {0, {0, 0.5, 4}, HandleType::STOP},
@@ -279,7 +291,7 @@ GLuint loadTexture(std::string textureFileName) {
 }
 
 GLuint generateTexture() {
-    return generateTexture(WINDOW_WIDTH, WINDOW_HEIGHT);
+    return generateTexture(window_width, window_height);
 }
 
 GLuint generateTexture(int width, int height) {
@@ -303,12 +315,26 @@ GLFWwindow *initGLFW() {
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    //GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    //const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    GLFWwindow *window = glfwCreateWindow(
-        //mode->width, mode->height
-        WINDOW_WIDTH, WINDOW_HEIGHT, "Brechpunkt", nullptr, nullptr
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    window_width = mode->width;
+    window_height = mode->height;
+    GLFWwindow *window;
+
+    if (debug_flag) {
+        window_width = DEFAULT_WIDTH;
+        window_height = DEFAULT_HEIGHT;
+
+        window = glfwCreateWindow(
+            window_width, window_height, "Brechpunkt", nullptr, nullptr
     );
+    } else {
+        window = glfwCreateWindow(
+            window_width, window_height, "Brechpunkt", monitor, nullptr
+        );
+    }
+
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     if (window == nullptr) {
