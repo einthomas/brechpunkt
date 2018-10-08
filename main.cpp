@@ -52,10 +52,10 @@ int main() {
     GLuint gColor, gWorldPos, gNormal, gReflection, depthRBO;
     GLuint gBuffer = generateFramebuffer(
         WINDOW_WIDTH, WINDOW_HEIGHT, {
-            {GL_COLOR_ATTACHMENT0, gColor, GL_RGB8, GL_RGB},
-            {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8, GL_RGB},
-            {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8, GL_RGB},
-            {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8, GL_RGB},
+            {GL_COLOR_ATTACHMENT0, gColor, GL_RGB8},
+            {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
+            {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
+            {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8},
         }, {
             {GL_DEPTH_ATTACHMENT, depthRBO, GL_DEPTH_COMPONENT},
         }

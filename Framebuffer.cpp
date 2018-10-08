@@ -16,9 +16,8 @@ GLuint generateFramebuffer(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, attachment.internalFormat,
-            width, height, 0, attachment.format, GL_BYTE, nullptr
+        glTexStorage2D(
+            GL_TEXTURE_2D, 1, attachment.internalFormat, width, height
         );
 
         glFramebufferTexture2D(

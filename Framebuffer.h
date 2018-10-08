@@ -8,7 +8,6 @@ struct FramebufferAttachementParameters {
     GLenum attachmentPoint;
     GLuint& name;
     GLint internalFormat;
-    GLenum format;
 };
 
 GLuint generateFramebuffer(
