@@ -2,7 +2,7 @@
 
 #include <map>
 #include <string>
-#include <GL\glew.h>
+#include <GL/glew.h>
 #include <tiny_obj_loader.h>
 
 class RessourceManager {

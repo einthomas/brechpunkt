@@ -12,6 +12,7 @@
 #include "Mesh.h"
 #include "Animation.h"
 #include "Camera.h"
+#include "Framebuffer.h"
 
 using namespace std;
 
@@ -48,25 +49,20 @@ int main() {
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
 
-    GLuint gBuffer;
-    glGenFramebuffers(1, &gBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-    GLuint gColor = generateTexture();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gColor, 0);
-    GLuint gWorldPos = generateTexture();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gWorldPos, 0);
-    GLuint gNormal = generateTexture();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gNormal, 0);
-    GLuint gReflection = generateTexture();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gReflection, 0);
+    GLuint gColor, gWorldPos, gNormal, gReflection, depthRBO;
+    GLuint gBuffer = generateFramebuffer(
+        WINDOW_WIDTH, WINDOW_HEIGHT, {
+            {GL_COLOR_ATTACHMENT0, gColor, GL_RGB8, GL_RGB},
+            {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8, GL_RGB},
+            {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8, GL_RGB},
+            {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8, GL_RGB},
+        }, {
+            {GL_DEPTH_ATTACHMENT, depthRBO, GL_DEPTH_COMPONENT},
+        }
+    );
+
     GLuint gBufferAttachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
     glDrawBuffers(4, gBufferAttachments);
-    GLuint depthRBO;
-    glGenRenderbuffers(1, &depthRBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glEnable(GL_DEPTH_TEST);
 
