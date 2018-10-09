@@ -1,7 +1,6 @@
 #version 400 core
 
-// TODO: resolve samples before
-uniform sampler2DMS colorTex;
+uniform sampler2D colorTex;
 
 out vec4 color;
 

@@ -70,6 +70,12 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, depthRBO, GL_DEPTH_COMPONENT},
         }
     );
+    GLuint gColorFiltered;
+    GLuint filterFramebuffer = generateFramebuffer(
+        window_width, window_height, {
+            {GL_COLOR_ATTACHMENT0, gColorFiltered, GL_RGB16F}
+        }, {}
+    );
 
     GLuint bloomHorizontalTexture, bloomTexture;
     GLuint bloomHorizontalFramebuffer = generateFramebuffer(
@@ -113,6 +119,7 @@ int main(int argc, const char** argv) {
         NORMAL_TEXTURE_UNIT,
 
         COLOR_TEXTURE_UNIT,
+        COLOR_FILTERED_TEXTURE_UNIT,
 
         BLOOM_HORIZONTAL_TEXTURE_UNIT,
         BLOOM_FINAL_TEXTURE_UNIT,
@@ -125,7 +132,7 @@ int main(int argc, const char** argv) {
     bloomHorizontalShader.use();
     glUniform1i(
         glGetUniformLocation(bloomHorizontalShader.program, "colorTex"),
-        COLOR_TEXTURE_UNIT
+        COLOR_FILTERED_TEXTURE_UNIT
     );
 
     auto bloomVerticalShader = Shader(
@@ -149,6 +156,7 @@ int main(int argc, const char** argv) {
     );
 
     glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
+    glBindTextureUnit(COLOR_FILTERED_TEXTURE_UNIT, gColorFiltered);
     glBindTextureUnit(BLOOM_HORIZONTAL_TEXTURE_UNIT, bloomHorizontalTexture);
     glBindTextureUnit(BLOOM_FINAL_TEXTURE_UNIT, bloomTexture);
 
@@ -207,6 +215,15 @@ int main(int argc, const char** argv) {
             meshes[i].draw(gBufferShader);
         }
 
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(
+            0, 0, window_width, window_height,
+            0, 0, window_width, window_height,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
 
         glBindFramebuffer(GL_FRAMEBUFFER, bloomHorizontalFramebuffer);
         bloomHorizontalShader.use();
