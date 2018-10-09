@@ -24,12 +24,12 @@ const float CAMERA_SPEED = 10.0f;
 
 static int window_width = 0, window_height = 0;
 
-Camera camera;
-Shader gBufferShader;
-Shader composeShader;
-vector<Mesh> meshes;
-float deltaTime;
-bool useAnimatedCamera = false;
+static Camera camera;
+static Shader gBufferShader;
+static Shader composeShader;
+static vector<Mesh> meshes;
+static float deltaTime;
+static bool useAnimatedCamera = false;
 
 GLuint loadTexture(std::string textureFileName);
 void loadObj(std::string basedir, std::string objFileName);
@@ -62,7 +62,7 @@ int main(int argc, const char** argv) {
     GLuint gColor, gWorldPos, gNormal, gReflection, depthRBO;
     GLuint gBuffer = generateFramebufferMultisample(
         window_width, window_height, 4, {
-            {GL_COLOR_ATTACHMENT0, gColor, GL_RGB8},
+            {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
             {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8},
@@ -71,8 +71,17 @@ int main(int argc, const char** argv) {
         }
     );
 
-    GLuint gBufferAttachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(4, gBufferAttachments);
+    GLuint bloomHorizontalTexture, bloomTexture;
+    GLuint bloomHorizontalFramebuffer = generateFramebuffer(
+        window_width, window_height, {
+            {GL_COLOR_ATTACHMENT0, bloomHorizontalTexture, GL_RGB16F}
+        }, {}
+    );
+    GLuint bloomVerticalFramebuffer = generateFramebuffer(
+        window_width, window_height, {
+            {GL_COLOR_ATTACHMENT0, bloomTexture, GL_RGB16F}
+        }, {}
+    );
 
     glEnable(GL_DEPTH_TEST);
 
@@ -98,12 +107,50 @@ int main(int argc, const char** argv) {
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
 
-    composeShader.use();
-    GLint composeColorUniform = glGetUniformLocation(
-        composeShader.program, "colorTex"
+    enum TextureUnit : GLuint {
+        DIFFUSE_TEXTURE_UNIT,
+        REFLECTION_TEXTURE_UNIT,
+        NORMAL_TEXTURE_UNIT,
+
+        COLOR_TEXTURE_UNIT,
+
+        BLOOM_HORIZONTAL_TEXTURE_UNIT,
+        BLOOM_FINAL_TEXTURE_UNIT,
+    };
+
+    auto bloomHorizontalShader = Shader(
+        "shaders/compose.vert",
+        "shaders/bloomHorizontal.frag"
     );
-    GLint colorTextureUnit = 0;
-    glUniform1i(composeColorUniform, colorTextureUnit);
+    bloomHorizontalShader.use();
+    glUniform1i(
+        glGetUniformLocation(bloomHorizontalShader.program, "colorTex"),
+        COLOR_TEXTURE_UNIT
+    );
+
+    auto bloomVerticalShader = Shader(
+        "shaders/compose.vert",
+        "shaders/bloomVertical.frag"
+    );
+    bloomVerticalShader.use();
+    glUniform1i(
+        glGetUniformLocation(bloomVerticalShader.program, "colorTex"),
+        BLOOM_HORIZONTAL_TEXTURE_UNIT
+    );
+
+    composeShader.use();
+    glUniform1i(
+        glGetUniformLocation(composeShader.program, "colorTex"),
+        COLOR_TEXTURE_UNIT
+    );
+    glUniform1i(
+        glGetUniformLocation(composeShader.program, "bloomTex"),
+        BLOOM_FINAL_TEXTURE_UNIT
+    );
+
+    glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
+    glBindTextureUnit(BLOOM_HORIZONTAL_TEXTURE_UNIT, bloomHorizontalTexture);
+    glBindTextureUnit(BLOOM_FINAL_TEXTURE_UNIT, bloomTexture);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -159,11 +206,20 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < meshes.size(); i++) {
             meshes[i].draw(gBufferShader);
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+        glBindFramebuffer(GL_FRAMEBUFFER, bloomHorizontalFramebuffer);
+        bloomHorizontalShader.use();
+        drawScreenQuad(screenQuadVAO);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, bloomVerticalFramebuffer);
+        bloomVerticalShader.use();
+        drawScreenQuad(screenQuadVAO);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindTextureUnit(colorTextureUnit, gColor);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
@@ -321,7 +377,7 @@ GLFWwindow *initGLFW() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, 0);
+    glfwWindowHint(GLFW_SAMPLES, 0); // turn off multisample for framebuffer 0
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);

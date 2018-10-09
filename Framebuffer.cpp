@@ -11,7 +11,13 @@ GLuint generateFramebuffer(
 
     GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
-    for (auto& attachment : textures) {
+    GLuint drawBuffers[16];
+
+    for (unsigned int i = 0; i < textures.size(); i++) {
+        auto& attachment = *(textures.begin() + i);
+
+        drawBuffers[i] = attachment.attachmentPoint;
+
         glGenTextures(1, &attachment.name);
         glBindTexture(target, attachment.name);
 
@@ -39,6 +45,8 @@ GLuint generateFramebuffer(
             target, attachment.name, 0
         );
     }
+
+    glDrawBuffers(textures.size(), drawBuffers);
 
     for (auto& attachment : renderbuffers) {
         glGenRenderbuffers(1, &attachment.name);
