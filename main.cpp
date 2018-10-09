@@ -13,6 +13,7 @@
 #include "Animation.h"
 #include "Camera.h"
 #include "Framebuffer.h"
+#include "Effect.h"
 
 using namespace std;
 
@@ -77,20 +78,6 @@ int main(int argc, const char** argv) {
         }, {}
     );
 
-    GLuint bloomHorizontalTexture, bloomTexture;
-    GLuint bloomHorizontalFramebuffer = generateFramebuffer(
-        window_width, window_height, {
-            {GL_COLOR_ATTACHMENT0, bloomHorizontalTexture, GL_RGB16F}
-        }, {}
-    );
-    GLuint bloomVerticalFramebuffer = generateFramebuffer(
-        window_width, window_height, {
-            {GL_COLOR_ATTACHMENT0, bloomTexture, GL_RGB16F}
-        }, {}
-    );
-
-    glEnable(GL_DEPTH_TEST);
-
     GLuint screenQuadVAO = getScreenQuadVAO();
 
     loadObj("scenes/scene1/", "demolevel.obj");
@@ -125,24 +112,16 @@ int main(int argc, const char** argv) {
         BLOOM_FINAL_TEXTURE_UNIT,
     };
 
-    auto bloomHorizontalShader = Shader(
-        "shaders/compose.vert",
-        "shaders/bloomHorizontal.frag"
-    );
-    bloomHorizontalShader.use();
-    glUniform1i(
-        glGetUniformLocation(bloomHorizontalShader.program, "colorTex"),
-        COLOR_FILTERED_TEXTURE_UNIT
+    auto bloomHorizontalPass = Effect(
+        "shaders/bloomHorizontal.frag", window_width, window_height,
+        {{"colorTex", COLOR_FILTERED_TEXTURE_UNIT}},
+        {{"color", BLOOM_HORIZONTAL_TEXTURE_UNIT, GL_RGB16F}}
     );
 
-    auto bloomVerticalShader = Shader(
-        "shaders/compose.vert",
-        "shaders/bloomVertical.frag"
-    );
-    bloomVerticalShader.use();
-    glUniform1i(
-        glGetUniformLocation(bloomVerticalShader.program, "colorTex"),
-        BLOOM_HORIZONTAL_TEXTURE_UNIT
+    auto bloomVerticalPass = Effect(
+        "shaders/bloomVertical.frag", window_width, window_height,
+        {{"colorTex", BLOOM_HORIZONTAL_TEXTURE_UNIT}},
+        {{"color", BLOOM_FINAL_TEXTURE_UNIT, GL_RGB16F}}
     );
 
     composeShader.use();
@@ -157,8 +136,6 @@ int main(int argc, const char** argv) {
 
     glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
     glBindTextureUnit(COLOR_FILTERED_TEXTURE_UNIT, gColorFiltered);
-    glBindTextureUnit(BLOOM_HORIZONTAL_TEXTURE_UNIT, bloomHorizontalTexture);
-    glBindTextureUnit(BLOOM_FINAL_TEXTURE_UNIT, bloomTexture);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -225,13 +202,10 @@ int main(int argc, const char** argv) {
             GL_COLOR_BUFFER_BIT, GL_NEAREST
         );
 
-        glBindFramebuffer(GL_FRAMEBUFFER, bloomHorizontalFramebuffer);
-        bloomHorizontalShader.use();
-        drawScreenQuad(screenQuadVAO);
+        glBindVertexArray(screenQuadVAO);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, bloomVerticalFramebuffer);
-        bloomVerticalShader.use();
-        drawScreenQuad(screenQuadVAO);
+        bloomHorizontalPass.render();
+        bloomVerticalPass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer
