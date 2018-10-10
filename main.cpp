@@ -113,13 +113,13 @@ int main(int argc, const char** argv) {
     };
 
     auto bloomHorizontalPass = Effect(
-        "shaders/bloomHorizontal.frag", window_width, window_height,
+        "shaders/bloomHorizontal.frag", window_width / 2, window_height / 2,
         {{"colorTex", COLOR_FILTERED_TEXTURE_UNIT}},
         {{"color", BLOOM_HORIZONTAL_TEXTURE_UNIT, GL_RGB16F}}
     );
 
     auto bloomVerticalPass = Effect(
-        "shaders/bloomVertical.frag", window_width, window_height,
+        "shaders/bloomVertical.frag", window_width / 2, window_height / 2,
         {{"colorTex", BLOOM_HORIZONTAL_TEXTURE_UNIT}},
         {{"color", BLOOM_FINAL_TEXTURE_UNIT, GL_RGB16F}}
     );

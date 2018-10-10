@@ -4,16 +4,20 @@ uniform sampler2D colorTex;
 
 out vec4 color;
 
-int sigma = 24;
+const int sigma = 10;
+const int radius = 31;
+const int step = 1;
 
 void main() {
 	color = vec4(0);
 
-	for (int i = -63; i <= 63; i++) {
+	ivec2 center = ivec2(gl_FragCoord.xy) * 2;
+
+	for (int i = -radius; i <= radius; i += step) {
 		float weight = exp(-float(i * i) / (2 * sigma * sigma));
 		color += vec4(
 			texelFetch(
-				colorTex, ivec2(gl_FragCoord.x + i, gl_FragCoord.y), 0
+				colorTex, center + ivec2(i * 2, 0), 0
 			).rgb * weight,
 			weight
 		);
