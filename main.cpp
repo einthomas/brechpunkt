@@ -60,15 +60,15 @@ int main(int argc, const char** argv) {
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
 
-    GLuint gColor, gWorldPos, gNormal, gReflection, depthRBO;
+    GLuint gColor, gWorldPos, gNormal, gReflection, gDepth;
     GLuint gBuffer = generateFramebufferMultisample(
         window_width, window_height, 4, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
             {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8},
+            {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT16},
         }, {
-            {GL_DEPTH_ATTACHMENT, depthRBO, GL_DEPTH_COMPONENT},
         }
     );
     GLuint gColorFiltered;
@@ -107,9 +107,14 @@ int main(int argc, const char** argv) {
 
         COLOR_TEXTURE_UNIT,
         COLOR_FILTERED_TEXTURE_UNIT,
+        DEPTH_TEXTURE_UNIT,
 
         BLOOM_HORIZONTAL_TEXTURE_UNIT,
-        BLOOM_FINAL_TEXTURE_UNIT,
+        BLOOM_TEXTURE_UNIT,
+
+        DOF_COC_TEXTURE_UNIT,
+        DOF_COARSE_TEXTURE_UNIT,
+        DOF_TEXTURE_UNIT,
     };
 
     auto bloomHorizontalPass = Effect(
@@ -121,7 +126,32 @@ int main(int argc, const char** argv) {
     auto bloomVerticalPass = Effect(
         "shaders/bloomVertical.frag", window_width / 2, window_height / 2,
         {{"colorTex", BLOOM_HORIZONTAL_TEXTURE_UNIT}},
-        {{"color", BLOOM_FINAL_TEXTURE_UNIT, GL_RGB16F}}
+        {{"color", BLOOM_TEXTURE_UNIT, GL_RGB16F}}
+    );
+
+    auto dofCocPass = Effect(
+        "shaders/dofCoc.frag", window_width, window_height, {
+            {"depthTex", DEPTH_TEXTURE_UNIT},
+        }, {
+            {"coc", DOF_COC_TEXTURE_UNIT, GL_R8_SNORM},
+        }
+    );
+    auto dofCoarsePass = Effect(
+        "shaders/dofCoarse.frag", window_width, window_height, {
+            {"colorTex", COLOR_TEXTURE_UNIT},
+            {"colorFilteredTex", COLOR_FILTERED_TEXTURE_UNIT},
+            {"depthTex", DEPTH_TEXTURE_UNIT},
+            {"cocTex", DOF_COC_TEXTURE_UNIT},
+        }, {
+            {"coarse", DOF_COARSE_TEXTURE_UNIT, GL_RGBA16F},
+        }
+    );
+    auto dofFinePass = Effect(
+        "shaders/dofFine.frag", window_width, window_height, {
+            {"coarseTex", DOF_COARSE_TEXTURE_UNIT},
+        }, {
+            {"color", DOF_TEXTURE_UNIT, GL_RGB16F},
+        }
     );
 
     composeShader.use();
@@ -131,11 +161,16 @@ int main(int argc, const char** argv) {
     );
     glUniform1i(
         glGetUniformLocation(composeShader.program, "bloomTex"),
-        BLOOM_FINAL_TEXTURE_UNIT
+        BLOOM_TEXTURE_UNIT
+    );
+    glUniform1i(
+        glGetUniformLocation(composeShader.program, "dofTex"),
+        DOF_TEXTURE_UNIT
     );
 
     glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
     glBindTextureUnit(COLOR_FILTERED_TEXTURE_UNIT, gColorFiltered);
+    glBindTextureUnit(DEPTH_TEXTURE_UNIT, gDepth);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -206,6 +241,10 @@ int main(int argc, const char** argv) {
 
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
+
+        dofCocPass.render();
+        dofCoarsePass.render();
+        dofFinePass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer

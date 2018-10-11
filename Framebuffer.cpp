@@ -11,22 +11,36 @@ GLuint generateFramebuffer(
 
     GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
-    GLuint drawBuffers[8];
+    GLuint drawBuffers[8]{GL_NONE};
 
     for (unsigned int i = 0; i < textures.size(); i++) {
         auto& attachment = *(textures.begin() + i);
 
-        drawBuffers[i] = attachment.attachmentPoint;
+        if (
+            attachment.attachmentPoint != GL_DEPTH_ATTACHMENT &&
+            attachment.attachmentPoint != GL_STENCIL_ATTACHMENT &&
+            attachment.attachmentPoint != GL_DEPTH_STENCIL_ATTACHMENT
+        ) {
+            drawBuffers[i] = attachment.attachmentPoint;
+        }
 
         glGenTextures(1, &attachment.name);
         glBindTexture(target, attachment.name);
 
         if (!multisample) {
             // setting sampler parameters is illegal with multisample
-            glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP);
-            glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP);
-            glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
+
+        if (
+            attachment.attachmentPoint == GL_DEPTH_ATTACHMENT ||
+            attachment.attachmentPoint == GL_DEPTH_STENCIL_ATTACHMENT
+        ) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+            glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         }
 
         if (multisample) {
