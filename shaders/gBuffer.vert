@@ -5,16 +5,20 @@ layout(location = 1) in vec3 _normal;
 layout(location = 2) in vec2 _texCoord;
 
 uniform mat4 model;
-uniform mat4 viewProjectionMatrix;
+uniform mat4 view;
+uniform mat4 projection;
+uniform bool useNormalTex;
 
 out vec3 worldPos;
 out vec3 normal;
 out vec2 texCoord;
 
 void main() {
-    vec4 worldPos4 = model * vec4(_pos, 1.0f);
+    vec4 worldPos4 = view * model * vec4(_pos, 1.0f);
     worldPos = worldPos4.xyz;
-    normal = _normal;
+    
+    normal = transpose(inverse(mat3(view * model))) * _normal;
+    
     texCoord = _texCoord;
-    gl_Position = viewProjectionMatrix * worldPos4;
+    gl_Position = projection * worldPos4;
 }

@@ -3,7 +3,7 @@
 #include <initializer_list>
 
 #include <GL/glew.h>
-#include <Shader.h>
+#include "Shader.h"
 
 struct EffectInput {
     const char* identifier;
@@ -18,6 +18,8 @@ struct EffectOutput {
 
 class Effect {
 public:
+    Shader shader;
+
     Effect(
         const char* fragmentShaderPath, int width, int height,
         std::initializer_list<EffectInput> inputs,
@@ -28,7 +30,6 @@ public:
     void render();
 
 private:
-    Shader shader;
     GLuint framebuffer;
     GLsizei textureCount;
     GLuint textures[8];

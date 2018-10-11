@@ -2,6 +2,7 @@
 
 uniform sampler2DMS colorTex;
 uniform sampler2D bloomTex;
+uniform sampler2D occlusionTex;
 
 in vec2 texCoord;
 
@@ -19,4 +20,6 @@ void main() {
 	inColor = mix(inColor, texture(bloomTex, texCoord).rgb, 0.05);
 
 	color = vec4(pow(inColor, vec3(1.0f / 2.2f)), 1.0f);
+
+    color = vec4(texture(occlusionTex, texCoord).xyz, 1.0f);
 }

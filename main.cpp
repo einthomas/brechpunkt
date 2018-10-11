@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <random>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -28,9 +29,13 @@ static int window_width = 0, window_height = 0;
 static Camera camera;
 static Shader gBufferShader;
 static Shader composeShader;
+static Shader ssdoShader;
+static Shader blurShader;
 static vector<Mesh> meshes;
 static float deltaTime;
 static bool useAnimatedCamera = false;
+GLuint blurFBO0, blurFBO1;
+GLuint blurBuffer0, blurBuffer1;
 
 GLuint loadTexture(std::string textureFileName);
 void loadObj(std::string basedir, std::string objFileName);
@@ -39,9 +44,11 @@ bool initGLEW();
 GLuint getScreenQuadVAO();
 GLuint generateTexture();
 GLuint generateTexture(int width, int height);
+GLuint generateNoiseTexture();
 void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+GLuint blur(int width, int height, GLuint texture, Shader &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal);
 
 int main(int argc, const char** argv) {
     if (argc >= 2) {
@@ -78,6 +85,30 @@ int main(int argc, const char** argv) {
         }, {}
     );
 
+    //GLuint occlusionTexture, depthRBO2;
+    //GLuint ssdoBuffer = generateFramebuffer(
+    //    window_width, window_height, {
+    //      {GL_COLOR_ATTACHMENT0, occlusionTexture, GL_RGB16F},
+    //    }, {
+    //      {GL_DEPTH_ATTACHMENT, depthRBO2, GL_DEPTH_COMPONENT},
+    //    }
+    // );
+
+    GLuint blurBuffer0;
+    GLuint blurFBO0 = generateFramebuffer(
+        window_width, window_height, {
+          {GL_COLOR_ATTACHMENT0, blurBuffer0, GL_RGB16F},
+        }, {}
+    );
+    GLuint blurBuffer1;
+    GLuint blurFBO1 = generateFramebuffer(
+        window_width, window_height, {
+          {GL_COLOR_ATTACHMENT0, blurBuffer1, GL_RGB16F},
+        }, {}
+    );
+
+    glEnable(GL_DEPTH_TEST);
+
     GLuint screenQuadVAO = getScreenQuadVAO();
 
     loadObj("scenes/scene1/", "demolevel.obj");
@@ -99,11 +130,17 @@ int main(int argc, const char** argv) {
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
+    ssdoShader = Shader("shaders/ssdo.vert", "shaders/ssdo.frag");
+    blurShader = Shader("shaders/blur.vert", "shaders/blur.frag");
 
     enum TextureUnit : GLuint {
         DIFFUSE_TEXTURE_UNIT,
         REFLECTION_TEXTURE_UNIT,
         NORMAL_TEXTURE_UNIT,
+        VIEWPOS_TEXTURE_UNIT,
+
+        SSDO_TEXTURE_UNIT,
+        SSDO_NOISE_TEXTURE_UNIT,
 
         COLOR_TEXTURE_UNIT,
         COLOR_FILTERED_TEXTURE_UNIT,
@@ -114,14 +151,26 @@ int main(int argc, const char** argv) {
 
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", window_width / 2, window_height / 2,
-        {{"colorTex", COLOR_FILTERED_TEXTURE_UNIT}},
-        {{"color", BLOOM_HORIZONTAL_TEXTURE_UNIT, GL_RGB16F}}
+        { {"colorTex", COLOR_FILTERED_TEXTURE_UNIT} },
+        { {"color", BLOOM_HORIZONTAL_TEXTURE_UNIT, GL_RGB16F} }
     );
 
     auto bloomVerticalPass = Effect(
         "shaders/bloomVertical.frag", window_width / 2, window_height / 2,
-        {{"colorTex", BLOOM_HORIZONTAL_TEXTURE_UNIT}},
-        {{"color", BLOOM_FINAL_TEXTURE_UNIT, GL_RGB16F}}
+        { {"colorTex", BLOOM_HORIZONTAL_TEXTURE_UNIT} },
+        { {"color", BLOOM_FINAL_TEXTURE_UNIT, GL_RGB16F} }
+    );
+
+    auto ssdoPass = Effect(
+      "shaders/ssdo.frag", window_width, window_height,
+      {
+        /*
+        {"gColorTex", COLOR_FILTERED_TEXTURE_UNIT},
+        {"gNormalTex", NORMAL_TEXTURE_UNIT},
+        {"gWorldPosTex", VIEWPOS_TEXTURE_UNIT}
+        */
+      },
+      {{"occlusionTex", SSDO_TEXTURE_UNIT, GL_RGB16F}}
     );
 
     composeShader.use();
@@ -133,6 +182,10 @@ int main(int argc, const char** argv) {
         glGetUniformLocation(composeShader.program, "bloomTex"),
         BLOOM_FINAL_TEXTURE_UNIT
     );
+    glUniform1i(
+        glGetUniformLocation(composeShader.program, "occlusionTex"),
+        SSDO_TEXTURE_UNIT
+    );
 
     glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
     glBindTextureUnit(COLOR_FILTERED_TEXTURE_UNIT, gColorFiltered);
@@ -141,6 +194,15 @@ int main(int argc, const char** argv) {
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
+    //GLuint noiseTexture = generateNoiseTexture();
+
+    //float randomValues[64];
+    //std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+    //std::default_random_engine generator;
+    //for (int i = 0; i < 64; i++) {
+    //    randomValues[i] = randomFloats(generator);
+    //}
 
     float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
@@ -180,13 +242,15 @@ int main(int argc, const char** argv) {
             viewMatrix = camera.getViewMatrix();
             cameraPosition.reset();
         }
-
+        
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
+        // g-buffer
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
-        gBufferShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
+        gBufferShader.setMatrix4("view", viewMatrix);
+        gBufferShader.setMatrix4("projection", projectionMatrix);
 
         for (int i = 0; i < meshes.size(); i++) {
             meshes[i].draw(gBufferShader);
@@ -207,11 +271,53 @@ int main(int argc, const char** argv) {
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
 
+        /*
+        ssdoPass.shader.use();
+        ssdoShader.setMatrix4("view", viewMatrix);
+        ssdoShader.setMatrix4("projection", projectionMatrix);
+        glUniform1fv(glGetUniformLocation(ssdoShader.program, "randomValues"), 64, randomValues);
+        */
+        ssdoPass.render();
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         composeShader.use();
+        /*
+        // ssdo
+        noiseTexture = generateNoiseTexture();
+
+        float randomValues[64];
+        std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+        std::default_random_engine generator;
+        for (int i = 0; i < 64; i++) {
+            randomValues[i] = randomFloats(generator);
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, ssdoBuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        ssdoShader.use();
+        ssdoShader.setMatrix4("view", viewMatrix);
+        ssdoShader.setMatrix4("projection", projectionMatrix);
+        ssdoShader.setTexture2D("gColorTex", GL_TEXTURE0, gColor, 0);
+        ssdoShader.setTexture2D("gNormalTex", GL_TEXTURE1, gNormal, 1);
+        ssdoShader.setTexture2D("gWorldPosTex", GL_TEXTURE2, gWorldPos, 2);
+        ssdoShader.setTexture2D("noiseTex", GL_TEXTURE3, noiseTexture, 3);
+        glUniform1fv(glGetUniformLocation(ssdoShader.program, "randomValues"), 64, randomValues);
+        drawScreenQuad(screenQuadVAO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        GLuint blurredSSDOTexture = blur(WINDOW_WIDTH, WINDOW_HEIGHT, occlusionTexture, blurShader, 3, screenQuadVAO, gNormal);
+
+        // render to screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        composeShader.use();
+        composeShader.setTexture2D("colorTex", GL_TEXTURE0, gColor, 0);
+        composeShader.setTexture2D("occlusionTex", GL_TEXTURE1, blurredSSDOTexture, 1);
+        */
         drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
@@ -222,6 +328,35 @@ int main(int argc, const char** argv) {
     return 0;
 }
 
+GLuint blur(int width, int height, GLuint texture, Shader &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal) {
+    shader.use();
+    shader.setVector2f("size", glm::vec2(width, height));
+
+    // blur horizontally
+    glBindFramebuffer(GL_FRAMEBUFFER, blurFBO1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, width, height);
+    shader.setVector2f("dir", glm::vec2(1, 0));
+    shader.setTexture2D("tex", GL_TEXTURE0, texture, 0);
+    shader.setTexture2D("normalTex", GL_TEXTURE1, gNormal, 1);
+    shader.setInteger("kernelSize", kernelSize);
+    drawScreenQuad(screenQuadVAO);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // blur vertically
+    glBindFramebuffer(GL_FRAMEBUFFER, blurFBO0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, width, height);
+    shader.setVector2f("dir", glm::vec2(0, 1));
+    shader.setTexture2D("tex", GL_TEXTURE0, blurBuffer1, 0);
+    shader.setTexture2D("normalTex", GL_TEXTURE1, gNormal, 1);
+    shader.setInteger("kernelSize", kernelSize);
+    drawScreenQuad(screenQuadVAO);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return blurBuffer0;
+}
+
 void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
     camera.processMouseMovement(xPos, yPos);
 }
@@ -230,6 +365,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
         gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
         composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
+        ssdoShader = Shader("shaders/ssdo.vert", "shaders/ssdo.frag");
+        blurShader = Shader("shaders/blur.vert", "shaders/blur.frag");
     }
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -345,6 +482,30 @@ GLuint loadTexture(std::string textureFileName) {
     return texture;
 }
 
+GLuint generateNoiseTexture() {
+    uniform_real_distribution<GLfloat> randomFloats(0.0f, 1.0f);
+    default_random_engine randomEngine;
+    vector<glm::vec3> noise;
+    for (int i = 0; i < 64; i++) {
+        noise.push_back(glm::vec3(
+            randomFloats(randomEngine) * 2.0f - 1.0f,
+            randomFloats(randomEngine) * 2.0f - 1.0f,
+            0.0f
+        ));
+    }
+
+    GLuint noiseTexture;
+    glGenTextures(1, &noiseTexture);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 8, 8, 0, GL_RGB, GL_FLOAT, &noise[0]);
+
+    return noiseTexture;
+}
+
 GLuint generateTexture() {
     return generateTexture(window_width, window_height);
 }
@@ -355,9 +516,9 @@ GLuint generateTexture(int width, int height) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
 
     return texture;
 }
