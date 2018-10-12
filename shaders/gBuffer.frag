@@ -18,19 +18,19 @@ in vec2 texCoord;
 void main() {
     vec3 color;
     if (useDiffuseTex) {
-		color = texture(diffuseTex, texCoord).xyz;
+        color = texture(diffuseTex, texCoord).xyz;
     } else {
-		color = vec3(5.0f);
+        color = vec3(5.0f);
     }
-	colorOut = vec4(pow(color, vec3(2.2f)), 1.0f);
+    colorOut = vec4(pow(color, vec3(2.2f)), 1.0f);
 
     positionOut = vec4(worldPos, 1.0f);
 
     if (useNormalTex) {
-		normalOut = vec4(normalize(texture(normalTex, texCoord).xzy * 0.5f + 0.5f), 1.0f);
+        normalOut = vec4(normalize(texture(normalTex, texCoord).xzy * 0.5f + 0.5f), 1.0f);
     } else {
         normalOut = vec4(normalize(normal * 0.5f + 0.5f), 1.0f);
     }
-    
-	reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+
+    reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
 }

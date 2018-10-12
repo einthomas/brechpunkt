@@ -25,6 +25,7 @@ Effect::Effect(
             // output is used in shader
             drawBuffers[location] = GL_COLOR_ATTACHMENT0 + i;
 
+            glActiveTexture(GL_TEXTURE0 + output.textureUnit);
             glBindTexture(GL_TEXTURE_2D, textures[i]);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -35,8 +36,6 @@ Effect::Effect(
             glTexStorage2D(
                 GL_TEXTURE_2D, 1, output.internalFormat, width, height
             );
-
-            glBindTextureUnit(output.textureUnit, textures[i]);
 
             glFramebufferTexture2D(
                 GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,

@@ -1,4 +1,4 @@
-#version 400 core
+#version 330 core
 
 uniform sampler2DMS colorTex;
 uniform sampler2D bloomTex;

@@ -168,9 +168,12 @@ int main(int argc, const char** argv) {
         DOF_TEXTURE_UNIT
     );
 
-    glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
-    glBindTextureUnit(COLOR_FILTERED_TEXTURE_UNIT, gColorFiltered);
-    glBindTextureUnit(DEPTH_TEXTURE_UNIT, gDepth);
+    glActiveTexture(GL_TEXTURE0 + COLOR_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
+    glActiveTexture(GL_TEXTURE0 + COLOR_FILTERED_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D, gColorFiltered);
+    glActiveTexture(GL_TEXTURE0 + DEPTH_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gDepth);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
