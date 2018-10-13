@@ -100,80 +100,56 @@ int main(int argc, const char** argv) {
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
 
-    enum TextureUnit : GLuint {
-        DIFFUSE_TEXTURE_UNIT,
-        REFLECTION_TEXTURE_UNIT,
-        NORMAL_TEXTURE_UNIT,
 
-        COLOR_TEXTURE_UNIT,
-        COLOR_FILTERED_TEXTURE_UNIT,
-        DEPTH_TEXTURE_UNIT,
-
-        BLOOM_HORIZONTAL_TEXTURE_UNIT,
-        BLOOM_TEXTURE_UNIT,
-
-        DOF_COC_TEXTURE_UNIT,
-        DOF_COARSE_TEXTURE_UNIT,
-        DOF_TEXTURE_UNIT,
-    };
-
+    GLuint bloomHorizontalTexture, bloomTexture;
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", window_width / 2, window_height / 2,
-        {{"colorTex", COLOR_FILTERED_TEXTURE_UNIT}},
-        {{"color", BLOOM_HORIZONTAL_TEXTURE_UNIT, GL_RGB16F}}
+        {{"colorTex", GL_TEXTURE_2D, gColorFiltered}},
+        {{"color", bloomHorizontalTexture, GL_RGB16F}}
     );
 
     auto bloomVerticalPass = Effect(
         "shaders/bloomVertical.frag", window_width / 2, window_height / 2,
-        {{"colorTex", BLOOM_HORIZONTAL_TEXTURE_UNIT}},
-        {{"color", BLOOM_TEXTURE_UNIT, GL_RGB16F}}
+        {{"colorTex", GL_TEXTURE_2D, bloomHorizontalTexture}},
+        {{"color", bloomTexture, GL_RGB16F}}
     );
 
+    GLuint dofCocTexture, dofCoarseTexture, dofTexture;
     auto dofCocPass = Effect(
         "shaders/dofCoc.frag", window_width, window_height, {
-            {"depthTex", DEPTH_TEXTURE_UNIT},
+            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
         }, {
-            {"coc", DOF_COC_TEXTURE_UNIT, GL_R8_SNORM},
+            {"coc", dofCocTexture, GL_R8_SNORM},
         }
     );
     auto dofCoarsePass = Effect(
         "shaders/dofCoarse.frag", window_width, window_height, {
-            {"colorTex", COLOR_TEXTURE_UNIT},
-            {"colorFilteredTex", COLOR_FILTERED_TEXTURE_UNIT},
-            {"depthTex", DEPTH_TEXTURE_UNIT},
-            {"cocTex", DOF_COC_TEXTURE_UNIT},
+            {"colorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
+            {"colorFilteredTex", GL_TEXTURE_2D, gColorFiltered},
+            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
+            {"cocTex", GL_TEXTURE_2D, dofCocTexture},
         }, {
-            {"coarse", DOF_COARSE_TEXTURE_UNIT, GL_RGBA16F},
+            {"coarse", dofCoarseTexture, GL_RGBA16F},
         }
     );
     auto dofFinePass = Effect(
         "shaders/dofFine.frag", window_width, window_height, {
-            {"coarseTex", DOF_COARSE_TEXTURE_UNIT},
+            {"coarseTex", GL_TEXTURE_2D, dofCoarseTexture},
         }, {
-            {"color", DOF_TEXTURE_UNIT, GL_RGB16F},
+            {"color", dofTexture, GL_RGB16F},
         }
     );
 
     composeShader.use();
     glUniform1i(
-        glGetUniformLocation(composeShader.program, "colorTex"),
-        COLOR_TEXTURE_UNIT
+        glGetUniformLocation(composeShader.program, "colorTex"), 0
     );
     glUniform1i(
-        glGetUniformLocation(composeShader.program, "bloomTex"),
-        BLOOM_TEXTURE_UNIT
+        glGetUniformLocation(composeShader.program, "bloomTex"), 1
     );
     glUniform1i(
-        glGetUniformLocation(composeShader.program, "dofTex"),
-        DOF_TEXTURE_UNIT
+        glGetUniformLocation(composeShader.program, "dofTex"), 2
     );
-
-    glActiveTexture(GL_TEXTURE0 + COLOR_TEXTURE_UNIT);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
-    glActiveTexture(GL_TEXTURE0 + COLOR_FILTERED_TEXTURE_UNIT);
-    glBindTexture(GL_TEXTURE_2D, gColorFiltered);
-    glActiveTexture(GL_TEXTURE0 + DEPTH_TEXTURE_UNIT);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gDepth);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -253,6 +229,12 @@ int main(int argc, const char** argv) {
         // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glActiveTexture(GL_TEXTURE0 + 0);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_2D, bloomTexture);
+        glActiveTexture(GL_TEXTURE0 + 2);
+        glBindTexture(GL_TEXTURE_2D, dofTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 

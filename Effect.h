@@ -7,12 +7,13 @@
 
 struct EffectInput {
     const char* identifier;
-    GLuint textureUnit;
+    GLenum textureTarget;
+    GLuint textureName;
 };
 
 struct EffectOutput {
     const char* identifier;
-    GLuint textureUnit;
+    GLuint& textureName;
     GLint internalFormat;
 };
 
@@ -30,6 +31,8 @@ public:
 private:
     Shader shader;
     GLuint framebuffer;
-    GLsizei textureCount;
-    GLuint textures[8];
+    GLsizei inputCount, outputCount;
+    GLuint outputTextures[8];
+    GLuint inputTextures[8];
+    GLenum inputTextureTargets[8];
 };
