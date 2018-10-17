@@ -60,13 +60,14 @@ int main(int argc, const char** argv) {
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
 
-    GLuint gColor, gWorldPos, gNormal, gReflection, gDepth;
+    GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
     GLuint gBuffer = generateFramebufferMultisample(
         window_width, window_height, 4, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
             {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8},
+            {GL_COLOR_ATTACHMENT4, gEmission, GL_RGB16F},
             {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT16},
         }, {
         }
@@ -80,7 +81,7 @@ int main(int argc, const char** argv) {
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
-    loadObj("scenes/scene1/", "demolevel.obj");
+    loadObj("scenes/scene2/", "objects.obj");
 
     float near = 0.1f;
     float far = 100.0f;
@@ -361,10 +362,12 @@ GLuint loadTexture(std::string textureFileName) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    if (data != nullptr) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
-    stbi_image_free(data);
+        stbi_image_free(data);
+    }
 
     return texture;
 }

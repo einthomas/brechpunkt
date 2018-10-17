@@ -14,19 +14,37 @@ Mesh::Mesh(GLuint VAO, std::string materialName, int numTriangles, glm::vec3 pos
 }
 
 void Mesh::draw(Shader &shader) {
-    if (RessourceManager::materials[materialName].diffuse_texname.length() > 0) {
+    auto& material = RessourceManager::materials[materialName];
+    if (material.diffuse_texname.length() > 0) {
         shader.setInteger("useDiffuseTex", 1);
-        shader.setTexture2D("diffuseTex", GL_TEXTURE0, RessourceManager::textures[RessourceManager::materials[materialName].diffuse_texname], 0);
+        shader.setTexture2D(
+            "diffuseTex", GL_TEXTURE0,
+            RessourceManager::textures[material.diffuse_texname], 0
+        );
     } else {
         shader.setInteger("useDiffuseTex", 0);
+        shader.setVector3f(
+            "diffuseColor",
+            material.diffuse[0], material.diffuse[1], material.diffuse[2]
+        );
     }
-	shader.setTexture2D("reflectionTex", GL_TEXTURE1, RessourceManager::textures[RessourceManager::materials[materialName].metallic_texname], 1);
-	if (RessourceManager::materials[materialName].normal_texname.length() > 0) {
+    shader.setTexture2D(
+        "reflectionTex", GL_TEXTURE1,
+        RessourceManager::textures[material.metallic_texname], 1
+    );
+    if (material.normal_texname.length() > 0) {
 		shader.setInteger("useNormalTex", 1);
-		shader.setTexture2D("normalTex", GL_TEXTURE2, RessourceManager::textures[RessourceManager::materials[materialName].normal_texname], 2);
+        shader.setTexture2D(
+            "normalTex", GL_TEXTURE2,
+            RessourceManager::textures[material.normal_texname], 2
+        );
 	} else {
 		shader.setInteger("useNormalTex", 0);
 	}
+    shader.setVector3f(
+        "emissionColor",
+        material.emission[0], material.emission[1], material.emission[2]
+    );
 
     glm::mat4 modelMatrix(1.0f);
     modelMatrix = glm::translate(modelMatrix, position);

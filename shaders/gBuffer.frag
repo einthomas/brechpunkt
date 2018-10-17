@@ -4,12 +4,15 @@ layout(location = 0) out vec4 colorOut;
 layout(location = 1) out vec4 positionOut;
 layout(location = 2) out vec4 normalOut;
 layout(location = 3) out vec4 reflectionOut;
+layout(location = 4) out vec3 emissionOut;
 
 uniform sampler2D diffuseTex;
 uniform sampler2D reflectionTex;
 uniform sampler2D normalTex;
 uniform bool useNormalTex;
 uniform bool useDiffuseTex;
+uniform vec3 diffuseColor;
+uniform vec3 emissionColor;
 
 in vec3 worldPos;
 in vec3 normal;
@@ -20,7 +23,7 @@ void main() {
     if (useDiffuseTex) {
         color = texture(diffuseTex, texCoord).xyz;
     } else {
-        color = vec3(5.0f);
+        color = diffuseColor;
     }
     colorOut = vec4(pow(color, vec3(2.2f)), 1.0f);
 
@@ -33,4 +36,9 @@ void main() {
     }
 
     reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+
+    emissionOut = emissionColor;
+
+    // TODO: remove
+    colorOut += vec4(emissionColor, 0.0);
 }
