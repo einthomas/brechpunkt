@@ -11,26 +11,33 @@ const int step = 1;
 void main() {
     ivec2 center = ivec2(gl_FragCoord.xy);
 
-    vec4 colorA = vec4(texelFetch(coarseTex, center, 0).rgb, 1);
-    vec4 colorB = vec4(texelFetch(coarseTex, center, 0).rgb, 1);
+    vec4 coarse = texelFetch(coarseTex, center, 0);
+    float centerCoc = coarse.a;
+
+    vec4 colorA = vec4(0);
+    vec4 colorB = vec4(0);
 
     for (int x = -radius; x <= radius; x += step) {
         vec4 current = texelFetch(
             coarseTex, center + ivec2(x / 2, x), 0
         );
         float coc = current.a;
+        float blurriness = abs(min(coc, centerCoc));
+        float weight = 1 / (blurriness + 0.01);
 
-        if (abs(x) < radius * coc) {
-            colorA += vec4(current.rgb, 1);
+        if (abs(x) <= radius * blurriness) {
+            colorA += vec4(current.rgb * weight, weight);
         }
 
         current = texelFetch(
             coarseTex, center + ivec2(-x / 2, x), 0
         );
         coc = current.a;
+        blurriness = abs(min(coc, centerCoc));
+        weight = 1 / (blurriness + 0.01);
 
-        if (abs(x) < radius * coc) {
-            colorB += vec4(current.rgb, 1);
+        if (abs(x) <= radius * blurriness) {
+            colorB += vec4(current.rgb * weight, weight);
         }
     }
 

@@ -5,7 +5,7 @@ uniform sampler2DMS depthTex;
 out float coc;
 
 const float aperture = 1;
-const float focus = 16;
+const float focus = 8;
 
 float depth(float x) {
 	// stackoverflow.com/questions/6652253
@@ -24,5 +24,5 @@ float signedCoc(float depth) {
 
 void main() {
     ivec2 center = ivec2(gl_FragCoord.xy);
-    coc = abs(signedCoc(depth(texelFetch(depthTex, center, 0).r)));
+    coc = signedCoc(depth(texelFetch(depthTex, center, 0).r));
 }

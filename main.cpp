@@ -127,7 +127,6 @@ int main(int argc, const char** argv) {
         "shaders/dofCoarse.frag", window_width, window_height, {
             {"colorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
             {"colorFilteredTex", GL_TEXTURE_2D, gColorFiltered},
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
             {"cocTex", GL_TEXTURE_2D, dofCocTexture},
         }, {
             {"coarse", dofCoarseTexture, GL_RGBA16F},
