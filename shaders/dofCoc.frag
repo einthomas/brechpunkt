@@ -1,4 +1,4 @@
-#version 400 core
+#version 330 core
 
 uniform sampler2DMS depthTex;
 
@@ -24,5 +24,5 @@ float signedCoc(float depth) {
 
 void main() {
     ivec2 center = ivec2(gl_FragCoord.xy);
-    coc = signedCoc(depth(texelFetch(depthTex, center, 0).r));
+    coc = abs(signedCoc(depth(texelFetch(depthTex, center, 0).r)));
 }
