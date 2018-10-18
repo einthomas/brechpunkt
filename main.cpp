@@ -18,6 +18,26 @@
 
 using namespace std;
 
+enum TextureUnit : GLuint {
+    MATERIAL_DIFFUSE_TEXTURE_UNIT,
+    MATERIAL_REFLECTION_TEXTURE_UNIT,
+    MATERIAL_NORMAL_TEXTURE_UNIT,
+    VIEWPOS_TEXTURE_UNIT,
+
+    NORMAL_TEXTURE_UNIT,
+    SSDO_TEXTURE_UNIT,
+    SSDO_NOISE_TEXTURE_UNIT,
+	SSDO_SAMPLES_TEXTURE,
+    SSDO_HORIZONTAL_BLUR_TEXTURE_UNIT,
+    SSDO_FINAL_TEXTURE_UNIT,
+
+    COLOR_TEXTURE_UNIT,
+    COLOR_FILTERED_TEXTURE_UNIT,
+
+    BLOOM_HORIZONTAL_TEXTURE_UNIT,
+    BLOOM_FINAL_TEXTURE_UNIT,
+};
+
 static bool debug_flag = false;
 
 const int DEFAULT_WIDTH = 1280;
@@ -30,7 +50,6 @@ static Camera camera;
 static Shader gBufferShader;
 static Shader composeShader;
 static Shader ssdoShader;
-static Shader blurShader;
 static vector<Mesh> meshes;
 static float deltaTime;
 static bool useAnimatedCamera = false;
@@ -49,6 +68,86 @@ void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 GLuint blur(int width, int height, GLuint texture, Shader &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal);
+
+glm::vec3 getHemisphereSample(glm::vec2 u) {
+    // source: "Physically Based Rendering: From Theory to Implementation" [Pharr and Humphreys, 2016]
+    float r = std::sqrt(u.x);
+    float phi = 2.0f * 3.1415926f * u.y;
+    return glm::vec3(
+        r * std::cosf(phi),
+        r * std::sinf(phi),
+        std::sqrt(std::max(0.0f, 1.0f - u.x))
+    );
+}
+
+// generated using the method from "Sampling with Hammersley and Halton Points" [Wong et al., 1997]
+// with parameters p1 = 2, p2 = 7
+const glm::vec2 HALTON_POINTS[64] = {
+    glm::vec2(0, 0),
+    glm::vec2(0.5, 0.142857),
+    glm::vec2(0.25, 0.285714),
+    glm::vec2(0.75, 0.428571),
+    glm::vec2(0.125, 0.571429),
+    glm::vec2(0.625, 0.714286),
+    glm::vec2(0.375, 0.857143),
+    glm::vec2(0.875, 0.0204082),
+    glm::vec2(0.0625, 0.163265),
+    glm::vec2(0.5625, 0.306122),
+    glm::vec2(0.3125, 0.44898),
+    glm::vec2(0.8125, 0.591837),
+    glm::vec2(0.1875, 0.734694),
+    glm::vec2(0.6875, 0.877551),
+    glm::vec2(0.4375, 0.0408163),
+    glm::vec2(0.9375, 0.183673),
+    glm::vec2(0.03125, 0.326531),
+    glm::vec2(0.53125, 0.469388),
+    glm::vec2(0.28125, 0.612245),
+    glm::vec2(0.78125, 0.755102),
+    glm::vec2(0.15625, 0.897959),
+    glm::vec2(0.65625, 0.0612245),
+    glm::vec2(0.40625, 0.204082),
+    glm::vec2(0.90625, 0.346939),
+    glm::vec2(0.09375, 0.489796),
+    glm::vec2(0.59375, 0.632653),
+    glm::vec2(0.34375, 0.77551),
+    glm::vec2(0.84375, 0.918367),
+    glm::vec2(0.21875, 0.0816327),
+    glm::vec2(0.71875, 0.22449),
+    glm::vec2(0.46875, 0.367347),
+    glm::vec2(0.96875, 0.510204),
+    glm::vec2(0.015625, 0.653061),
+    glm::vec2(0.515625, 0.795918),
+    glm::vec2(0.265625, 0.938776),
+    glm::vec2(0.765625, 0.102041),
+    glm::vec2(0.140625, 0.244898),
+    glm::vec2(0.640625, 0.387755),
+    glm::vec2(0.390625, 0.530612),
+    glm::vec2(0.890625, 0.673469),
+    glm::vec2(0.078125, 0.816327),
+    glm::vec2(0.578125, 0.959184),
+    glm::vec2(0.328125, 0.122449),
+    glm::vec2(0.828125, 0.265306),
+    glm::vec2(0.203125, 0.408163),
+    glm::vec2(0.703125, 0.55102),
+    glm::vec2(0.453125, 0.693878),
+    glm::vec2(0.953125, 0.836735),
+    glm::vec2(0.046875, 0.979592),
+    glm::vec2(0.546875, 0.00291545),
+    glm::vec2(0.296875, 0.145773),
+    glm::vec2(0.796875, 0.28863),
+    glm::vec2(0.171875, 0.431487),
+    glm::vec2(0.671875, 0.574344),
+    glm::vec2(0.421875, 0.717201),
+    glm::vec2(0.921875, 0.860058),
+    glm::vec2(0.109375, 0.0233236),
+    glm::vec2(0.609375, 0.166181),
+    glm::vec2(0.359375, 0.309038),
+    glm::vec2(0.859375, 0.451895),
+    glm::vec2(0.234375, 0.594752),
+    glm::vec2(0.734375, 0.737609),
+    glm::vec2(0.484375, 0.880467),
+    glm::vec2(0.984375, 0.0437318)
+};
 
 int main(int argc, const char** argv) {
     if (argc >= 2) {
@@ -71,39 +170,17 @@ int main(int argc, const char** argv) {
     GLuint gBuffer = generateFramebufferMultisample(
         window_width, window_height, 4, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
-            {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB8},
-            {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB8},
-            {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB8},
+            {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB16F},
+            {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB16F},
+            {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB16F},
         }, {
             {GL_DEPTH_ATTACHMENT, depthRBO, GL_DEPTH_COMPONENT},
         }
-    );
+        );
     GLuint gColorFiltered;
     GLuint filterFramebuffer = generateFramebuffer(
         window_width, window_height, {
             {GL_COLOR_ATTACHMENT0, gColorFiltered, GL_RGB16F}
-        }, {}
-    );
-
-    //GLuint occlusionTexture, depthRBO2;
-    //GLuint ssdoBuffer = generateFramebuffer(
-    //    window_width, window_height, {
-    //      {GL_COLOR_ATTACHMENT0, occlusionTexture, GL_RGB16F},
-    //    }, {
-    //      {GL_DEPTH_ATTACHMENT, depthRBO2, GL_DEPTH_COMPONENT},
-    //    }
-    // );
-
-    GLuint blurBuffer0;
-    GLuint blurFBO0 = generateFramebuffer(
-        window_width, window_height, {
-          {GL_COLOR_ATTACHMENT0, blurBuffer0, GL_RGB16F},
-        }, {}
-    );
-    GLuint blurBuffer1;
-    GLuint blurFBO1 = generateFramebuffer(
-        window_width, window_height, {
-          {GL_COLOR_ATTACHMENT0, blurBuffer1, GL_RGB16F},
         }, {}
     );
 
@@ -119,7 +196,7 @@ int main(int argc, const char** argv) {
         glm::radians(45.0f), (float)window_width / (float)window_height, near, far
     );
 
-    Animation<glm::vec3> cameraPosition {
+    Animation<glm::vec3> cameraPosition{
         {0, {0, 0.5, 4}, HandleType::STOP},
         {4, {3, 0.5, 4}},
         {10, {3, 0.5, 7}, HandleType::SMOOTH_IN},
@@ -131,27 +208,10 @@ int main(int argc, const char** argv) {
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
     ssdoShader = Shader("shaders/ssdo.vert", "shaders/ssdo.frag");
-    blurShader = Shader("shaders/blur.vert", "shaders/blur.frag");
-
-    enum TextureUnit : GLuint {
-        DIFFUSE_TEXTURE_UNIT,
-        REFLECTION_TEXTURE_UNIT,
-        NORMAL_TEXTURE_UNIT,
-        VIEWPOS_TEXTURE_UNIT,
-
-        SSDO_TEXTURE_UNIT,
-        SSDO_NOISE_TEXTURE_UNIT,
-
-        COLOR_TEXTURE_UNIT,
-        COLOR_FILTERED_TEXTURE_UNIT,
-
-        BLOOM_HORIZONTAL_TEXTURE_UNIT,
-        BLOOM_FINAL_TEXTURE_UNIT,
-    };
 
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", window_width / 2, window_height / 2,
-        { {"colorTex", COLOR_FILTERED_TEXTURE_UNIT} },
+        { {"colorTex", SSDO_FINAL_TEXTURE_UNIT} },
         { {"color", BLOOM_HORIZONTAL_TEXTURE_UNIT, GL_RGB16F} }
     );
 
@@ -162,15 +222,31 @@ int main(int argc, const char** argv) {
     );
 
     auto ssdoPass = Effect(
-      "shaders/ssdo.frag", window_width, window_height,
-      {
-        /*
-        {"gColorTex", COLOR_FILTERED_TEXTURE_UNIT},
-        {"gNormalTex", NORMAL_TEXTURE_UNIT},
-        {"gWorldPosTex", VIEWPOS_TEXTURE_UNIT}
-        */
-      },
-      {{"occlusionTex", SSDO_TEXTURE_UNIT, GL_RGB16F}}
+        "shaders/ssdo.frag", window_width, window_height,
+        {
+          {"gColorTex", COLOR_FILTERED_TEXTURE_UNIT},
+          {"gNormalTex", NORMAL_TEXTURE_UNIT},
+          {"gWorldPosTex", VIEWPOS_TEXTURE_UNIT}
+        },
+        { {"color", SSDO_TEXTURE_UNIT, GL_RGB16F} }
+    );
+
+    auto blurSSDOHorizontal = Effect(
+        "shaders/blurSSDOHorizontal.frag", window_width, window_height,
+        {
+            {"colorTex", SSDO_TEXTURE_UNIT},
+            {"gNormalTex", NORMAL_TEXTURE_UNIT}
+        },
+        { {"color", SSDO_HORIZONTAL_BLUR_TEXTURE_UNIT, GL_RGB16F} }
+    );
+
+    auto blurSSDOVertical = Effect(
+        "shaders/blurSSDOVertical.frag", window_width, window_height,
+        {
+            {"colorTex", SSDO_HORIZONTAL_BLUR_TEXTURE_UNIT},
+            {"gNormalTex", NORMAL_TEXTURE_UNIT}
+        },
+        { {"color", SSDO_FINAL_TEXTURE_UNIT, GL_RGB16F} }
     );
 
     composeShader.use();
@@ -184,25 +260,56 @@ int main(int argc, const char** argv) {
     );
     glUniform1i(
         glGetUniformLocation(composeShader.program, "occlusionTex"),
-        SSDO_TEXTURE_UNIT
+        SSDO_FINAL_TEXTURE_UNIT
     );
-
-    glBindTextureUnit(COLOR_TEXTURE_UNIT, gColor);
-    glBindTextureUnit(COLOR_FILTERED_TEXTURE_UNIT, gColorFiltered);
+    glActiveTexture(GL_TEXTURE0 + COLOR_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
+    glActiveTexture(GL_TEXTURE0 + COLOR_FILTERED_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D, gColorFiltered);
+    glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gNormal);
+    glActiveTexture(GL_TEXTURE0 + VIEWPOS_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gWorldPos);
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    //GLuint noiseTexture = generateNoiseTexture();
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+    glm::vec3 randomValues[16];
+    for (int k = 0; k < 16; k++) {
+        randomValues[k] = glm::vec3(
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0 - 1.0,
+            0.0f
+        );
+    }
+    GLuint noiseTexture;
+    glGenTextures(1, &noiseTexture);
+    glActiveTexture(GL_TEXTURE0 + SSDO_NOISE_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &randomValues[0]);
 
-    //float randomValues[64];
-    //std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-    //std::default_random_engine generator;
-    //for (int i = 0; i < 64; i++) {
-    //    randomValues[i] = randomFloats(generator);
-    //}
+    float hemisphereSamples[192];
+    for (int i = 0; i < 64; i++) {
+        glm::vec3 hemisphereSample = getHemisphereSample(HALTON_POINTS[i]) * randomFloats(generator);
+        hemisphereSamples[i * 3] = hemisphereSample.x;
+        hemisphereSamples[i * 3 + 1] = hemisphereSample.y;
+        hemisphereSamples[i * 3 + 2] = hemisphereSample.z;
+    }
+
+    ssdoPass.shader.use();
+    glUniform1i(
+        glGetUniformLocation(ssdoPass.shader.program, "noiseTex"),
+        SSDO_NOISE_TEXTURE_UNIT
+    );
+    glUniform3fv(glGetUniformLocation(ssdoShader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
 
     float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
@@ -242,8 +349,6 @@ int main(int argc, const char** argv) {
             viewMatrix = camera.getViewMatrix();
             cameraPosition.reset();
         }
-        
-        glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         // g-buffer
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -268,56 +373,22 @@ int main(int argc, const char** argv) {
 
         glBindVertexArray(screenQuadVAO);
 
-        bloomHorizontalPass.render();
-        bloomVerticalPass.render();
-
-        /*
         ssdoPass.shader.use();
         ssdoShader.setMatrix4("view", viewMatrix);
         ssdoShader.setMatrix4("projection", projectionMatrix);
-        glUniform1fv(glGetUniformLocation(ssdoShader.program, "randomValues"), 64, randomValues);
-        */
         ssdoPass.render();
+		
+        blurSSDOHorizontal.render();
+        blurSSDOVertical.render();
+
+        bloomHorizontalPass.render();
+        bloomVerticalPass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         composeShader.use();
-        /*
-        // ssdo
-        noiseTexture = generateNoiseTexture();
-
-        float randomValues[64];
-        std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-        std::default_random_engine generator;
-        for (int i = 0; i < 64; i++) {
-            randomValues[i] = randomFloats(generator);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, ssdoBuffer);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        ssdoShader.use();
-        ssdoShader.setMatrix4("view", viewMatrix);
-        ssdoShader.setMatrix4("projection", projectionMatrix);
-        ssdoShader.setTexture2D("gColorTex", GL_TEXTURE0, gColor, 0);
-        ssdoShader.setTexture2D("gNormalTex", GL_TEXTURE1, gNormal, 1);
-        ssdoShader.setTexture2D("gWorldPosTex", GL_TEXTURE2, gWorldPos, 2);
-        ssdoShader.setTexture2D("noiseTex", GL_TEXTURE3, noiseTexture, 3);
-        glUniform1fv(glGetUniformLocation(ssdoShader.program, "randomValues"), 64, randomValues);
-        drawScreenQuad(screenQuadVAO);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        GLuint blurredSSDOTexture = blur(WINDOW_WIDTH, WINDOW_HEIGHT, occlusionTexture, blurShader, 3, screenQuadVAO, gNormal);
-
-        // render to screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        composeShader.use();
-        composeShader.setTexture2D("colorTex", GL_TEXTURE0, gColor, 0);
-        composeShader.setTexture2D("occlusionTex", GL_TEXTURE1, blurredSSDOTexture, 1);
-        */
         drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
@@ -366,7 +437,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
         composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
         ssdoShader = Shader("shaders/ssdo.vert", "shaders/ssdo.frag");
-        blurShader = Shader("shaders/blur.vert", "shaders/blur.frag");
     }
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -496,6 +566,7 @@ GLuint generateNoiseTexture() {
 
     GLuint noiseTexture;
     glGenTextures(1, &noiseTexture);
+    glActiveTexture(GL_TEXTURE0 + SSDO_NOISE_TEXTURE_UNIT);
     glBindTexture(GL_TEXTURE_2D, noiseTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);

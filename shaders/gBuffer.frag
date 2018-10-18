@@ -23,9 +23,9 @@ void main() {
     if (useDiffuseTex) {
 		color = texture(diffuseTex, texCoord).xyz;
     } else {
-		color = vec3(5.0f);
+		color = vec3(0.0f, 1.0f, 0.0f);
     }
-	colorOut = vec4(pow(color, vec3(2.2f)), 1.0f);
+    colorOut = vec4(color, 1.0f);
     
     if (useNormalTex) {
         vec3 tangent = normalize(dFdx(worldPos));

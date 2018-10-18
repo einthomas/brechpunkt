@@ -19,6 +19,7 @@ struct EffectOutput {
 class Effect {
 public:
     Shader shader;
+    GLuint framebuffer;
 
     Effect(
         const char* fragmentShaderPath, int width, int height,
@@ -30,7 +31,6 @@ public:
     void render();
 
 private:
-    GLuint framebuffer;
     GLsizei textureCount;
     GLuint textures[8];
 };
