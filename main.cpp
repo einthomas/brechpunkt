@@ -31,6 +31,10 @@ enum TextureUnit : GLuint {
     SSDO_HORIZONTAL_BLUR_TEXTURE_UNIT,
     SSDO_FINAL_TEXTURE_UNIT,
 
+    LIGHT_BOUNCE_TEXTURE_UNIT,
+    LIGHT_BOUNCE_HORIZONTAL_BLUR_TEXTURE_UNIT,
+    LIGHT_BOUNCE_FINAL_TEXTURE_UNIT,
+
     COLOR_TEXTURE_UNIT,
     COLOR_FILTERED_TEXTURE_UNIT,
 
@@ -207,7 +211,6 @@ int main(int argc, const char** argv) {
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
-    ssdoShader = Shader("shaders/ssdo.vert", "shaders/ssdo.frag");
 
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", window_width / 2, window_height / 2,
@@ -230,7 +233,6 @@ int main(int argc, const char** argv) {
         },
         { {"color", SSDO_TEXTURE_UNIT, GL_RGB16F} }
     );
-
     auto blurSSDOHorizontal = Effect(
         "shaders/blurSSDOHorizontal.frag", window_width, window_height,
         {
@@ -239,7 +241,6 @@ int main(int argc, const char** argv) {
         },
         { {"color", SSDO_HORIZONTAL_BLUR_TEXTURE_UNIT, GL_RGB16F} }
     );
-
     auto blurSSDOVertical = Effect(
         "shaders/blurSSDOVertical.frag", window_width, window_height,
         {
@@ -247,6 +248,26 @@ int main(int argc, const char** argv) {
             {"gNormalTex", NORMAL_TEXTURE_UNIT}
         },
         { {"color", SSDO_FINAL_TEXTURE_UNIT, GL_RGB16F} }
+    );
+
+    auto lightBouncePass = Effect(
+        "shaders/lightBounce.frag", window_width / 2, window_height / 2,
+        {
+          {"gColorTex", COLOR_FILTERED_TEXTURE_UNIT},
+          {"gNormalTex", NORMAL_TEXTURE_UNIT},
+          {"gWorldPosTex", VIEWPOS_TEXTURE_UNIT}
+        },
+        { {"color", LIGHT_BOUNCE_TEXTURE_UNIT, GL_RGB16F} }
+    );
+    auto blurLightBounceHorizontalPass = Effect(
+        "shaders/blurLightBounceHorizontal.frag", window_width / 2, window_height / 2,
+        { {"colorTex", LIGHT_BOUNCE_TEXTURE_UNIT} },
+        { {"color", LIGHT_BOUNCE_HORIZONTAL_BLUR_TEXTURE_UNIT, GL_RGB16F} }
+    );
+    auto blurLightBounceVerticalPass = Effect(
+        "shaders/blurLightBounceVertical.frag", window_width / 2, window_height / 2,
+        { {"colorTex", LIGHT_BOUNCE_HORIZONTAL_BLUR_TEXTURE_UNIT} },
+        { {"color", LIGHT_BOUNCE_FINAL_TEXTURE_UNIT, GL_RGB16F} }
     );
 
     composeShader.use();
@@ -261,6 +282,10 @@ int main(int argc, const char** argv) {
     glUniform1i(
         glGetUniformLocation(composeShader.program, "occlusionTex"),
         SSDO_FINAL_TEXTURE_UNIT
+    );
+    glUniform1i(
+        glGetUniformLocation(composeShader.program, "lightBounceTex"),
+        LIGHT_BOUNCE_FINAL_TEXTURE_UNIT
     );
     glActiveTexture(GL_TEXTURE0 + COLOR_TEXTURE_UNIT);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
@@ -309,7 +334,14 @@ int main(int argc, const char** argv) {
         glGetUniformLocation(ssdoPass.shader.program, "noiseTex"),
         SSDO_NOISE_TEXTURE_UNIT
     );
-    glUniform3fv(glGetUniformLocation(ssdoShader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
+    glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
+
+    lightBouncePass.shader.use();
+    glUniform1i(
+        glGetUniformLocation(lightBouncePass.shader.program, "noiseTex"),
+        SSDO_NOISE_TEXTURE_UNIT
+    );
+    glUniform3fv(glGetUniformLocation(lightBouncePass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
 
     float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
@@ -374,8 +406,8 @@ int main(int argc, const char** argv) {
         glBindVertexArray(screenQuadVAO);
 
         ssdoPass.shader.use();
-        ssdoShader.setMatrix4("view", viewMatrix);
-        ssdoShader.setMatrix4("projection", projectionMatrix);
+        ssdoPass.shader.setMatrix4("view", viewMatrix);
+        ssdoPass.shader.setMatrix4("projection", projectionMatrix);
         ssdoPass.render();
 		
         blurSSDOHorizontal.render();
@@ -383,6 +415,13 @@ int main(int argc, const char** argv) {
 
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
+
+        lightBouncePass.shader.use();
+        lightBouncePass.shader.setMatrix4("view", viewMatrix);
+        lightBouncePass.shader.setMatrix4("projection", projectionMatrix);
+        lightBouncePass.render();
+        blurLightBounceHorizontalPass.render();
+        blurLightBounceVerticalPass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer
