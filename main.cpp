@@ -7,6 +7,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
+#include <glm/gtc/quaternion.hpp>
 
 #include "RessourceManager.h"
 #include "Mesh.h"
@@ -29,6 +30,8 @@ static Camera camera;
 static Shader gBufferShader;
 static Shader composeShader;
 static vector<Mesh> meshes;
+static Mesh lightMesh;
+static Mesh centerCube;
 static float deltaTime;
 static bool useAnimatedCamera = false;
 
@@ -201,9 +204,41 @@ int main(int argc, const char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
         gBufferShader.setMatrix4("viewProjectionMatrix", viewProjectionMatrix);
+        gBufferShader.setMatrix4("model", glm::mat4());
 
         for (int i = 0; i < meshes.size(); i++) {
             meshes[i].draw(gBufferShader);
+        }
+
+        for (int i = 0; i < 36; i++) {
+            auto angle = glm::radians(i * 10.0f);
+            auto model = glm::rotate(
+                glm::mat4(), angle, {0, 1, 0}
+            );
+            model = glm::scale(model, {1, sinf(angle * 3) + 2, 1});
+
+            gBufferShader.setMatrix4("model", model);
+            lightMesh.draw(gBufferShader);
+        }
+
+        // center cube
+        float spread = 0.75f, scale[8] = {1};
+        glm::quat rotation = glm::rotate(glm::quat(), 30.0f, {1, 1, 1});
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 2; k++) {
+                    auto model = glm::translate(
+                        glm::mat4(), {0, 1, 0}
+                    );
+                    model *= glm::mat4_cast(rotation);
+                    model = glm::translate(
+                        model, glm::vec3(i - 0.5f, j - 0.5f, k - 0.5f) * spread
+                    );
+                    gBufferShader.setMatrix4("model", model);
+                    centerCube.draw(gBufferShader);
+                }
+            }
         }
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
@@ -234,7 +269,7 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 1);
         glBindTexture(GL_TEXTURE_2D, bloomTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, dofTexture);
+        glBindTexture(GL_TEXTURE_2D, gColorFiltered);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
@@ -340,12 +375,21 @@ void loadObj(std::string basedir, std::string objFileName) {
 
         glBindVertexArray(0);
 
-        meshes.push_back(Mesh(
+        Mesh mesh = Mesh(
             VAO,
             materials[shapes[i].mesh.material_ids[0]].name,
-            meshData.size() / 8.0f,
-            glm::vec3(0.0f)
-        ));
+            meshData.size() / 8.0f
+        );
+
+        if (shapes[i].name == "Light") {
+            lightMesh = mesh;
+
+        } else if (shapes[i].name == "Cube") {
+            centerCube = mesh;
+
+        } else {
+            meshes.push_back(mesh);
+        }
     }
 }
 

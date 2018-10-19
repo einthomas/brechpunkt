@@ -5,11 +5,10 @@
 
 #include "RessourceManager.h"
 
-Mesh::Mesh(GLuint VAO, std::string materialName, int numTriangles, glm::vec3 position) :
+Mesh::Mesh(GLuint VAO, std::string materialName, int numTriangles) :
 	VAO(VAO),
 	materialName(materialName),
-	numTriangles(numTriangles),
-    position(position)
+    numTriangles(numTriangles)
 {
 }
 
@@ -46,10 +45,8 @@ void Mesh::draw(Shader &shader) {
         material.emission[0], material.emission[1], material.emission[2]
     );
 
-    glm::mat4 modelMatrix(1.0f);
-    modelMatrix = glm::translate(modelMatrix, position);
-	shader.setMatrix4("model", modelMatrix);
-
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, numTriangles);
 }
+
+Mesh::Mesh() {}
