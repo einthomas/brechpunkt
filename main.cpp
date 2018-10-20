@@ -343,6 +343,7 @@ int main(int argc, const char** argv) {
         SSDO_NOISE_TEXTURE_UNIT
     );
     glUniform3fv(glGetUniformLocation(lightBouncePass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
+    glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
     float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
