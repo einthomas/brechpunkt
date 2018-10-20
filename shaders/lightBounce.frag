@@ -58,4 +58,5 @@ void main() {
     }
 
     color = vec4(pow(lightBounce / (numSamples / stepSize), vec3(2.2f)), 1.0f);
+    color = vec4(0.0f);
 }

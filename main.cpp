@@ -44,8 +44,8 @@ enum TextureUnit : GLuint {
 
 static bool debug_flag = false;
 
-const int DEFAULT_WIDTH = 1280;
-const int DEFAULT_HEIGHT = 720;
+const int DEFAULT_WIDTH = 1920;
+const int DEFAULT_HEIGHT = 1080;
 const float CAMERA_SPEED = 10.0f;
 
 static int window_width = 0, window_height = 0;
@@ -335,6 +335,7 @@ int main(int argc, const char** argv) {
         SSDO_NOISE_TEXTURE_UNIT
     );
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
+    glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
     lightBouncePass.shader.use();
     glUniform1i(
