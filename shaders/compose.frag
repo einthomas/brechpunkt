@@ -11,7 +11,7 @@ out vec4 color;
 
 void main() {
 	vec3 inColor = (texture(occlusionTex, texCoord).xyz + texture(lightBounceTex, texCoord).xyz) * 0.25;
-    inColor = mix(inColor, texture(bloomTex, texCoord).rgb, 0.05);
+	inColor = mix(inColor, texture(bloomTex, texCoord).rgb, 0.05);
 
 	color = vec4(pow(inColor, vec3(1.0f / 2.2f)), 1.0f);
 

@@ -564,6 +564,12 @@ void loadObj(std::string basedir, std::string objFileName) {
 
         glBindVertexArray(0);
 
+        /*
+        if (mesh.name == "asdfasdf") {
+            add lamp
+        }
+        */
+
         meshes.push_back(Mesh(
             VAO,
             materials[shapes[i].mesh.material_ids[0]].name,

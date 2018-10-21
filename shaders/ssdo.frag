@@ -2,6 +2,14 @@
 
 #define M_PI 3.141592653589
 
+struct PointLight {
+    vec3 pos;
+    vec3 color;
+    float constantTerm;
+    float linearTerm;
+    float quadraticTerm;
+}
+
 uniform sampler2D gColorTex;
 uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gWorldPosTex;
@@ -10,6 +18,7 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 hemisphereSamples[64];
 uniform vec2 size;
+uniform PointLight pointLights[4];
 
 in vec2 texCoord;
 
@@ -50,8 +59,10 @@ void main() {
         {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 2.0f, abs(sampleProjected.z - samplePos.z));
         }
-        float lightStrength = 4.0f;
-        c += max(0.0f, dot(hemisphereSample, lightDir)) * visibility * lightStrength;
+        for (int k = 0; k < 50; k++) {
+            float lightStrength = 4.0f;
+            c += max(0.0f, dot(hemisphereSample, lightDir)) * visibility * lightStrength;
+        }
     }
     
     color = vec4(pow((c / numSamples) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);

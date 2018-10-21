@@ -46,7 +46,7 @@ void main() {
         vec4 sampleProjected = texelFetch(gWorldPosTex, ivec2(samplePosImageSpace.xy * size), 0);
 
         float visibility = 1.0f;
-       if (samplePosImageSpace.x >= 0.0f && samplePosImageSpace.x <= 1.0f &&
+        if (samplePosImageSpace.x >= 0.0f && samplePosImageSpace.x <= 1.0f &&
             samplePosImageSpace.y >= 0.0f && samplePosImageSpace.y <= 1.0f &&
             sampleProjected.w > 0.0f)
         {
