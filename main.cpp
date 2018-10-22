@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <random>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -59,6 +60,28 @@ int main(int argc, const char** argv) {
     }
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
+
+
+    GLuint uniformNoiseTexture;
+    glGenTextures(1, &uniformNoiseTexture);
+    glBindTexture(GL_TEXTURE_2D, uniformNoiseTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    {
+        GLushort uniformNoise[8 * 8];
+        auto r = std::default_random_engine();
+        for (auto& v : uniformNoise) {
+            v = std::uniform_int_distribution<GLushort>()(r);
+        }
+
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_R16, 16, 16, 0, GL_RED, GL_UNSIGNED_SHORT,
+            uniformNoise
+        );
+    }
+
 
     GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
     GLuint gBuffer = generateFramebufferMultisample(
@@ -129,6 +152,7 @@ int main(int argc, const char** argv) {
             {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
             {"colorFilteredTex", GL_TEXTURE_2D, gColorFiltered},
             {"cocTex", GL_TEXTURE_2D, dofCocTexture},
+            {"noiseTex", GL_TEXTURE_2D, uniformNoiseTexture},
         }, {
             {"coarse", dofCoarseTexture, GL_RGBA16F},
         }
@@ -225,7 +249,7 @@ int main(int argc, const char** argv) {
 
         dofCocPass.render();
         dofCoarsePass.render();
-        dofFinePass.render();
+        //dofFinePass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer
@@ -236,7 +260,7 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 1);
         glBindTexture(GL_TEXTURE_2D, bloomTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, dofTexture);
+        glBindTexture(GL_TEXTURE_2D, dofCoarseTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
