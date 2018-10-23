@@ -7,7 +7,7 @@ uniform sampler2D cocTex;
 out vec4 coarse;
 
 const int radius = 31;
-const int step = 1;
+const int step = 2;
 const float exaggeration = 1;
 
 void main() {
