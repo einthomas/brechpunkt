@@ -12,15 +12,13 @@ const int step = 1;
 ivec2 center;
 vec4 coarse;
 float centerCoc;
-float centerDepth;
 
 vec4 getSample(ivec2 offset, float x) {
     vec4 current = texelFetch(
         coarseTex, center + offset, 0
     );
     float coc = current.a;
-    float depth = texelFetch(depthTex, center + offset, 0).r;
-    float blurriness = mix(coc, centerCoc, centerDepth < depth);
+    float blurriness = abs(min(coc, centerCoc));
     float weight = 1 / (blurriness + 0.01);
 
     return mix(
@@ -35,7 +33,6 @@ void main() {
 
     coarse = texelFetch(coarseTex, center, 0);
     centerCoc = coarse.a;
-    centerDepth = texelFetch(depthTex, center, 0).r;
 
     vec4 colorA = vec4(0);
     vec4 colorB = vec4(0);
