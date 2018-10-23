@@ -7,7 +7,7 @@ out vec3 color;
 
 const int radius = 26; // 31 * sin(pi / 3)
 const int fineRadius = 2;
-const int step = 1;
+const int step = 2;
 const float exaggeration = 1;
 
 ivec2 center;
