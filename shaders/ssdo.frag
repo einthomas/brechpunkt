@@ -8,7 +8,7 @@ struct PointLight {
     float constantTerm;
     float linearTerm;
     float quadraticTerm;
-}
+};
 
 uniform sampler2D gColorTex;
 uniform sampler2DMS gNormalTex;
@@ -59,10 +59,19 @@ void main() {
         {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 2.0f, abs(sampleProjected.z - samplePos.z));
         }
-        for (int k = 0; k < 50; k++) {
-            float lightStrength = 4.0f;
-            c += max(0.0f, dot(hemisphereSample, lightDir)) * visibility * lightStrength;
+        
+        vec3 asdf = vec3(0.0f);
+        for (int k = 0; k < 4; k++) {
+            float lightStrength = 60.0f;
+            vec3 lp = (view * vec4(pointLights[k].pos, 1.0f)).xyz;
+            vec3 ld = normalize(lp - worldPos);
+            float dist = length(lp - worldPos);
+            float attenuation = 1.0f / (pointLights[k].constantTerm + pointLights[k].linearTerm * dist + pointLights[k].quadraticTerm * dist * dist);
+            asdf += max(0.0f, dot(hemisphereSample, ld)) * visibility * lightStrength * pointLights[k].color * attenuation;
         }
+        asdf /= 4.0f;
+        c += asdf;
+        //c += max(0.0f, dot(hemisphereSample, lightDir)) * visibility;
     }
     
     color = vec4(pow((c / numSamples) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);

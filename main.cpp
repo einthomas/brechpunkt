@@ -18,6 +18,23 @@
 
 using namespace std;
 
+struct PointLight {
+    glm::vec3 pos;
+    glm::vec3 color;
+    float constantTerm;
+    float linearTerm;
+    float quadraticTerm;
+
+    PointLight(glm::vec3 pos, glm::vec3 color, float constantTerm, float linearTerm, float quadraticTerm) :
+        pos(pos),
+        color(color),
+        constantTerm(constantTerm),
+        linearTerm(linearTerm),
+        quadraticTerm(quadraticTerm)
+    {
+    }
+};
+
 enum TextureUnit : GLuint {
     MATERIAL_DIFFUSE_TEXTURE_UNIT,
     MATERIAL_REFLECTION_TEXTURE_UNIT,
@@ -50,6 +67,7 @@ const float CAMERA_SPEED = 10.0f;
 
 static int window_width = 0, window_height = 0;
 
+static vector<PointLight> pointLights;
 static Camera camera;
 static Shader gBufferShader;
 static Shader composeShader;
@@ -336,6 +354,13 @@ int main(int argc, const char** argv) {
     );
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    for (int i = 0; i < 4; i++) {
+        ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].pos", pointLights[i].pos);
+        ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+        ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
+        ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
+        ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
+    }
 
     lightBouncePass.shader.use();
     glUniform1i(
@@ -418,12 +443,12 @@ int main(int argc, const char** argv) {
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
 
-        lightBouncePass.shader.use();
-        lightBouncePass.shader.setMatrix4("view", viewMatrix);
-        lightBouncePass.shader.setMatrix4("projection", projectionMatrix);
-        lightBouncePass.render();
-        blurLightBounceHorizontalPass.render();
-        blurLightBounceVerticalPass.render();
+        //lightBouncePass.shader.use();
+        //lightBouncePass.shader.setMatrix4("view", viewMatrix);
+        //lightBouncePass.shader.setMatrix4("projection", projectionMatrix);
+        //lightBouncePass.render();
+        //blurLightBounceHorizontalPass.render();
+        //blurLightBounceVerticalPass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer
@@ -564,11 +589,15 @@ void loadObj(std::string basedir, std::string objFileName) {
 
         glBindVertexArray(0);
 
-        /*
-        if (mesh.name == "asdfasdf") {
-            add lamp
+        if (shapes[i].name.find("MusicCube") != string::npos) {
+            pointLights.push_back(PointLight(
+                glm::vec3(meshData[0], meshData[1], meshData[2]),
+                glm::vec3(0.0f, 1.0f, 0.0f),
+                1.0f,
+                0.022f,
+                0.44f
+            ));
         }
-        */
 
         meshes.push_back(Mesh(
             VAO,
