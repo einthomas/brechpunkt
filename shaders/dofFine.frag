@@ -8,6 +8,7 @@ out vec3 color;
 const int radius = 26; // 31 * sin(pi / 3)
 const int fineRadius = 2;
 const int step = 1;
+const float exaggeration = 1;
 
 ivec2 center;
 vec4 coarse;
@@ -42,6 +43,8 @@ void main() {
         colorB += getSample(ivec2(x * -0.5, x), x);
     }
 
-    color = min(colorA.rgb / colorA.a, colorB.rgb / colorB.a);
-    //color = colorB.rgb / colorB.a;
+    color = pow(
+        min(colorA.rgb / colorA.a, colorB.rgb / colorB.a),
+        vec3(1 / exaggeration)
+    );
 }
