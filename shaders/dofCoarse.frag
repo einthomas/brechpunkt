@@ -1,7 +1,6 @@
 #version 330 core
 
 uniform sampler2DMS colorTex;
-uniform sampler2DMS depthTex;
 uniform sampler2D colorFilteredTex;
 uniform sampler2D cocTex;
 
@@ -14,7 +13,6 @@ void main() {
     ivec2 center = ivec2(gl_FragCoord.xy);
 
     float centerCoc = texelFetch(cocTex, center, 0).r;
-    float centerDepth = texelFetch(depthTex, center, 0).r;
 
     float centerWeight = 1 / (abs(centerCoc) + 0.01);
 
@@ -30,15 +28,14 @@ void main() {
             colorTex, center + offset, 0
         );
         float coc = texelFetch(cocTex, center + offset, 0).r;
-        float depth = texelFetch(depthTex, center + offset, 0).r;
-        float blurriness = mix(coc, centerCoc, centerDepth < depth);
+        float blurriness = abs(min(coc, centerCoc));
         float weight = 1 / (blurriness + 0.01);
 
         bool mask = abs(x) <= radius * blurriness;
 
         coarse += mix(
             vec4(0),
-            vec4(current.rgb, coc) * weight,
+            vec4(current.rgb, blurriness) * weight,
             bvec4(mask)
         );
 
@@ -46,4 +43,5 @@ void main() {
     }
 
     coarse = coarse / count;
+    coarse.a *= sign(centerCoc);
 }

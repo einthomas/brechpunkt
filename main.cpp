@@ -120,13 +120,12 @@ int main(int argc, const char** argv) {
         "shaders/dofCoc.frag", window_width, window_height, {
             {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
         }, {
-            {"coc", dofCocTexture, GL_R8},
+            {"coc", dofCocTexture, GL_R8_SNORM},
         }
     );
     auto dofCoarsePass = Effect(
         "shaders/dofCoarse.frag", window_width, window_height, {
             {"colorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
             {"colorFilteredTex", GL_TEXTURE_2D, gColorFiltered},
             {"cocTex", GL_TEXTURE_2D, dofCocTexture},
         }, {
@@ -136,7 +135,6 @@ int main(int argc, const char** argv) {
     auto dofFinePass = Effect(
         "shaders/dofFine.frag", window_width, window_height, {
             {"coarseTex", GL_TEXTURE_2D, dofCoarseTexture},
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
         }, {
             {"color", dofTexture, GL_RGB16F},
         }
