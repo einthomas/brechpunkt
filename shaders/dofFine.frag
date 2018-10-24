@@ -5,7 +5,7 @@ uniform sampler2DMS depthTex;
 
 out vec3 color;
 
-const int radius = 26; // 31 * sin(pi / 3)
+const int radius = 26; // 31 * sqrt(3) / 2
 const int fineRadius = 2;
 const int step = 2;
 const float exaggeration = 1;
@@ -25,7 +25,7 @@ vec4 getSample(ivec2 offset, float x) {
     return mix(
         vec4(0),
         vec4(current.rgb * weight, weight),
-        bvec4(abs(x) <= radius * blurriness)
+        bvec4(abs(x * 2 / sqrt(3)) <= radius * blurriness)
     );
 }
 
