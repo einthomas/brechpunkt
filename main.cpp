@@ -61,9 +61,10 @@ enum TextureUnit : GLuint {
 
 static bool debug_flag = false;
 
-const int DEFAULT_WIDTH = 1920;
-const int DEFAULT_HEIGHT = 1080;
+const int DEFAULT_WIDTH = 1280;
+const int DEFAULT_HEIGHT = 720;
 const float CAMERA_SPEED = 10.0f;
+const int NUM_LIGHTS = 2;
 
 static int window_width = 0, window_height = 0;
 
@@ -79,7 +80,7 @@ GLuint blurFBO0, blurFBO1;
 GLuint blurBuffer0, blurBuffer1;
 
 GLuint loadTexture(std::string textureFileName);
-void loadObj(std::string basedir, std::string objFileName);
+MeshInfo loadMesh(std::string basedir, std::string objFileName);
 GLFWwindow *initGLFW();
 bool initGLEW();
 GLuint getScreenQuadVAO();
@@ -210,7 +211,38 @@ int main(int argc, const char** argv) {
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
-    loadObj("scenes/scene1/", "demolevel.obj");
+	MeshInfo musicCubeMeshInfo = loadMesh("scenes/scene3/", "MusicCube.obj");
+	MeshInfo floorMeshInfo = loadMesh("scenes/scene3/", "Floor.obj");
+	meshes.push_back(Mesh(
+		musicCubeMeshInfo,
+		glm::vec3(0.0f, 1.0f, -5.0f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	));
+	meshes.push_back(Mesh(
+		musicCubeMeshInfo,
+		glm::vec3(3.0f, 1.0f, -5.0f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	));
+	meshes.push_back(Mesh(
+		floorMeshInfo,
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	));
+
+	pointLights.push_back(PointLight(
+		glm::vec3(0.0f, 0.0f, -5.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		1.0f,
+		0.022f,
+		0.44f
+	));
+	pointLights.push_back(PointLight(
+		glm::vec3(3.0f, 0.0f, -5.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		1.0f,
+		0.022f,
+		0.44f
+	));
 
     float near = 0.1f;
     float far = 100.0f;
@@ -354,13 +386,11 @@ int main(int argc, const char** argv) {
     );
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
-    for (int i = 0; i < 4; i++) {
-        ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].pos", pointLights[i].pos);
-        ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
-        ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
-        ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
-        ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
-    }
+	for (int i = 0; i < NUM_LIGHTS; i++) {
+		ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
+		ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
+		ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
+	}
 
     lightBouncePass.shader.use();
     glUniform1i(
@@ -435,6 +465,10 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.use();
         ssdoPass.shader.setMatrix4("view", viewMatrix);
         ssdoPass.shader.setMatrix4("projection", projectionMatrix);
+		for (int i = 0; i < NUM_LIGHTS; i++) {
+			ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
+			ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+		}
         ssdoPass.render();
 		
         blurSSDOHorizontal.render();
@@ -518,7 +552,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
 }
 
-void loadObj(std::string basedir, std::string objFileName) {
+MeshInfo loadMesh(std::string basedir, std::string objFileName) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -526,7 +560,7 @@ void loadObj(std::string basedir, std::string objFileName) {
     tinyobj::LoadObj(&attrib, &shapes, &materials, &err, (basedir + objFileName).c_str(), basedir.c_str());
     if (!err.empty()) {
         std::cout << err << std::endl;
-        return;
+        return MeshInfo();
     }
 
     for (int i = 0; i < materials.size(); i++) {
@@ -544,68 +578,54 @@ void loadObj(std::string basedir, std::string objFileName) {
         }
     }
 
-    for (int i = 0; i < shapes.size(); i++) {
-        vector<float> meshData;
+	vector<float> meshData;
+	int indexOffset = 0;
+	for (int k = 0; k < shapes[0].mesh.num_face_vertices.size(); k++) {
+		unsigned int faceVertices = shapes[0].mesh.num_face_vertices[k];
+		for (int m = 0; m < faceVertices; m++) {
+			tinyobj::index_t index = shapes[0].mesh.indices[indexOffset + m];
 
-        int indexOffset = 0;
-        for (int k = 0; k < shapes[i].mesh.num_face_vertices.size(); k++) {
-            unsigned int faceVertices = shapes[i].mesh.num_face_vertices[k];
-            for (int m = 0; m < faceVertices; m++) {
-                tinyobj::index_t index = shapes[i].mesh.indices[indexOffset + m];
+			meshData.push_back(attrib.vertices[3 * index.vertex_index + 0]);
+			meshData.push_back(attrib.vertices[3 * index.vertex_index + 1]);
+			meshData.push_back(attrib.vertices[3 * index.vertex_index + 2]);
 
-                meshData.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-                meshData.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-                meshData.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+			meshData.push_back(attrib.normals[3 * index.normal_index + 0]);
+			meshData.push_back(attrib.normals[3 * index.normal_index + 1]);
+			meshData.push_back(attrib.normals[3 * index.normal_index + 2]);
 
-                meshData.push_back(attrib.normals[3 * index.normal_index + 0]);
-                meshData.push_back(attrib.normals[3 * index.normal_index + 1]);
-                meshData.push_back(attrib.normals[3 * index.normal_index + 2]);
+			meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
+			meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
+		}
+		indexOffset += faceVertices;
+	}
 
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
-            }
-            indexOffset += faceVertices;
-        }
+	unsigned int VAO;
+	unsigned int VBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
 
-        unsigned int VAO;
-        unsigned int VBO;
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
 
-        glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
+	// position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// normal
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	// texture coordinate
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
-        // position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        // normal
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        // texture coordinate
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
 
-        glBindVertexArray(0);
-
-        if (shapes[i].name.find("MusicCube") != string::npos) {
-            pointLights.push_back(PointLight(
-                glm::vec3(meshData[0], meshData[1], meshData[2]),
-                glm::vec3(0.0f, 1.0f, 0.0f),
-                1.0f,
-                0.022f,
-                0.44f
-            ));
-        }
-
-        meshes.push_back(Mesh(
-            VAO,
-            materials[shapes[i].mesh.material_ids[0]].name,
-            meshData.size() / 8.0f,
-            glm::vec3(0.0f)
-        ));
-    }
+	return MeshInfo(
+		VAO,
+		materials[shapes[0].mesh.material_ids[0]].name,
+		meshData.size() / 8.0f
+	);
 }
 
 GLuint loadTexture(std::string textureFileName) {

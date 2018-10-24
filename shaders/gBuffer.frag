@@ -13,19 +13,20 @@ uniform bool useNormalTex;
 
 uniform mat4 view;
 uniform mat4 model;
+uniform vec3 color;
 
 in vec3 worldPos;
 in vec3 normal;
 in vec2 texCoord;
 
 void main() {
-    vec3 color;
+    vec3 c;
     if (useDiffuseTex) {
-		color = texture(diffuseTex, texCoord).xyz;
+		c = texture(diffuseTex, texCoord).xyz;
     } else {
-		color = vec3(0.0f, 1.0f, 0.0f);
+		c = color;
     }
-    colorOut = vec4(color, 1.0f);
+    colorOut = vec4(c, 1.0f);
     
     if (useNormalTex) {
         vec3 tangent = normalize(dFdx(worldPos));
