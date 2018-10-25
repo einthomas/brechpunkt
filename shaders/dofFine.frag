@@ -25,7 +25,7 @@ vec4 getSample(ivec2 offset, float x) {
     return mix(
         vec4(0),
         vec4(current.rgb * weight, weight),
-        bvec4(abs(x * 2 / sqrt(3)) <= radius * blurriness)
+        bvec4(abs(x) <= radius * blurriness)
     );
 }
 
