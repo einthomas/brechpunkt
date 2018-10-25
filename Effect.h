@@ -3,7 +3,7 @@
 #include <initializer_list>
 
 #include <GL/glew.h>
-#include <Shader.h>
+#include "Shader.h"
 
 struct EffectInput {
     const char* identifier;

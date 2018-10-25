@@ -347,8 +347,13 @@ void loadObj(std::string basedir, std::string objFileName) {
                 meshData.push_back(attrib.normals[3 * index.normal_index + 1]);
                 meshData.push_back(attrib.normals[3 * index.normal_index + 2]);
 
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
+				if (index.texcoord_index > -1) {
+					meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
+					meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
+				} else {
+					meshData.push_back(0);
+					meshData.push_back(0);
+				}
             }
             indexOffset += faceVertices;
         }
