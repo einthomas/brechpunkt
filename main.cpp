@@ -269,7 +269,7 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 1);
         glBindTexture(GL_TEXTURE_2D, bloomTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, gColorFiltered);
+        glBindTexture(GL_TEXTURE_2D, dofTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
