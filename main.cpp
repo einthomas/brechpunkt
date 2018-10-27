@@ -68,13 +68,14 @@ const int DEFAULT_WIDTH = 1280;
 const int DEFAULT_HEIGHT = 720;
 const float CAMERA_SPEED = 10.0f;
 
-static int window_width = 0, window_height = 0;
+static int windowWidth = 0, windowHeight = 0;
 
 static vector<PointLight> pointLights;
 static Camera camera;
 static Shader gBufferShader;
 static Shader composeShader;
 static Shader ssdoShader;
+static Shader environmentShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
 static Mesh centerCube;
@@ -195,7 +196,7 @@ int main(int argc, const char** argv) {
 
     GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
     GLuint gBuffer = generateFramebufferMultisample(
-        window_width, window_height, 4, {
+        windowWidth, windowHeight, 4, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB16F},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB16F},
@@ -207,12 +208,20 @@ int main(int argc, const char** argv) {
         );
     GLuint gColorFiltered;
     GLuint filterFramebuffer = generateFramebuffer(
-        window_width, window_height, {
+        windowWidth, windowHeight, {
             {GL_COLOR_ATTACHMENT0, gColorFiltered, GL_RGB16F}
         }, {}
     );
 
     glEnable(GL_DEPTH_TEST);
+    GLuint environmentColor, environmentDepth;
+    GLuint cubemapFramebuffer = generateFramebuffer(
+        256, 256, GL_TEXTURE_CUBE_MAP, {
+            {GL_COLOR_ATTACHMENT0, environmentColor, GL_RGB16F},
+            {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
+        }, {
+        }
+    );
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
@@ -265,7 +274,7 @@ int main(int argc, const char** argv) {
     float near = 0.1f;
     float far = 100.0f;
     glm::mat4 projectionMatrix = glm::perspective(
-        glm::radians(45.0f), (float)window_width / (float)window_height, near, far
+        glm::radians(45.0f), (float)windowWidth / (float)windowHeight, near, far
     );
 
     Animation<glm::vec3> cameraPosition{
@@ -279,17 +288,21 @@ int main(int argc, const char** argv) {
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
+    environmentShader = Shader(
+        "shaders/environment.vert", "shaders/environment.geom",
+        "shaders/environment.frag"
+    );
 
     GLuint dofCocTexture, dofCoarseTexture, dofTexture;
     auto dofCocPass = Effect(
-        "shaders/dofCoc.frag", window_width, window_height, {
+        "shaders/dofCoc.frag", windowWidth, windowHeight, {
             {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
         }, {
             {"coc", dofCocTexture, GL_R8_SNORM},
         }
     );
     auto dofCoarsePass = Effect(
-        "shaders/dofCoarse.frag", window_width, window_height, {
+        "shaders/dofCoarse.frag", windowWidth, windowHeight, {
             {"colorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
             {"colorFilteredTex", GL_TEXTURE_2D, gColorFiltered},
             {"cocTex", GL_TEXTURE_2D, dofCocTexture},
@@ -298,7 +311,7 @@ int main(int argc, const char** argv) {
         }
     );
     auto dofFinePass = Effect(
-        "shaders/dofFine.frag", window_width, window_height, {
+        "shaders/dofFine.frag", windowWidth, windowHeight, {
             {"coarseTex", GL_TEXTURE_2D, dofCoarseTexture},
         }, {
             {"color", dofTexture, GL_RGB16F},
@@ -307,7 +320,7 @@ int main(int argc, const char** argv) {
 
     GLuint ssdoUnblurredTexture, ssdoTexture;
     auto ssdoPass = Effect(
-        "shaders/ssdo.frag", window_width, window_height,
+        "shaders/ssdo.frag", windowWidth, windowHeight,
         {
           {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
@@ -318,7 +331,7 @@ int main(int argc, const char** argv) {
 
     GLuint ssdoBlurHorizontalTexture;
     auto blurSSDOHorizontal = Effect(
-        "shaders/blurSSDOHorizontal.frag", window_width, window_height,
+        "shaders/blurSSDOHorizontal.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoUnblurredTexture},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal}
@@ -326,7 +339,7 @@ int main(int argc, const char** argv) {
         { {"color", ssdoBlurHorizontalTexture, GL_RGB16F} }
     );
     auto blurSSDOVertical = Effect(
-        "shaders/blurSSDOVertical.frag", window_width, window_height,
+        "shaders/blurSSDOVertical.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoBlurHorizontalTexture},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal}
@@ -336,12 +349,12 @@ int main(int argc, const char** argv) {
 
     GLuint bloomHorizontalTexture, bloomTexture;
     auto bloomHorizontalPass = Effect(
-        "shaders/bloomHorizontal.frag", window_width / 2, window_height / 2,
+        "shaders/bloomHorizontal.frag", windowWidth / 2, windowHeight / 2,
         { {"colorTex", GL_TEXTURE_2D, ssdoTexture} },
         { {"color", bloomHorizontalTexture, GL_RGB16F} }
     );
     auto bloomVerticalPass = Effect(
-        "shaders/bloomVertical.frag", window_width / 2, window_height / 2,
+        "shaders/bloomVertical.frag", windowWidth / 2, windowHeight / 2,
         { {"colorTex", GL_TEXTURE_2D, bloomHorizontalTexture} },
         { {"color", bloomTexture, GL_RGB16F} }
     );
@@ -444,8 +457,20 @@ int main(int argc, const char** argv) {
             cameraPosition.reset();
         }
 
-        // g-buffer
+        glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
+        glViewport(0, 0, 256, 256);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        environmentShader.use();
+        environmentShader.setMatrix4("model", {});
+        environmentShader.setMatrix4("view", viewMatrix);
+        for (int i = 0; i < meshes.size(); i++) {
+            meshes[i].draw(environmentShader);
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+        glViewport(0, 0, windowWidth, windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
         gBufferShader.setMatrix4("model", glm::mat4());
@@ -465,8 +490,8 @@ int main(int argc, const char** argv) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
         glBlitFramebuffer(
-            0, 0, window_width, window_height,
-            0, 0, window_width, window_height,
+            0, 0, windowWidth, windowHeight,
+            0, 0, windowWidth, windowHeight,
             GL_COLOR_BUFFER_BIT, GL_NEAREST
         );
 
@@ -690,7 +715,7 @@ GLuint generateNoiseTexture() {
 }
 
 GLuint generateTexture() {
-    return generateTexture(window_width, window_height);
+    return generateTexture(windowWidth, windowHeight);
 }
 
 GLuint generateTexture(int width, int height) {
@@ -716,20 +741,20 @@ GLFWwindow *initGLFW() {
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    window_width = mode->width;
-    window_height = mode->height;
+    windowWidth = mode->width;
+    windowHeight = mode->height;
     GLFWwindow *window;
 
     if (debug_flag) {
-        window_width = DEFAULT_WIDTH;
-        window_height = DEFAULT_HEIGHT;
+        windowWidth = DEFAULT_WIDTH;
+        windowHeight = DEFAULT_HEIGHT;
 
         window = glfwCreateWindow(
-            window_width, window_height, "Brechpunkt", nullptr, nullptr
+            windowWidth, windowHeight, "Brechpunkt", nullptr, nullptr
         );
     } else {
         window = glfwCreateWindow(
-            window_width, window_height, "Brechpunkt", monitor, nullptr
+            windowWidth, windowHeight, "Brechpunkt", monitor, nullptr
         );
     }
 
