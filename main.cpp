@@ -102,8 +102,8 @@ glm::vec3 getHemisphereSample(glm::vec2 u) {
     float r = std::sqrt(u.x);
     float phi = 2.0f * 3.1415926f * u.y;
     return glm::vec3(
-        r * std::cosf(phi),
-        r * std::sinf(phi),
+        r * std::cos(phi),
+        r * std::sin(phi),
         std::sqrt(std::max(0.0f, 1.0f - u.x))
     );
 }
