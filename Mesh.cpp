@@ -5,15 +5,24 @@
 
 #include "RessourceManager.h"
 
-Mesh::Mesh(GLuint VAO, std::string materialName, int numTriangles) :
-	VAO(VAO),
-	materialName(materialName),
-    numTriangles(numTriangles)
+Mesh::Mesh(MeshInfo meshInfo, glm::vec3 position, glm::vec3 diffuseColor, glm::vec3 emissionColor) :
+	meshInfo(meshInfo),
+    position(position),
+	diffuseColor(diffuseColor),
+    emissionColor(emissionColor)
+{
+}
+
+Mesh::Mesh(MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor, glm::vec3 emissionColor) :
+    meshInfo(meshInfo),
+    model(model),
+    diffuseColor(diffuseColor),
+    emissionColor(emissionColor)
 {
 }
 
 void Mesh::draw(Shader &shader) {
-    auto& material = RessourceManager::materials[materialName];
+    auto& material = RessourceManager::materials[meshInfo.materialName];
     if (material.diffuse_texname.length() > 0) {
         shader.setInteger("useDiffuseTex", 1);
         shader.setTexture2D(
@@ -40,13 +49,20 @@ void Mesh::draw(Shader &shader) {
 	} else {
 		shader.setInteger("useNormalTex", 0);
 	}
-    shader.setVector3f(
-        "emissionColor",
-        material.emission[0], material.emission[1], material.emission[2]
-    );
+    
+    //glm::mat4 modelMatrix(1.0f);
+    //modelMatrix = glm::translate(modelMatrix, position);
+	//shader.setMatrix4("model", modelMatrix);
+    shader.setMatrix4("model", model);
+	shader.setVector3f("diffuseColor", diffuseColor);
+    shader.setVector3f("emissionColor", emissionColor);
+    //shader.setVector3f(
+    //    "emissionColor",
+    //    material.emission[0], material.emission[1], material.emission[2]
+    //);
 
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, numTriangles);
+	glBindVertexArray(meshInfo.VAO);
+	glDrawArrays(GL_TRIANGLES, 0, meshInfo.numTriangles);
 }
 
 Mesh::Mesh() {}

@@ -19,6 +19,9 @@ struct EffectOutput {
 
 class Effect {
 public:
+    Shader shader;
+    GLuint framebuffer;
+
     Effect(
         const char* fragmentShaderPath, int width, int height,
         std::initializer_list<EffectInput> inputs,
@@ -29,8 +32,6 @@ public:
     void render();
 
 private:
-    Shader shader;
-    GLuint framebuffer;
     GLsizei inputCount, outputCount;
     GLuint outputTextures[8];
     GLuint inputTextures[8];
