@@ -220,7 +220,7 @@ int main(int argc, const char** argv) {
 	));
 	meshes.push_back(Mesh(
 		musicCubeMeshInfo,
-		glm::vec3(3.0f, 1.0f, -5.0f),
+		glm::vec3(4.0f, 1.0f, -5.0f),
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	));
 	meshes.push_back(Mesh(
@@ -228,20 +228,19 @@ int main(int argc, const char** argv) {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	));
-
 	pointLights.push_back(PointLight(
-		glm::vec3(0.0f, 0.0f, -5.0f),
+		glm::vec3(0.0f, 1.0f, -5.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		1.0f,
-		0.022f,
-		0.44f
+        0.14,
+        0.07
 	));
 	pointLights.push_back(PointLight(
-		glm::vec3(3.0f, 0.0f, -5.0f),
+		glm::vec3(4.0f, 1.0f, -5.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f),
 		1.0f,
-		0.022f,
-		0.44f
+        0.14,
+        0.07
 	));
 
     float near = 0.1f;
@@ -331,12 +330,13 @@ int main(int argc, const char** argv) {
     );
     glUniform1i(
         glGetUniformLocation(composeShader.program, "occlusionTex"),
-        SSDO_FINAL_TEXTURE_UNIT
+        //SSDO_FINAL_TEXTURE_UNIT
+		COLOR_FILTERED_TEXTURE_UNIT
     );
-    glUniform1i(
-        glGetUniformLocation(composeShader.program, "lightBounceTex"),
-        LIGHT_BOUNCE_FINAL_TEXTURE_UNIT
-    );
+	glUniform1i(
+		glGetUniformLocation(composeShader.program, "lightBounceTex"),
+		LIGHT_BOUNCE_FINAL_TEXTURE_UNIT
+	);
     glActiveTexture(GL_TEXTURE0 + COLOR_TEXTURE_UNIT);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
     glActiveTexture(GL_TEXTURE0 + COLOR_FILTERED_TEXTURE_UNIT);
@@ -345,6 +345,13 @@ int main(int argc, const char** argv) {
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gNormal);
     glActiveTexture(GL_TEXTURE0 + VIEWPOS_TEXTURE_UNIT);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gWorldPos);
+
+    gBufferShader.use();
+    for (int i = 0; i < NUM_LIGHTS; i++) {
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
+    }
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -386,11 +393,6 @@ int main(int argc, const char** argv) {
     );
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
-	for (int i = 0; i < NUM_LIGHTS; i++) {
-		ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
-		ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
-		ssdoPass.shader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
-	}
 
     lightBouncePass.shader.use();
     glUniform1i(
@@ -445,6 +447,10 @@ int main(int argc, const char** argv) {
         gBufferShader.use();
         gBufferShader.setMatrix4("view", viewMatrix);
         gBufferShader.setMatrix4("projection", projectionMatrix);
+        for (int i = 0; i < NUM_LIGHTS; i++) {
+            gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
+            gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+        }
 
         for (int i = 0; i < meshes.size(); i++) {
             meshes[i].draw(gBufferShader);
@@ -465,10 +471,6 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.use();
         ssdoPass.shader.setMatrix4("view", viewMatrix);
         ssdoPass.shader.setMatrix4("projection", projectionMatrix);
-		for (int i = 0; i < NUM_LIGHTS; i++) {
-			ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
-			ssdoPass.shader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
-		}
         ssdoPass.render();
 		
         blurSSDOHorizontal.render();

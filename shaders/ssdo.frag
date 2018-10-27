@@ -59,18 +59,9 @@ void main() {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 2.0f, abs(sampleProjected.z - samplePos.z));
         }
         
-        for (int k = 0; k < NUM_LIGHTS; k++) {
-            float lightStrength = 60.0f;
-            vec3 lightDir = normalize(pointLights[k].pos - worldPos);
-            float lightDist = length(pointLights[k].pos - worldPos);
-            float attenuation = 1.0f / (
-                pointLights[k].constantTerm +
-                pointLights[k].linearTerm * lightDist +
-                pointLights[k].quadraticTerm * lightDist * lightDist
-            );
-            c += max(0.0f, dot(hemisphereSample, lightDir)) * visibility * lightStrength * pointLights[k].color * attenuation;
-        }
+        // sample cube map
+        // c += cubeMapColor * visibility;
     }
     
-    color = vec4(pow((c / NUM_SAMPLES / NUM_LIGHTS) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);
+    color = vec4(pow((c / NUM_SAMPLES) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);
 }
