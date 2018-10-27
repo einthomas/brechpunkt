@@ -14,6 +14,10 @@ public:
 
 	Shader() = default;
 	Shader(std::string vertexShaderPath, std::string fragmentShaderPath);
+    Shader(
+        std::string vertexShaderPath, std::string geometryShaderPath,
+        std::string fragmentShaderPath
+    );
 	void use();
 	void reload();
 
@@ -28,8 +32,12 @@ public:
 	void setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
 
 private:
-	GLuint loadShader(GLuint shaderType, std::string shaderCode);
-	void compileShader(std::string vertexShaderPath, std::string fragmentShaderPath);
+    GLuint loadShader(GLuint shaderType, std::string shaderPath);
+    void compileShader(
+        std::string vertexShaderPath, std::string geometryShaderPath,
+        std::string fragmentShaderPath
+    );
 	std::string vertexShaderPath;
+    std::string geometryShaderPath;
 	std::string fragmentShaderPath;
 };

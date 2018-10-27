@@ -6,36 +6,57 @@
 
 Shader::Shader(std::string vertexShaderPath, std::string fragmentShaderPath) :
 	vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath) {
-	compileShader(vertexShaderPath, fragmentShaderPath);
+    compileShader(vertexShaderPath, std::string(), fragmentShaderPath);
 }
 
-void Shader::compileShader(std::string vertexShaderPath, std::string fragmentShaderPath) {
-	std::ifstream vertexFile(vertexShaderPath);
-	std::string vertexSource((std::istreambuf_iterator<char>(vertexFile)), std::istreambuf_iterator<char>());
-	vertexFile.close();
+Shader::Shader(
+    std::string vertexShaderPath, std::string geometryShaderPath,
+    std::string fragmentShaderPath
+) :
+    vertexShaderPath(vertexShaderPath), geometryShaderPath(geometryShaderPath),
+    fragmentShaderPath(fragmentShaderPath) {
+    compileShader(vertexShaderPath, geometryShaderPath, fragmentShaderPath);
+}
 
-	std::ifstream fragmentFile(fragmentShaderPath);
-	std::string fragmentSource((std::istreambuf_iterator<char>(fragmentFile)), std::istreambuf_iterator<char>());
-	fragmentFile.close();
+void Shader::compileShader(
+    std::string vertexShaderPath, std::string geometryShaderPath,
+    std::string fragmentShaderPath
+) {
+    program = glCreateProgram();
 
-	GLuint vertexShader = loadShader(GL_VERTEX_SHADER, vertexSource);
-	GLuint fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragmentSource);
+    GLuint vertexShader = loadShader(GL_VERTEX_SHADER, vertexShaderPath);
+    glAttachShader(program, vertexShader);
 
-	program = glCreateProgram();
-	glAttachShader(program, vertexShader);
-	glAttachShader(program, fragmentShader);
-	glLinkProgram(program);
+    GLuint geometryShader = 0;
+    if (geometryShaderPath.length() > 0) {
+        geometryShader = loadShader(GL_GEOMETRY_SHADER, geometryShaderPath);
+        glAttachShader(program, geometryShader);
+    }
+
+    GLuint fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragmentShaderPath);
+    glAttachShader(program, fragmentShader);
+
+    glLinkProgram(program);
+
+    glDetachShader(program, vertexShader);
 	glDeleteShader(vertexShader);
+
+    if (geometryShader != 0) {
+        glDetachShader(program, geometryShader);
+        glDeleteShader(geometryShader);
+    }
+
+    glDetachShader(program, fragmentShader);
 	glDeleteShader(fragmentShader);
 
 	GLint success;
 	GLchar *infoLog;
-	GLint infoLogLength = 0;
-	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+    GLint infoLogLength = 0;
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
 	infoLog = new GLchar[infoLogLength];
 	glGetProgramiv(program, GL_LINK_STATUS, &success);
 	if (!success) {
-		glGetProgramInfoLog(program, infoLogLength, NULL, infoLog);
+        glGetProgramInfoLog(program, infoLogLength, nullptr, infoLog);
 		std::cout << "ERROR::SHADERPROGRAM::LINKING\n" << infoLog << std::endl;
 	}
 	delete[] infoLog;
@@ -47,21 +68,29 @@ void Shader::use() {
 
 void Shader::reload() {
 	glDeleteProgram(program);
-	compileShader(vertexShaderPath, fragmentShaderPath);
+    compileShader(vertexShaderPath, geometryShaderPath, fragmentShaderPath);
 }
 
-GLuint Shader::loadShader(GLuint shaderType, std::string shaderCode) {
+GLuint Shader::loadShader(GLuint shaderType, std::string shaderPath) {
+    std::ifstream file(shaderPath);
+    std::string source(
+        (std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()
+    );
+    file.close();
+
 	GLuint shader = glCreateShader(shaderType);
-	const char *shaderCode_c_str = shaderCode.c_str();
-	glShaderSource(shader, 1, &shaderCode_c_str, NULL);
+    const char *shaderCode_c_str = source.c_str();
+    glShaderSource(shader, 1, &shaderCode_c_str, nullptr);
 	glCompileShader(shader);
 
 	GLint success;
 	GLchar infoLog[512];
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		std::cout << "ERROR::Shader::COMPILATION_FAILED\n" << infoLog << std::endl;
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cout <<
+            "Error compiling shader " << shaderPath << ": " <<
+            infoLog << std::endl;
 	}
 
 	return shader;
