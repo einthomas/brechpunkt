@@ -57,13 +57,11 @@ void main() {
             pointLights[i].linearTerm * lightDist +
             pointLights[i].quadraticTerm * lightDist * lightDist
         );
-        c += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation * 50.0f * diffuseColor_;
+        c += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation * diffuseColor_;
     }
-    c /= NUM_LIGHTS;
     c += emissionColor;
     
     colorOut = vec4(c, 1.0f);
-    //colorOut = normalOut;
 
     positionOut = vec4(worldPos, 1.0f);
     

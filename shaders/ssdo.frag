@@ -2,13 +2,14 @@
 
 #define M_PI 3.141592653589
 
-const int NUM_SAMPLES = 16;
+const int NUM_SAMPLES = 64;
 const float RADIUS = 0.5f;
 
 uniform sampler2D gColorTex;
 uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gWorldPosTex;
 uniform sampler2D noiseTex;
+uniform samplerCube environmentColor;
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 hemisphereSamples[64];
@@ -23,14 +24,13 @@ void main() {
     vec3 worldPos = texelFetch(gWorldPosTex, ivec2(gl_FragCoord.xy), 0).xyz;
 
     vec2 noiseStep = size / 4.0f;
-    vec3 rotationValue = texture(noiseTex, texCoord * noiseStep).xyz;
-
-    vec3 right = normalize(rotationValue - normal * dot(rotationValue, normal));
+    vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
+    
+    vec3 right = normalize(noise - normal * dot(noise, normal));
     vec3 forward = cross(normal, right);
     mat3 basis = mat3(right, forward, normal);
 
     vec3 c = vec3(0.0f);
-    vec3 lightBounce = vec3(0.0f);
     for (int i = 0; i < NUM_SAMPLES; i++) {
         vec3 hemisphereSample = basis * hemisphereSamples[i];
         vec3 samplePos = worldPos + hemisphereSample * RADIUS;
@@ -46,13 +46,11 @@ void main() {
             samplePosImageSpace.y >= 0.0f && samplePosImageSpace.y <= 1.0f &&
             sampleProjected.w > 0.0f)
         {
-            visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 2.0f, abs(sampleProjected.z - samplePos.z));
+            visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
         }
-        
-        // sample cube map
-        // c += cubeMapColor * visibility;
+
+        c += texture(environmentColor, samplePos).xyz * visibility;
     }
-    
-    //color = vec4(pow((c / NUM_SAMPLES) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);
-    color = vec4(pow(texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);
+
+    color = vec4(pow((c / NUM_SAMPLES) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);
 }
