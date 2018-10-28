@@ -21,16 +21,15 @@ struct MeshInfo {
 
 class Mesh {
 public:
-    glm::vec3 position;
 	glm::vec3 diffuseColor;
     glm::vec3 emissionColor;
+    bool useDiffuseTexture, useReflectionTexture, useNormalTexture;
+    GLuint diffuseTexture, reflectionTexture, normalTexture;
+    glm::mat4 model;
+    GLuint vao;
+    GLsizei count;
     
     Mesh();
-    Mesh(MeshInfo meshInfo, glm::vec3 position, glm::vec3 diffuseColor, glm::vec3 emissionColor);
     Mesh(MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor, glm::vec3 emissionColor);
     void draw(Shader &shader);
-
-private:
-	MeshInfo meshInfo;
-    glm::mat4 model;
 };

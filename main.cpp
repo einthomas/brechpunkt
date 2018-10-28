@@ -57,8 +57,8 @@ static Mesh lightMesh;
 static Mesh centerCube;
 static float deltaTime;
 static bool useAnimatedCamera = false;
-GLuint blurFBO0, blurFBO1;
-GLuint blurBuffer0, blurBuffer1;
+static GLuint blurFBO0, blurFBO1;
+static GLuint blurBuffer0, blurBuffer1;
 
 GLuint loadTexture(std::string textureFileName);
 MeshInfo loadMesh(std::string basedir, std::string objFileName);
@@ -203,6 +203,13 @@ int main(int argc, const char** argv) {
 	MeshInfo musicCubeMeshInfo = loadMesh("scenes/scene3/", "MusicCube.obj");
 	MeshInfo floorMeshInfo = loadMesh("scenes/scene3/", "Floor.obj");
     MeshInfo centerCubeMeshInfo = loadMesh("scenes/scene3/", "CenterCube.obj");
+    MeshInfo lightRimInfo = loadMesh("scenes/scene3/", "LightRim.obj");
+
+    Mesh lightRimMesh = Mesh(
+        lightRimInfo, glm::translate(
+            glm::mat4(), glm::vec3(0, 10, 0)
+        ), {}, {2, 2, 2}
+    );
 
     meshes.push_back(Mesh(
         floorMeshInfo,
@@ -361,8 +368,8 @@ int main(int argc, const char** argv) {
     glm::vec3 randomValues[16];
     for (int k = 0; k < 16; k++) {
         randomValues[k] = glm::vec3(
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0f - 1.0f,
+            randomFloats(generator) * 2.0f - 1.0f,
             0.0f
         );
     }
@@ -439,9 +446,7 @@ int main(int argc, const char** argv) {
         environmentShader.use();
         environmentShader.setMatrix4("model", {});
         environmentShader.setMatrix4("view", viewMatrix);
-        for (int i = 0; i < meshes.size(); i++) {
-            meshes[i].draw(environmentShader);
-        }
+        lightRimMesh.draw(environmentShader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
         glViewport(0, 0, windowWidth, windowHeight);
@@ -458,6 +463,7 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < meshes.size(); i++) {
             meshes[i].draw(gBufferShader);
         }
+        lightRimMesh.draw(gBufferShader);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
