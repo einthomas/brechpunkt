@@ -347,10 +347,21 @@ int main(int argc, const char** argv) {
         { {"color", ssdoTexture, GL_RGB16F} }
     );
 
+    GLuint ssrTexture;
+    auto ssrPass = Effect(
+        "shaders/ssr.frag", windowWidth, windowHeight,
+        {
+          {"gColorTex", GL_TEXTURE_2D, ssdoTexture},
+          {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
+          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos}
+        },
+        { {"color", ssrTexture, GL_RGB16F} }
+    );
+
     GLuint bloomHorizontalTexture, bloomTexture;
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", windowWidth / 2, windowHeight / 2,
-        { {"colorTex", GL_TEXTURE_2D, ssdoTexture} },
+        { {"colorTex", GL_TEXTURE_2D, ssrTexture} },
         { {"color", bloomHorizontalTexture, GL_RGB16F} }
     );
     auto bloomVerticalPass = Effect(
@@ -370,12 +381,6 @@ int main(int argc, const char** argv) {
         glGetUniformLocation(composeShader.program, "dofTex"), 2
     );
 
-    gBufferShader.use();
-    for (int i = 0; i < pointLights.size(); i++) {
-        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
-        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
-        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
-    }
 
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -417,6 +422,21 @@ int main(int argc, const char** argv) {
     );
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
+    ssrPass.shader.use();
+    glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
+    gBufferShader.use();
+    for (int i = 0; i < pointLights.size(); i++) {
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
+    }
+    glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    glUniform1i(
+        glGetUniformLocation(gBufferShader.program, "noiseTex"),
+        SSDO_NOISE_TEXTURE_UNIT
+    );
 
     float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
@@ -505,6 +525,10 @@ int main(int argc, const char** argv) {
         blurSSDOHorizontal.render();
         blurSSDOVertical.render();
 
+        ssrPass.shader.use();
+        ssrPass.shader.setMatrix4("projection", projectionMatrix);
+        ssrPass.render();
+
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
 
@@ -519,7 +543,7 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
         glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_2D, bloomTexture);
+        glBindTexture(GL_TEXTURE_2D, ssrTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
         glBindTexture(GL_TEXTURE_2D, gColorFiltered);
         composeShader.use();

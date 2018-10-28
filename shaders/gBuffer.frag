@@ -19,10 +19,12 @@ uniform PointLight pointLights[NUM_LIGHTS];
 uniform sampler2D diffuseTex;
 uniform sampler2D reflectionTex;
 uniform sampler2D normalTex;
+uniform sampler2D noiseTex;
 uniform bool useDiffuseTex;
 uniform bool useNormalTex;
 uniform vec3 diffuseColor;
 uniform vec3 emissionColor;
+uniform vec2 size;
 
 uniform mat4 view;
 uniform mat4 model;
@@ -38,7 +40,11 @@ void main() {
         vec3 bitangent = normalize(cross(normal, tangent)); //normalize(dFdy(worldPos));
         mat3 tbn = mat3(tangent, bitangent, normalize(normal));
 
+        vec2 noiseStep = size / 4.0f;
+        vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
+
         vec3 textureNormal = texture(normalTex, texCoord).xyz * 2.0 - 1.0;
+
         normalOut = vec4(normalize(tbn * textureNormal), 1.0f);
     } else {
         normalOut = vec4(normal, 1.0f);
