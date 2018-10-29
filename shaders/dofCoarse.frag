@@ -1,7 +1,6 @@
 #version 330 core
 
-uniform sampler2DMS colorTex;
-uniform sampler2D colorFilteredTex;
+uniform sampler2D colorTex;
 uniform sampler2D cocTex;
 
 out vec4 coarse;
@@ -18,7 +17,7 @@ void main() {
     float centerWeight = 1 / (abs(centerCoc) + 0.01);
 
     coarse = vec4(
-        pow(texelFetch(colorFilteredTex, center, 0).rgb, vec3(exaggeration)),
+        pow(texelFetch(colorTex, center, 0).rgb, vec3(exaggeration)),
         centerCoc
     ) * centerWeight;
     float count = centerWeight;

@@ -38,30 +38,6 @@ struct PointLight {
     }
 };
 
-enum TextureUnit : GLuint {
-    MATERIAL_DIFFUSE_TEXTURE_UNIT,
-    MATERIAL_REFLECTION_TEXTURE_UNIT,
-    MATERIAL_NORMAL_TEXTURE_UNIT,
-    VIEWPOS_TEXTURE_UNIT,
-
-    NORMAL_TEXTURE_UNIT,
-    SSDO_TEXTURE_UNIT,
-    SSDO_NOISE_TEXTURE_UNIT,
-	SSDO_SAMPLES_TEXTURE,
-    SSDO_HORIZONTAL_BLUR_TEXTURE_UNIT,
-    SSDO_FINAL_TEXTURE_UNIT,
-
-    LIGHT_BOUNCE_TEXTURE_UNIT,
-    LIGHT_BOUNCE_HORIZONTAL_BLUR_TEXTURE_UNIT,
-    LIGHT_BOUNCE_FINAL_TEXTURE_UNIT,
-
-    COLOR_TEXTURE_UNIT,
-    COLOR_FILTERED_TEXTURE_UNIT,
-
-    BLOOM_HORIZONTAL_TEXTURE_UNIT,
-    BLOOM_FINAL_TEXTURE_UNIT,
-};
-
 static bool debug_flag = false;
 
 const int DEFAULT_WIDTH = 1280;
@@ -78,7 +54,6 @@ static Shader ssdoShader;
 static Shader environmentShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
-static Mesh centerCube;
 static float deltaTime;
 static bool useAnimatedCamera = false;
 static GLuint blurFBO0, blurFBO1;
@@ -91,7 +66,6 @@ bool initGLEW();
 GLuint getScreenQuadVAO();
 GLuint generateTexture();
 GLuint generateTexture(int width, int height);
-GLuint generateNoiseTexture();
 void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -232,7 +206,7 @@ int main(int argc, const char** argv) {
 
     Mesh lightRimMesh = Mesh(
         lightRimInfo, glm::translate(
-            glm::mat4(), glm::vec3(0, 10, 0)
+            glm::mat4(1.0f), glm::vec3(0, 10, 0)
         ), {}, {2, 2, 2}
     );
 
@@ -243,7 +217,7 @@ int main(int argc, const char** argv) {
         glm::vec3(0.0f)
 	));
 
-    const float lightFloorOffset = 0.5f;
+    const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
         auto pos = glm::vec3(0.0f, 0.0f, -20.0f);
         auto model = glm::mat4(1.0f);
@@ -265,8 +239,8 @@ int main(int argc, const char** argv) {
             model * glm::vec4(0.0f, lightFloorOffset, 0.0f, 1.0f),
             color,
             1.0f,
-            0.07,
-            0.017
+            0.07f,
+            0.20f
         ));
     }
 
@@ -275,7 +249,7 @@ int main(int argc, const char** argv) {
         centerCubeMeshInfo,
         centerCubeModel,
         glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
-        glm::vec3(0.1f)
+        glm::vec3(0.0f)
     ));
 
     float near = 0.1f;
@@ -300,38 +274,14 @@ int main(int argc, const char** argv) {
         "shaders/environment.frag"
     );
 
-    GLuint dofCocTexture, dofCoarseTexture, dofTexture;
-    auto dofCocPass = Effect(
-        "shaders/dofCoc.frag", windowWidth, windowHeight, {
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
-        }, {
-            {"coc", dofCocTexture, GL_R8_SNORM},
-        }
-    );
-    auto dofCoarsePass = Effect(
-        "shaders/dofCoarse.frag", windowWidth, windowHeight, {
-            {"colorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
-            {"colorFilteredTex", GL_TEXTURE_2D, gColorFiltered},
-            {"cocTex", GL_TEXTURE_2D, dofCocTexture},
-        }, {
-            {"coarse", dofCoarseTexture, GL_RGBA16F},
-        }
-    );
-    auto dofFinePass = Effect(
-        "shaders/dofFine.frag", windowWidth, windowHeight, {
-            {"coarseTex", GL_TEXTURE_2D, dofCoarseTexture},
-        }, {
-            {"color", dofTexture, GL_RGB16F},
-        }
-    );
-
     GLuint ssdoUnblurredTexture, ssdoTexture;
     auto ssdoPass = Effect(
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
           {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos}
+          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
+		  {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
     );
@@ -366,6 +316,30 @@ int main(int argc, const char** argv) {
         { {"color", bloomTexture, GL_RGB16F} }
     );
 
+    GLuint dofCocTexture, dofCoarseTexture, dofTexture;
+    auto dofCocPass = Effect(
+        "shaders/dofCoc.frag", windowWidth, windowHeight, {
+            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
+        }, {
+            {"coc", dofCocTexture, GL_R8_SNORM},
+        }
+    );
+    auto dofCoarsePass = Effect(
+        "shaders/dofCoarse.frag", windowWidth, windowHeight, {
+            {"colorTex", GL_TEXTURE_2D, ssdoTexture},
+            {"cocTex", GL_TEXTURE_2D, dofCocTexture},
+        }, {
+            {"coarse", dofCoarseTexture, GL_RGBA16F},
+        }
+    );
+    auto dofFinePass = Effect(
+        "shaders/dofFine.frag", windowWidth, windowHeight, {
+            {"coarseTex", GL_TEXTURE_2D, dofCoarseTexture},
+        }, {
+            {"color", dofTexture, GL_RGB16F},
+        }
+    );
+
     composeShader.use();
     glUniform1i(
         glGetUniformLocation(composeShader.program, "colorTex"), 0
@@ -373,9 +347,9 @@ int main(int argc, const char** argv) {
     glUniform1i(
         glGetUniformLocation(composeShader.program, "bloomTex"), 1
     );
-    glUniform1i(
-        glGetUniformLocation(composeShader.program, "dofTex"), 2
-    );
+	glUniform1i(
+		glGetUniformLocation(composeShader.program, "dofTex"), 2
+	);
 
     gBufferShader.use();
     for (int i = 0; i < pointLights.size(); i++) {
@@ -401,7 +375,6 @@ int main(int argc, const char** argv) {
     }
     GLuint noiseTexture;
     glGenTextures(1, &noiseTexture);
-    glActiveTexture(GL_TEXTURE0 + SSDO_NOISE_TEXTURE_UNIT);
     glBindTexture(GL_TEXTURE_2D, noiseTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -418,10 +391,11 @@ int main(int argc, const char** argv) {
     }
 
     ssdoPass.shader.use();
-    glUniform1i(
-        glGetUniformLocation(ssdoPass.shader.program, "noiseTex"),
-        SSDO_NOISE_TEXTURE_UNIT
-    );
+    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "gColorTex"), 0);
+    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "gNormalTex"), 1);
+    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "gWorldPosTex"), 2);
+    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "noiseTex"), 3);
+    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "environmentColor"), 4);
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
@@ -478,7 +452,7 @@ int main(int argc, const char** argv) {
         glViewport(0, 0, windowWidth, windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
-        gBufferShader.setMatrix4("model", glm::mat4());
+        gBufferShader.setMatrix4("model", glm::mat4(1.0f));
         gBufferShader.setMatrix4("view", viewMatrix);
         gBufferShader.setMatrix4("projection", projectionMatrix);
         for (int i = 0; i < pointLights.size(); i++) {
@@ -506,6 +480,19 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.use();
         ssdoPass.shader.setMatrix4("view", viewMatrix);
         ssdoPass.shader.setMatrix4("projection", projectionMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gColorFiltered);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gNormal);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gWorldPos);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, noiseTexture);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, environmentColor);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gEmission);
+		
         ssdoPass.render();
 		
         blurSSDOHorizontal.render();
@@ -525,9 +512,10 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
         glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_2D, bloomTexture);
+        glBindTexture(GL_TEXTURE_2D, ssdoTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, gColorFiltered);
+		glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        //glBindTexture(GL_TEXTURE_2D, dofTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
@@ -693,31 +681,6 @@ GLuint loadTexture(std::string textureFileName) {
     }
 
     return texture;
-}
-
-GLuint generateNoiseTexture() {
-    uniform_real_distribution<GLfloat> randomFloats(0.0f, 1.0f);
-    default_random_engine randomEngine;
-    vector<glm::vec3> noise;
-    for (int i = 0; i < 64; i++) {
-        noise.push_back(glm::vec3(
-            randomFloats(randomEngine) * 2.0f - 1.0f,
-            randomFloats(randomEngine) * 2.0f - 1.0f,
-            0.0f
-        ));
-    }
-
-    GLuint noiseTexture;
-    glGenTextures(1, &noiseTexture);
-    glActiveTexture(GL_TEXTURE0 + SSDO_NOISE_TEXTURE_UNIT);
-    glBindTexture(GL_TEXTURE_2D, noiseTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 8, 8, 0, GL_RGB, GL_FLOAT, &noise[0]);
-
-    return noiseTexture;
 }
 
 GLuint generateTexture() {
