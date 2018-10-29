@@ -2,7 +2,7 @@
 
 #define M_PI 3.141592653589
 
-const int NUM_SAMPLES = 64;
+const int NUM_SAMPLES = 16;
 const float RADIUS = 0.5f;
 
 uniform sampler2D gColorTex;
@@ -10,6 +10,7 @@ uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gWorldPosTex;
 uniform sampler2D noiseTex;
 uniform samplerCube environmentColor;
+uniform sampler2DMS gEmissionTex;
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 hemisphereSamples[64];
@@ -36,8 +37,8 @@ void main() {
         vec3 samplePos = worldPos + hemisphereSample * RADIUS;
         
         vec4 samplePosImageSpace = projection * vec4(samplePos, 1.0f);
-        samplePosImageSpace.xy /= samplePosImageSpace.w;
-        samplePosImageSpace.xy = samplePosImageSpace.xy * 0.5f + 0.5f;
+        samplePosImageSpace.xyz /= samplePosImageSpace.w;
+        samplePosImageSpace.xyz = samplePosImageSpace.xyz * 0.5f + 0.5f;
 
         vec4 sampleProjected = texelFetch(gWorldPosTex, ivec2(samplePosImageSpace.xy * size), 0);
         
@@ -49,8 +50,10 @@ void main() {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
         }
 
-        c += texture(environmentColor, samplePos).xyz * visibility;
+        //c += sampleCubeMap * visibility
     }
 
-    color = vec4(pow((c / NUM_SAMPLES) * texture(gColorTex, texCoord).xyz, vec3(2.2f)), 1.0f);
+    vec3 emissionColor = texelFetch(gEmissionTex, ivec2(gl_FragCoord.xy), 0).xyz;
+    vec3 diffuseColor = texture(gColorTex, texCoord).xyz;
+    color = vec4(pow((c / NUM_SAMPLES) * diffuseColor + emissionColor, vec3(2.2f)), 1.0f);
 }

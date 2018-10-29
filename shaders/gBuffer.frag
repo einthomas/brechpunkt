@@ -59,7 +59,8 @@ void main() {
         );
         c += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation * diffuseColor_;
     }
-    c += emissionColor;
+
+    emissionOut = emissionColor;
     
     colorOut = vec4(c, 1.0f);
 
