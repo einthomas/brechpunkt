@@ -274,10 +274,28 @@ int main(int argc, const char** argv) {
         "shaders/environment.frag"
     );
 
-    GLuint ssdoUnblurredTexture, ssdoTexture;
+	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
+	std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+	std::default_random_engine generator;
+	glm::vec3 randomValues[16];
+	for (int k = 0; k < 16; k++) {
+		randomValues[k] = glm::vec3(
+			randomFloats(generator) * 2.0f - 1.0f,
+			randomFloats(generator) * 2.0f - 1.0f,
+			0.0f
+		);
+	}
+	glGenTextures(1, &noiseTexture);
+	glBindTexture(GL_TEXTURE_2D, noiseTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &randomValues[0]);
     auto ssdoPass = Effect(
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
+		  {"noiseTex", GL_TEXTURE_2D, noiseTexture},
           {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
           {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
@@ -363,25 +381,6 @@ int main(int argc, const char** argv) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-    std::default_random_engine generator;
-    glm::vec3 randomValues[16];
-    for (int k = 0; k < 16; k++) {
-        randomValues[k] = glm::vec3(
-            randomFloats(generator) * 2.0f - 1.0f,
-            randomFloats(generator) * 2.0f - 1.0f,
-            0.0f
-        );
-    }
-    GLuint noiseTexture;
-    glGenTextures(1, &noiseTexture);
-    glBindTexture(GL_TEXTURE_2D, noiseTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &randomValues[0]);
-
     float hemisphereSamples[192];
     for (int i = 0; i < 64; i++) {
         glm::vec3 hemisphereSample = getHemisphereSample(HALTON_POINTS[i]) * randomFloats(generator);
@@ -391,11 +390,6 @@ int main(int argc, const char** argv) {
     }
 
     ssdoPass.shader.use();
-    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "gColorTex"), 0);
-    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "gNormalTex"), 1);
-    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "gWorldPosTex"), 2);
-    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "noiseTex"), 3);
-    glUniform1i(glGetUniformLocation(ssdoPass.shader.program, "environmentColor"), 4);
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
@@ -444,7 +438,7 @@ int main(int argc, const char** argv) {
         glViewport(0, 0, 256, 256);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
-        environmentShader.setMatrix4("model", {});
+        environmentShader.setMatrix4("model", glm::mat4(1.0f));
         environmentShader.setMatrix4("view", viewMatrix);
         lightRimMesh.draw(environmentShader);
 
@@ -480,19 +474,6 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.use();
         ssdoPass.shader.setMatrix4("view", viewMatrix);
         ssdoPass.shader.setMatrix4("projection", projectionMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gColorFiltered);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gNormal);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gWorldPos);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, noiseTexture);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, environmentColor);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gEmission);
-		
         ssdoPass.render();
 		
         blurSSDOHorizontal.render();
