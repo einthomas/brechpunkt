@@ -14,7 +14,7 @@ out vec3 geometryNormal;
     perspective-and-orthographic-projection-matrix/
     opengl-perspective-projection-matrix
 */
-float near = 0.1f, far = 100f;
+float near = 0.1f, far = 100.0f;
 mat4 projection = mat4(
     1, 0, 0, 0,
     0, 1, 0, 0,
