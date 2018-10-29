@@ -54,7 +54,6 @@ static Shader ssdoShader;
 static Shader environmentShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
-static Mesh centerCube;
 static float deltaTime;
 static bool useAnimatedCamera = false;
 static GLuint blurFBO0, blurFBO1;
@@ -207,7 +206,7 @@ int main(int argc, const char** argv) {
 
     Mesh lightRimMesh = Mesh(
         lightRimInfo, glm::translate(
-            glm::mat4(), glm::vec3(0, 10, 0)
+            glm::mat4(1.0f), glm::vec3(0, 10, 0)
         ), {}, {2, 2, 2}
     );
 
@@ -250,7 +249,7 @@ int main(int argc, const char** argv) {
         centerCubeMeshInfo,
         centerCubeModel,
         glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
-        glm::vec3(0.1f)
+        glm::vec3(0.0f)
     ));
 
     float near = 0.1f;
@@ -281,7 +280,8 @@ int main(int argc, const char** argv) {
         {
           {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos}
+          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
+		  {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
     );
@@ -323,7 +323,7 @@ int main(int argc, const char** argv) {
         }, {
             {"coc", dofCocTexture, GL_R8_SNORM},
         }
-        );
+    );
     auto dofCoarsePass = Effect(
         "shaders/dofCoarse.frag", windowWidth, windowHeight, {
             {"colorTex", GL_TEXTURE_2D, ssdoTexture},
@@ -331,14 +331,14 @@ int main(int argc, const char** argv) {
         }, {
             {"coarse", dofCoarseTexture, GL_RGBA16F},
         }
-        );
+    );
     auto dofFinePass = Effect(
         "shaders/dofFine.frag", windowWidth, windowHeight, {
             {"coarseTex", GL_TEXTURE_2D, dofCoarseTexture},
         }, {
             {"color", dofTexture, GL_RGB16F},
         }
-        );
+    );
 
     composeShader.use();
     glUniform1i(
@@ -347,9 +347,9 @@ int main(int argc, const char** argv) {
     glUniform1i(
         glGetUniformLocation(composeShader.program, "bloomTex"), 1
     );
-    glUniform1i(
-        glGetUniformLocation(composeShader.program, "dofTex"), 2
-    );
+	glUniform1i(
+		glGetUniformLocation(composeShader.program, "dofTex"), 2
+	);
 
     gBufferShader.use();
     for (int i = 0; i < pointLights.size(); i++) {
@@ -452,7 +452,7 @@ int main(int argc, const char** argv) {
         glViewport(0, 0, windowWidth, windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBufferShader.use();
-        gBufferShader.setMatrix4("model", glm::mat4());
+        gBufferShader.setMatrix4("model", glm::mat4(1.0f));
         gBufferShader.setMatrix4("view", viewMatrix);
         gBufferShader.setMatrix4("projection", projectionMatrix);
         for (int i = 0; i < pointLights.size(); i++) {
@@ -490,6 +490,9 @@ int main(int argc, const char** argv) {
         glBindTexture(GL_TEXTURE_2D, noiseTexture);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_CUBE_MAP, environmentColor);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gEmission);
+		
         ssdoPass.render();
 		
         blurSSDOHorizontal.render();
@@ -509,9 +512,10 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
         glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_2D, bloomTexture);
+        glBindTexture(GL_TEXTURE_2D, ssdoTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, dofTexture);
+		glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        //glBindTexture(GL_TEXTURE_2D, dofTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
