@@ -28,7 +28,7 @@ void main() {
     vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
     
     vec3 right = normalize(noise - normal * dot(noise, normal));
-    vec3 forward = cross(normal, right);
+    vec3 forward = normalize(cross(normal, right));
     mat3 basis = mat3(right, forward, normal);
 
     vec3 c = vec3(0.0f);
@@ -49,10 +49,10 @@ void main() {
         {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
         }
-
+        
         vec3 sampleCubeMap = texture(
             environmentColor,
-            (inverse(view) * vec4(hemisphereSample, 0.0f)).xyz
+            hemisphereSample
         ).rgb;
 
         c += sampleCubeMap * visibility;

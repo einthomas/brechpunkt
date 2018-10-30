@@ -440,7 +440,7 @@ int main(int argc, const char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
         environmentShader.setMatrix4("model", glm::mat4(1.0f));
-        environmentShader.setMatrix4("view", glm::mat4(1.0f));
+        environmentShader.setMatrix4("view", viewMatrix);
         lightRimMesh.draw(environmentShader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
