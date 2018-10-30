@@ -50,10 +50,15 @@ void main() {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
         }
 
-        //c += sampleCubeMap * visibility
+        vec3 sampleCubeMap = texture(
+            environmentColor,
+            (inverse(view) * vec4(hemisphereSample, 0.0f)).xyz
+        ).rgb;
+
+        c += sampleCubeMap * visibility;
     }
 
     vec3 emissionColor = texelFetch(gEmissionTex, ivec2(gl_FragCoord.xy), 0).xyz;
     vec3 diffuseColor = texture(gColorTex, texCoord).xyz;
-    color = vec4(pow((c / NUM_SAMPLES) * diffuseColor + emissionColor, vec3(2.2f)), 1.0f);
+    color = vec4((c / NUM_SAMPLES) * diffuseColor + emissionColor, 1.0f);
 }

@@ -295,11 +295,12 @@ int main(int argc, const char** argv) {
     auto ssdoPass = Effect(
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
-		  {"noiseTex", GL_TEXTURE_2D, noiseTexture},
-          {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
-          {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
-		  {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
+            {"noiseTex", GL_TEXTURE_2D, noiseTexture},
+            {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
+            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
+            {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
+            {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission},
+            {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
     );
@@ -439,7 +440,7 @@ int main(int argc, const char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
         environmentShader.setMatrix4("model", glm::mat4(1.0f));
-        environmentShader.setMatrix4("view", viewMatrix);
+        environmentShader.setMatrix4("view", glm::mat4(1.0f));
         lightRimMesh.draw(environmentShader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
