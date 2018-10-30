@@ -44,11 +44,7 @@ void main() {
         normalOut = vec4(normal, 1.0f);
     }
 
-    vec3 diffuseColor_ = diffuseColor;
-    if (useDiffuseTex) {
-		diffuseColor_ = texture(diffuseTex, texCoord).xyz;
-    }
-    vec3 c = vec3(0.0f);
+    vec3 emissive = vec3(0.0f);
     for (int i = 0; i < NUM_LIGHTS; i++) {
         vec3 lightDir = pointLights[i].pos - worldPos;
         float lightDist = length(lightDir);
@@ -57,12 +53,15 @@ void main() {
             pointLights[i].linearTerm * lightDist +
             pointLights[i].quadraticTerm * lightDist * lightDist
         );
-        c += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation * diffuseColor_;
+        emissive += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation;
     }
-
-    emissionOut = emissionColor;
+    emissionOut = emissionColor + emissive;
     
-    colorOut = vec4(c, 1.0f);
+    vec3 diffuseColor_ = diffuseColor;
+    if (useDiffuseTex) {
+		diffuseColor_ = texture(diffuseTex, texCoord).xyz;
+    }
+    colorOut = vec4(diffuseColor_, 1.0f);
 
     positionOut = vec4(worldPos, 1.0f);
     
