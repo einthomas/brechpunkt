@@ -296,6 +296,7 @@ int main(int argc, const char** argv) {
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
 		  {"noiseTex", GL_TEXTURE_2D, noiseTexture},
+          {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
           {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
           {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
