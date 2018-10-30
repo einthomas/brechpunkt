@@ -40,9 +40,6 @@ void main() {
         vec3 bitangent = normalize(cross(normal, tangent)); //normalize(dFdy(worldPos));
         mat3 tbn = mat3(tangent, bitangent, normalize(normal));
 
-        vec2 noiseStep = size / 4.0f;
-        vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
-
         vec3 textureNormal = texture(normalTex, texCoord).xyz * 2.0 - 1.0;
 
         normalOut = vec4(normalize(tbn * textureNormal), 1.0f);
@@ -50,11 +47,7 @@ void main() {
         normalOut = vec4(normal, 1.0f);
     }
 
-    vec3 diffuseColor_ = diffuseColor;
-    if (useDiffuseTex) {
-		diffuseColor_ = texture(diffuseTex, texCoord).xyz;
-    }
-    vec3 c = vec3(0.0f);
+    vec3 emissive = vec3(0.0f);
     for (int i = 0; i < NUM_LIGHTS; i++) {
         vec3 lightDir = pointLights[i].pos - worldPos;
         float lightDist = length(lightDir);
@@ -63,13 +56,15 @@ void main() {
             pointLights[i].linearTerm * lightDist +
             pointLights[i].quadraticTerm * lightDist * lightDist
         );
-        c += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation * 50.0f * diffuseColor_;
+        emissive += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation;
     }
-    c /= NUM_LIGHTS;
-    c += emissionColor;
+    emissionOut = emissionColor + emissive;
     
-    colorOut = vec4(c, 1.0f);
-    //colorOut = normalOut;
+    vec3 diffuseColor_ = diffuseColor;
+    if (useDiffuseTex) {
+		diffuseColor_ = texture(diffuseTex, texCoord).xyz;
+    }
+    colorOut = vec4(diffuseColor_, 1.0f);
 
     positionOut = vec4(worldPos, 1.0f);
     
