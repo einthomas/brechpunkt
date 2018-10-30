@@ -28,7 +28,7 @@ void main() {
     vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
     
     vec3 right = normalize(noise - normal * dot(noise, normal));
-    vec3 forward = cross(normal, right);
+    vec3 forward = normalize(cross(normal, right));
     mat3 basis = mat3(right, forward, normal);
 
     vec3 c = vec3(0.0f);
@@ -49,11 +49,16 @@ void main() {
         {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
         }
+        
+        vec3 sampleCubeMap = texture(
+            environmentColor,
+            hemisphereSample
+        ).rgb;
 
-        //c += sampleCubeMap * visibility
+        c += sampleCubeMap * visibility;
     }
 
     vec3 emissionColor = texelFetch(gEmissionTex, ivec2(gl_FragCoord.xy), 0).xyz;
     vec3 diffuseColor = texture(gColorTex, texCoord).xyz;
-    color = vec4(pow((c / NUM_SAMPLES) * diffuseColor + emissionColor, vec3(2.2f)), 1.0f);
+    color = vec4((c / NUM_SAMPLES) * diffuseColor + emissionColor, 1.0f);
 }

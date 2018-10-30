@@ -295,12 +295,12 @@ int main(int argc, const char** argv) {
     auto ssdoPass = Effect(
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
-		  {"noiseTex", GL_TEXTURE_2D, noiseTexture},
-          {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
-          {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
-          {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
-		  {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
+            {"noiseTex", GL_TEXTURE_2D, noiseTexture},
+            {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
+            {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
+            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
+            {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
+            {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
     );
