@@ -27,6 +27,11 @@ public:
         std::initializer_list<EffectInput> inputs,
         std::initializer_list<EffectOutput> outputs
     );
+    Effect(const char* fragmentShaderPath, int width, int height,
+        bool multisample, int samples,
+        std::initializer_list<EffectInput> inputs,
+        std::initializer_list<EffectOutput> outputs
+    );
     ~Effect();
 
     void render();

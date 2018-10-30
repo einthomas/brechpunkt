@@ -1,11 +1,11 @@
-#version 330 core
+#version 400
 
 #define M_PI 3.141592653589
 
 const int NUM_SAMPLES = 16;
 const float RADIUS = 0.5f;
 
-uniform sampler2D gColorTex;
+uniform sampler2DMS gColorTex;
 uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gWorldPosTex;
 uniform sampler2D noiseTex;
@@ -21,8 +21,8 @@ in vec2 texCoord;
 out vec4 color;
 
 void main() {
-    vec3 normal = normalize(texelFetch(gNormalTex, ivec2(gl_FragCoord.xy), 0).xyz);
-    vec3 worldPos = texelFetch(gWorldPosTex, ivec2(gl_FragCoord.xy), 0).xyz;
+    vec3 normal = normalize(texelFetch(gNormalTex, ivec2(gl_FragCoord.xy), gl_SampleID).xyz);
+    vec3 worldPos = texelFetch(gWorldPosTex, ivec2(gl_FragCoord.xy), gl_SampleID).xyz;
 
     vec2 noiseStep = size / 4.0f;
     vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
@@ -40,7 +40,7 @@ void main() {
         samplePosImageSpace.xyz /= samplePosImageSpace.w;
         samplePosImageSpace.xyz = samplePosImageSpace.xyz * 0.5f + 0.5f;
 
-        vec4 sampleProjected = texelFetch(gWorldPosTex, ivec2(samplePosImageSpace.xy * size), 0);
+        vec4 sampleProjected = texelFetch(gWorldPosTex, ivec2(samplePosImageSpace.xy * size), gl_SampleID);
         
         float visibility = 1.0f;
         if (samplePosImageSpace.x >= 0.0f && samplePosImageSpace.x <= 1.0f &&
@@ -58,7 +58,7 @@ void main() {
         c += sampleCubeMap * visibility;
     }
 
-    vec3 emissionColor = texelFetch(gEmissionTex, ivec2(gl_FragCoord.xy), 0).xyz;
-    vec3 diffuseColor = texture(gColorTex, texCoord).xyz;
+    vec3 emissionColor = texelFetch(gEmissionTex, ivec2(gl_FragCoord.xy), gl_SampleID).xyz;
+    vec3 diffuseColor = texelFetch(gColorTex, ivec2(gl_FragCoord.xy), gl_SampleID).xyz;
     color = vec4((c / NUM_SAMPLES) * diffuseColor + emissionColor, 1.0f);
 }

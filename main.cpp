@@ -180,10 +180,10 @@ int main(int argc, const char** argv) {
         }, {
         }
     );
-    GLuint gColorFiltered;
+    GLuint colorFiltered;
     GLuint filterFramebuffer = generateFramebuffer(
         windowWidth, windowHeight, {
-            {GL_COLOR_ATTACHMENT0, gColorFiltered, GL_RGB16F}
+            {GL_COLOR_ATTACHMENT0, colorFiltered, GL_RGB16F}
         }, {}
     );
 
@@ -274,7 +274,7 @@ int main(int argc, const char** argv) {
         "shaders/environment.frag"
     );
 
-	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
+    GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
 	std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
 	std::default_random_engine generator;
 	glm::vec3 randomValues[16];
@@ -293,10 +293,10 @@ int main(int argc, const char** argv) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &randomValues[0]);
     auto ssdoPass = Effect(
-        "shaders/ssdo.frag", windowWidth, windowHeight,
+        "shaders/ssdo.frag", windowWidth, windowHeight, true, 4,
         {
             {"noiseTex", GL_TEXTURE_2D, noiseTexture},
-            {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
+            {"gColorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
             {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
             {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission},
@@ -309,7 +309,7 @@ int main(int argc, const char** argv) {
     auto blurSSDOHorizontal = Effect(
         "shaders/blurSSDOHorizontal.frag", windowWidth, windowHeight,
         {
-            {"colorTex", GL_TEXTURE_2D, ssdoUnblurredTexture},
+            {"colorTex", GL_TEXTURE_2D, colorFiltered},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal}
         },
         { {"color", ssdoBlurHorizontalTexture, GL_RGB16F} }
@@ -460,7 +460,14 @@ int main(int argc, const char** argv) {
         }
         lightRimMesh.draw(gBufferShader);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+        glBindVertexArray(screenQuadVAO);
+
+        ssdoPass.shader.use();
+        ssdoPass.shader.setMatrix4("view", viewMatrix);
+        ssdoPass.shader.setMatrix4("projection", projectionMatrix);
+        ssdoPass.render();
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, ssdoPass.framebuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -469,13 +476,6 @@ int main(int argc, const char** argv) {
             0, 0, windowWidth, windowHeight,
             GL_COLOR_BUFFER_BIT, GL_NEAREST
         );
-
-        glBindVertexArray(screenQuadVAO);
-
-        ssdoPass.shader.use();
-        ssdoPass.shader.setMatrix4("view", viewMatrix);
-        ssdoPass.shader.setMatrix4("projection", projectionMatrix);
-        ssdoPass.render();
 		
         blurSSDOHorizontal.render();
         blurSSDOVertical.render();
@@ -494,9 +494,9 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
         glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        glBindTexture(GL_TEXTURE_2D, colorFiltered);
         glActiveTexture(GL_TEXTURE0 + 2);
-		glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        glBindTexture(GL_TEXTURE_2D, colorFiltered);
         //glBindTexture(GL_TEXTURE_2D, dofTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);

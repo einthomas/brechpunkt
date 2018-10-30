@@ -5,6 +5,13 @@ Effect::Effect(
     const char *fragmentShaderPath, int width, int height,
     std::initializer_list<EffectInput> inputs,
     std::initializer_list<EffectOutput> outputs
+) : Effect(fragmentShaderPath, width, height, false, 0, inputs, outputs) {}
+
+Effect::Effect(
+    const char *fragmentShaderPath, int width, int height,
+    bool multisample, int samples,
+    std::initializer_list<EffectInput> inputs,
+    std::initializer_list<EffectOutput> outputs
 ) : shader("shaders/effect.vert", fragmentShaderPath) {
 
     inputCount = static_cast<int>(inputs.size());
@@ -27,24 +34,35 @@ Effect::Effect(
             shader.program, output.identifier
         );
 
+        GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+
         if (location != -1) {
             // output is used in shader
             drawBuffers[location] = GL_COLOR_ATTACHMENT0 + i;
 
-            glBindTexture(GL_TEXTURE_2D, outputTextures[i]);
+            glBindTexture(target, outputTextures[i]);
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if (!multisample) {
+                glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            }
 
-            glTexStorage2D(
-                GL_TEXTURE_2D, 1, output.internalFormat, width, height
-            );
+            if (multisample) {
+                glTexStorage2DMultisample(
+                    target, samples, output.internalFormat,
+                    width, height, true
+                );
+            } else {
+                glTexStorage2D(
+                    target, 1, output.internalFormat, width, height
+                );
+            }
 
-            glFramebufferTexture2D(
+            glFramebufferTexture(
                 GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
-                GL_TEXTURE_2D, outputTextures[i], 0
+                outputTextures[i], 0
             );
         }
     }
