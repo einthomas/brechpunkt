@@ -206,7 +206,7 @@ int main(int argc, const char** argv) {
 
     Mesh lightRimMesh = Mesh(
         lightRimInfo, glm::translate(
-            glm::mat4(1.0f), glm::vec3(0, 10, 0)
+            glm::mat4(1.0f), glm::vec3(0, 0, 0)
         ), {}, {2, 2, 2}
     );
 
