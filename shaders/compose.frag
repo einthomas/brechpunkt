@@ -1,8 +1,7 @@
 #version 330 core
 
-uniform sampler2DMS colorTex;
-uniform sampler2D bloomTex;
 uniform sampler2D dofTex;
+uniform sampler2D bloomTex;
 
 in vec2 texCoord;
 

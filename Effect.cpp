@@ -1,55 +1,73 @@
 #include "Effect.h"
 
 
+GLuint generateFramebuffer() {
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    return framebuffer;
+}
+
 Effect::Effect(
     const char *fragmentShaderPath, int width, int height,
     std::initializer_list<EffectInput> inputs,
-    std::initializer_list<EffectOutput> outputs
-) : shader("shaders/effect.vert", fragmentShaderPath) {
-
+    std::initializer_list<EffectOutput> outputs,
+    GLuint framebuffer
+) :
+    shader("shaders/effect.vert", fragmentShaderPath),
+    framebuffer(framebuffer)
+{
     inputCount = static_cast<int>(inputs.size());
     outputCount = static_cast<int>(outputs.size());
 
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    if (framebuffer != 0) {
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    GLuint drawBuffers[8]{GL_NONE};
+        GLuint drawBuffers[8]{GL_NONE};
 
-    glGenTextures(static_cast<GLsizei>(outputs.size()), outputTextures);
-    glActiveTexture(GL_TEXTURE0);
+        glGenTextures(static_cast<GLsizei>(outputs.size()), outputTextures);
+        glActiveTexture(GL_TEXTURE0);
 
-    for (unsigned int i = 0; i < outputs.size(); i++) {
-        auto output = *(outputs.begin() + i);
+        for (unsigned int i = 0; i < outputs.size(); i++) {
+            auto output = *(outputs.begin() + i);
 
-        output.textureName = outputTextures[i];
+            output.textureName = outputTextures[i];
 
-        GLint location = glGetFragDataLocation(
-            shader.program, output.identifier
-        );
-
-        if (location != -1) {
-            // output is used in shader
-            drawBuffers[location] = GL_COLOR_ATTACHMENT0 + i;
-
-            glBindTexture(GL_TEXTURE_2D, outputTextures[i]);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glTexStorage2D(
-                GL_TEXTURE_2D, 1, output.internalFormat, width, height
+            GLint location = glGetFragDataLocation(
+                shader.program, output.identifier
             );
 
-            glFramebufferTexture2D(
-                GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
-                GL_TEXTURE_2D, outputTextures[i], 0
-            );
+            if (location != -1) {
+                // output is used in shader
+                drawBuffers[location] = GL_COLOR_ATTACHMENT0 + i;
+
+                glBindTexture(GL_TEXTURE_2D, outputTextures[i]);
+
+                glTexParameteri(
+                    GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE
+                );
+                glTexParameteri(
+                    GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE
+                );
+                glTexParameteri(
+                    GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR
+                );
+                glTexParameteri(
+                    GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR
+                    );
+
+                glTexStorage2D(
+                    GL_TEXTURE_2D, 1, output.internalFormat, width, height
+                );
+
+                glFramebufferTexture2D(
+                    GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
+                    GL_TEXTURE_2D, outputTextures[i], 0
+                );
+            }
         }
-    }
 
-    glDrawBuffers(8, drawBuffers);
+        glDrawBuffers(8, drawBuffers);
+    }
 
     shader.use();
 
@@ -65,9 +83,26 @@ Effect::Effect(
     }
 }
 
+Effect::Effect(
+    const char *fragmentShaderPath, int width, int height,
+    std::initializer_list<EffectInput> inputs,
+    std::initializer_list<EffectOutput> outputs
+) : Effect(
+    fragmentShaderPath, width, height, inputs, outputs, generateFramebuffer()
+) {}
+
+Effect::Effect(
+    const char *fragmentShaderPath, int width, int height,
+    std::initializer_list<EffectInput> inputs, GLuint framebuffer
+) : Effect(
+    fragmentShaderPath, width, height, inputs, {}, framebuffer
+) {}
+
 Effect::~Effect() {
-    glDeleteFramebuffers(1, &framebuffer);
-    glDeleteTextures(outputCount, outputTextures);
+    if (framebuffer != 0) {
+        glDeleteFramebuffers(1, &framebuffer);
+        glDeleteTextures(outputCount, outputTextures);
+    }
 }
 
 void Effect::render() {

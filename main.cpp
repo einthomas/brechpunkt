@@ -46,8 +46,6 @@ static int windowWidth = 0, windowHeight = 0;
 static vector<PointLight> pointLights;
 static Camera camera;
 static Shader gBufferShader;
-static Shader composeShader;
-static Shader ssdoShader;
 static Shader environmentShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
@@ -263,7 +261,6 @@ int main(int argc, const char** argv) {
     };
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
-    composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
     environmentShader = Shader(
         "shaders/environment.vert", "shaders/environment.geom",
         "shaders/environment.frag"
@@ -354,16 +351,13 @@ int main(int argc, const char** argv) {
         }
     );
 
-    composeShader.use();
-    glUniform1i(
-        glGetUniformLocation(composeShader.program, "colorTex"), 0
+    auto composePass = Effect(
+        "shaders/compose.frag", windowWidth, windowHeight, {
+            {"dofTex", GL_TEXTURE_2D, dofTexture},
+            {"bloomTex", GL_TEXTURE_2D, bloomTexture},
+        },
+        0
     );
-    glUniform1i(
-        glGetUniformLocation(composeShader.program, "bloomTex"), 1
-    );
-	glUniform1i(
-		glGetUniformLocation(composeShader.program, "dofTex"), 2
-	);
 
     gBufferShader.use();
     for (int i = 0; i < pointLights.size(); i++) {
@@ -486,15 +480,7 @@ int main(int argc, const char** argv) {
         // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glActiveTexture(GL_TEXTURE0 + 0);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
-        glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_2D, dofTexture);
-        glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, dofTexture);
-        //glBindTexture(GL_TEXTURE_2D, dofTexture);
-        composeShader.use();
-        drawScreenQuad(screenQuadVAO);
+        composePass.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -539,9 +525,6 @@ void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-        gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
-        composeShader = Shader("shaders/compose.vert", "shaders/compose.frag");
-        ssdoShader = Shader("shaders/ssdo.vert", "shaders/ssdo.frag");
     }
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
