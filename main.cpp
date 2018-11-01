@@ -329,7 +329,10 @@ int main(int argc, const char** argv) {
         {
           {"gColorTex", GL_TEXTURE_2D, ssdoTexture},
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos}
+          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
+          {"gReflectionTex", GL_TEXTURE_2D_MULTISAMPLE, gReflection},
+          {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
+          {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
         },
         { {"color", ssrTexture, GL_RGB16F} }
     );
@@ -381,7 +384,6 @@ int main(int argc, const char** argv) {
 		glGetUniformLocation(composeShader.program, "dofTex"), 2
 	);
 
-
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
     glEnable(GL_DEPTH_TEST);
@@ -400,7 +402,7 @@ int main(int argc, const char** argv) {
     glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
     ssrPass.shader.use();
-    glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    glUniform2f(glGetUniformLocation(ssrPass.shader.program, "size"), windowWidth, windowHeight);
 
     gBufferShader.use();
     for (int i = 0; i < pointLights.size(); i++) {
@@ -496,7 +498,9 @@ int main(int argc, const char** argv) {
         blurSSDOVertical.render();
 
         ssrPass.shader.use();
+        ssrPass.shader.setMatrix4("view", viewMatrix);
         ssrPass.shader.setMatrix4("projection", projectionMatrix);
+        //ssrPass.shader.setVector3f("cameraPos", camera.pos);
         ssrPass.render();
 
         bloomHorizontalPass.render();
@@ -513,8 +517,8 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
         glActiveTexture(GL_TEXTURE0 + 1);
-        //glBindTexture(GL_TEXTURE_2D, ssrTexture);
-        glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        glBindTexture(GL_TEXTURE_2D, ssrTexture);
+        //glBindTexture(GL_TEXTURE_2D, ssdoTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
 		glBindTexture(GL_TEXTURE_2D, ssdoTexture);
         //glBindTexture(GL_TEXTURE_2D, dofTexture);

@@ -44,9 +44,12 @@ void Mesh::draw(Shader &shader) {
         );
     }
     if (useReflectionTexture) {
+        shader.setInteger("useReflectionTex", 1);
         shader.setTexture2D(
             "reflectionTex", GL_TEXTURE1, reflectionTexture, 1
         );
+    } else {
+        shader.setInteger("useReflectionTex", 0);
     }
     if (useNormalTexture) {
 		shader.setInteger("useNormalTex", 1);

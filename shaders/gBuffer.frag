@@ -22,6 +22,7 @@ uniform sampler2D normalTex;
 uniform sampler2D noiseTex;
 uniform bool useDiffuseTex;
 uniform bool useNormalTex;
+uniform bool useReflectionTex;
 uniform vec3 diffuseColor;
 uniform vec3 emissionColor;
 uniform vec2 size;
@@ -68,5 +69,9 @@ void main() {
 
     positionOut = vec4(worldPos, 1.0f);
     
-	reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+    if (useReflectionTex) {
+	    reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+    } else {
+        reflectionOut = vec4(0.0f);
+    }
 }
