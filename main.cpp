@@ -15,6 +15,7 @@
 #include "Camera.h"
 #include "Framebuffer.h"
 #include "Effect.h"
+#include "ParticleSystem.h"
 
 using namespace std;
 
@@ -209,6 +210,8 @@ int main(int argc, const char** argv) {
         glm::vec3(1.0f, 1.0f, 1.0f),
         glm::vec3(0.0f)
 	));
+
+    ParticleSystem particles(1000, 4, 5);
 
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
@@ -448,6 +451,8 @@ int main(int argc, const char** argv) {
             meshes[i].draw(gBufferShader);
         }
         lightRimMesh.draw(gBufferShader);
+
+        particles.draw();
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);

@@ -84,7 +84,6 @@ MeshInfo::MeshInfo(std::string basedir, std::string objFileName) {
         indexOffset += faceVertices;
     }
 
-    unsigned int VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
