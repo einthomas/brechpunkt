@@ -10,6 +10,10 @@ const int fineRadius = 2;
 const int step = 2;
 const float exaggeration = 1;
 
+float linearStep(float start, float end, float x) {
+    return clamp((x - start) / (end - start), 0, 1);
+}
+
 ivec2 center;
 vec4 coarse;
 float centerCoc;
@@ -22,10 +26,15 @@ vec4 getSample(ivec2 offset, float x) {
     float blurriness = abs(min(coc, centerCoc));
     float weight = 1 / (blurriness + 0.01);
 
+    float pixelCoc = radius * blurriness + 1;
+
+    // anti-aliasing
+    weight *= linearStep(pixelCoc, pixelCoc - 1, abs(x));
+
     return mix(
         vec4(0),
         vec4(current.rgb * weight, weight),
-        bvec4(abs(x) <= radius * blurriness)
+        bvec4(abs(x) <= pixelCoc)
     );
 }
 

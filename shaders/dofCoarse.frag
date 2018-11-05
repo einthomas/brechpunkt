@@ -9,6 +9,10 @@ const int radius = 31;
 const int step = 2;
 const float exaggeration = 1;
 
+float linearStep(float start, float end, float x) {
+    return clamp((x - start) / (end - start), 0, 1);
+}
+
 void main() {
     ivec2 center = ivec2(gl_FragCoord.xy);
 
@@ -31,7 +35,12 @@ void main() {
         float blurriness = abs(min(coc, centerCoc));
         float weight = 1 / (blurriness + 0.01);
 
-        bool mask = abs(x) <= radius * blurriness;
+        float pixelCoc = radius * blurriness + 1;
+
+        // anti-aliasing
+        weight *= linearStep(pixelCoc, pixelCoc - 1, abs(x));
+
+        bool mask = abs(x) <= pixelCoc;
 
         coarse += mix(
             vec4(0),

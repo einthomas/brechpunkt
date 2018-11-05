@@ -494,9 +494,9 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
         glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        glBindTexture(GL_TEXTURE_2D, dofTexture);
         glActiveTexture(GL_TEXTURE0 + 2);
-		glBindTexture(GL_TEXTURE_2D, ssdoTexture);
+        glBindTexture(GL_TEXTURE_2D, dofTexture);
         //glBindTexture(GL_TEXTURE_2D, dofTexture);
         composeShader.use();
         drawScreenQuad(screenQuadVAO);
