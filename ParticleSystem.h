@@ -1,18 +1,23 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <glm/glm.hpp>
+
+#include "Mesh.h"
 
 class ParticleSystem {
 public:
     ParticleSystem(
-        int capacity, GLint positionAttribute, GLint orientationAttribute
+        unsigned int capacity,
+        GLint positionAttribute, GLint orientationAttribute
     );
 
-    void draw();
+    void draw(Shader &shader);
+    void add(glm::vec3 position);
 
-    GLuint vao;
-    GLuint objectVbo;
+    Mesh mesh;
     GLuint instanceVbo;
     unsigned int particleCount;
+    unsigned int capacity;
     unsigned int triangleCount;
 };

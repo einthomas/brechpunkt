@@ -46,7 +46,7 @@ static int windowWidth = 0, windowHeight = 0;
 
 static vector<PointLight> pointLights;
 static Camera camera;
-static Shader gBufferShader;
+static Shader gBufferShader, particleShader, composeShader, ssdoShader;
 static Shader environmentShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
@@ -162,6 +162,8 @@ int main(int argc, const char** argv) {
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetKeyCallback(window, keyCallback);
 
+    std::default_random_engine random;
+
     GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
     GLuint gBuffer = generateFramebufferMultisample(
         windowWidth, windowHeight, 4, {
@@ -211,7 +213,16 @@ int main(int argc, const char** argv) {
         glm::vec3(0.0f)
 	));
 
-    ParticleSystem particles(1000, 4, 5);
+    ParticleSystem particles(1000, 3, 4);
+
+    std::uniform_real_distribution<float> signedRandomFloats(-1, 1);
+    for (int i = 0; i < 1000; i++) {
+        particles.add({
+            signedRandomFloats(random) * 15,
+            0.1,
+            signedRandomFloats(random) * 15
+        });
+    }
 
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
@@ -264,19 +275,19 @@ int main(int argc, const char** argv) {
     };
 
     gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
+    particleShader = Shader("shaders/particle.vert", "shaders/particle.frag");
     environmentShader = Shader(
         "shaders/environment.vert", "shaders/environment.geom",
         "shaders/environment.frag"
     );
 
 	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
-	std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-	std::default_random_engine generator;
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
 	glm::vec3 randomValues[16];
 	for (int k = 0; k < 16; k++) {
 		randomValues[k] = glm::vec3(
-			randomFloats(generator) * 2.0f - 1.0f,
-			randomFloats(generator) * 2.0f - 1.0f,
+            randomFloats(random) * 2.0f - 1.0f,
+            randomFloats(random) * 2.0f - 1.0f,
 			0.0f
 		);
 	}
@@ -369,6 +380,13 @@ int main(int argc, const char** argv) {
         gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
     }
 
+    particleShader.use();
+    for (int i = 0; i < pointLights.size(); i++) {
+        particleShader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
+        particleShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
+        particleShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
+    }
+
     camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f));
 
     glEnable(GL_DEPTH_TEST);
@@ -376,7 +394,7 @@ int main(int argc, const char** argv) {
 
     float hemisphereSamples[192];
     for (int i = 0; i < 64; i++) {
-        glm::vec3 hemisphereSample = getHemisphereSample(HALTON_POINTS[i]) * randomFloats(generator);
+        glm::vec3 hemisphereSample = getHemisphereSample(HALTON_POINTS[i]) * randomFloats(random);
         hemisphereSamples[i * 3] = hemisphereSample.x;
         hemisphereSamples[i * 3 + 1] = hemisphereSample.y;
         hemisphereSamples[i * 3 + 2] = hemisphereSample.z;
@@ -452,7 +470,14 @@ int main(int argc, const char** argv) {
         }
         lightRimMesh.draw(gBufferShader);
 
-        particles.draw();
+        particleShader.use();
+        particleShader.setMatrix4("view", viewMatrix);
+        particleShader.setMatrix4("projection", projectionMatrix);
+        for (int i = 0; i < pointLights.size(); i++) {
+            particleShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
+            particleShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+        }
+        particles.draw(particleShader);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -470,7 +495,7 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.setMatrix4("view", viewMatrix);
         ssdoPass.shader.setMatrix4("projection", projectionMatrix);
         ssdoPass.render();
-		
+
         blurSSDOHorizontal.render();
         blurSSDOVertical.render();
 

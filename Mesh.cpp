@@ -102,8 +102,6 @@ MeshInfo::MeshInfo(std::string basedir, std::string objFileName) {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    glBindVertexArray(0);
-
     numTriangles = meshData.size() / 8;
     materialName = materials[shapes[0].mesh.material_ids[0]].name;
 }
@@ -136,6 +134,13 @@ Mesh::Mesh(MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor, glm::vec3
 }
 
 void Mesh::draw(Shader &shader) {
+    setUniforms(shader);
+
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLES, 0, count);
+}
+
+void Mesh::setUniforms(Shader &shader) {
     if (useDiffuseTexture) {
         shader.setInteger("useDiffuseTex", 1);
         shader.setTexture2D(
@@ -153,20 +158,17 @@ void Mesh::draw(Shader &shader) {
         );
     }
     if (useNormalTexture) {
-		shader.setInteger("useNormalTex", 1);
+        shader.setInteger("useNormalTex", 1);
         shader.setTexture2D(
             "normalTex", GL_TEXTURE2, normalTexture, 2
         );
-	} else {
-		shader.setInteger("useNormalTex", 0);
-	}
+    } else {
+        shader.setInteger("useNormalTex", 0);
+    }
 
     shader.setMatrix4("model", model);
-	shader.setVector3f("diffuseColor", diffuseColor);
+    shader.setVector3f("diffuseColor", diffuseColor);
     shader.setVector3f("emissionColor", emissionColor);
-
-    glBindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, count);
 }
 
 Mesh::Mesh() {}

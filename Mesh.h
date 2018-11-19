@@ -36,4 +36,5 @@ public:
     Mesh();
     Mesh(MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor, glm::vec3 emissionColor);
     void draw(Shader &shader);
+    void setUniforms(Shader &shader);
 };
