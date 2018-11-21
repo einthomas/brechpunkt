@@ -8,6 +8,7 @@
 !*.vert
 !*.frag
 !*.geom
+!*.comp
 
 !*.txt
 

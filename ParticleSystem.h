@@ -12,11 +12,12 @@ public:
         GLint positionAttribute, GLint orientationAttribute
     );
 
-    void draw(Shader &shader);
-    void add(glm::vec3 position);
+    void draw(Program &shader);
+    void add(glm::vec3 position, glm::quat orientation = {});
 
     Mesh mesh;
     GLuint instanceVbo;
+    GLuint physicVbo;
     unsigned int particleCount;
     unsigned int capacity;
     unsigned int triangleCount;

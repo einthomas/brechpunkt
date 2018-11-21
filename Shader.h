@@ -8,16 +8,18 @@
 #include <string>
 #include <fstream>
 
-class Shader {
+class Program {
 public:
-	GLuint program = -1;
+    GLuint program = -1;
 
-	Shader() = default;
-	Shader(std::string vertexShaderPath, std::string fragmentShaderPath);
-    Shader(
+    Program() = default;
+    Program(std::string vertexShaderPath, std::string fragmentShaderPath);
+    Program(
         std::string vertexShaderPath, std::string geometryShaderPath,
         std::string fragmentShaderPath
     );
+    Program(std::string computeShaderPath);
+
 	void use();
 	void reload();
 
@@ -33,11 +35,14 @@ public:
 
 private:
     GLuint loadShader(GLuint shaderType, std::string shaderPath);
-    void compileShader(
+    void compileProgram(
         std::string vertexShaderPath, std::string geometryShaderPath,
-        std::string fragmentShaderPath
+        std::string fragmentShaderPath,
+        std::string computeShaderPath
     );
+
 	std::string vertexShaderPath;
     std::string geometryShaderPath;
 	std::string fragmentShaderPath;
+    std::string computeShaderPath;
 };

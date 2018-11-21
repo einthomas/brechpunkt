@@ -46,8 +46,9 @@ static int windowWidth = 0, windowHeight = 0;
 
 static vector<PointLight> pointLights;
 static Camera camera;
-static Shader gBufferShader, particleShader, composeShader, ssdoShader;
-static Shader environmentShader;
+static Program gBufferShader, particleShader, composeShader, ssdoShader;
+static Program environmentShader;
+static Program particleUpdateShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
 static float deltaTime;
@@ -63,7 +64,7 @@ GLuint generateTexture(int width, int height);
 void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-GLuint blur(int width, int height, GLuint texture, Shader &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal);
+GLuint blur(int width, int height, GLuint texture, Program &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal);
 
 glm::vec3 getHemisphereSample(glm::vec2 u) {
     // source: "Physically Based Rendering: From Theory to Implementation" [Pharr and Humphreys, 2016]
@@ -215,13 +216,20 @@ int main(int argc, const char** argv) {
 
     ParticleSystem particles(1000, 3, 4);
 
-    std::uniform_real_distribution<float> signedRandomFloats(-1, 1);
+    std::normal_distribution<float> normalFloats;
     for (int i = 0; i < 1000; i++) {
-        particles.add({
-            signedRandomFloats(random) * 15,
-            0.1,
-            signedRandomFloats(random) * 15
-        });
+        particles.add(
+            {
+                normalFloats(random) * 5,
+                0.1,
+                normalFloats(random) * 5
+            }, glm::normalize(glm::quat(
+                normalFloats(random),
+                normalFloats(random),
+                normalFloats(random),
+                normalFloats(random)
+            ))
+        );
     }
 
     const float lightFloorOffset = 2.0f;
@@ -274,12 +282,14 @@ int main(int argc, const char** argv) {
         {20, {3, 0.5, 7}, HandleType::STOP},
     };
 
-    gBufferShader = Shader("shaders/gBuffer.vert", "shaders/gBuffer.frag");
-    particleShader = Shader("shaders/particle.vert", "shaders/particle.frag");
-    environmentShader = Shader(
+    gBufferShader = Program("shaders/gBuffer.vert", "shaders/gBuffer.frag");
+    environmentShader = Program(
         "shaders/environment.vert", "shaders/environment.geom",
         "shaders/environment.frag"
     );
+
+    particleShader = Program("shaders/particle.vert", "shaders/particle.frag");
+    particleUpdateShader = Program("shaders/particleUpdate.comp");
 
 	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
@@ -520,7 +530,7 @@ int main(int argc, const char** argv) {
     return 0;
 }
 
-GLuint blur(int width, int height, GLuint texture, Shader &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal) {
+GLuint blur(int width, int height, GLuint texture, Program &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal) {
     shader.use();
     shader.setVector2f("size", glm::vec2(width, height));
 

@@ -19,7 +19,7 @@ struct EffectOutput {
 
 class Effect {
 public:
-    Shader shader;
+    Program shader;
     GLuint framebuffer;
 
     Effect(

@@ -33,9 +33,6 @@ void main() {
         vec3 lightDir = pointLights[i].pos - viewPosition;
         float lightDist = length(lightDir);
         lightDir /= lightDist;
-        //emissive +=
-        //    max(0.0f, dot(normalOut.xyz, normalize(lightDir))) *
-        //    pointLights[i].color * attenuation;
 
         emissive += max(
             0.0f,
@@ -44,7 +41,7 @@ void main() {
                     reflect(lightDir, normalOut.xyz),
                     viewDirection
                 ),
-                10
+                100
             )
         )  * pointLights[i].color / lightDist / lightDist * 1000;
     }

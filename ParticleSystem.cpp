@@ -28,23 +28,35 @@ ParticleSystem::ParticleSystem(
     glEnableVertexAttribArray(orientationAttribute);
     glVertexAttribDivisor(orientationAttribute, 1);
 
+    glGenBuffers(1, &physicVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, physicVbo);
+    glBufferData(
+        GL_ARRAY_BUFFER, capacity * (3 + 3) * sizeof(float),
+        nullptr, GL_DYNAMIC_DRAW
+    );
+
     triangleCount = static_cast<GLuint>(mesh.count);
     particleCount = 0;
 }
 
-void ParticleSystem::draw(Shader &shader) {
+void ParticleSystem::draw(Program &) {
     if (particleCount > 0) {
         glBindVertexArray(mesh.vao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, triangleCount, particleCount);
     }
 }
 
-void ParticleSystem::add(glm::vec3 position) {
+void ParticleSystem::add(glm::vec3 position, glm::quat orientation) {
     if (particleCount < capacity) {
+        float values[7] = {
+            position.x, position.y, position.z,
+            orientation.x, orientation.y, orientation.z, orientation.w
+        };
+
         glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
         glBufferSubData(
-            GL_ARRAY_BUFFER, particleCount * (3 + 4) * sizeof(float),
-            3 * sizeof(float), &position
+            GL_ARRAY_BUFFER, particleCount * sizeof(values),
+            sizeof(values), values
         );
         particleCount++;
     }

@@ -133,14 +133,14 @@ Mesh::Mesh(MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor, glm::vec3
     }
 }
 
-void Mesh::draw(Shader &shader) {
+void Mesh::draw(Program &shader) {
     setUniforms(shader);
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, count);
 }
 
-void Mesh::setUniforms(Shader &shader) {
+void Mesh::setUniforms(Program &shader) {
     if (useDiffuseTexture) {
         shader.setInteger("useDiffuseTex", 1);
         shader.setTexture2D(
