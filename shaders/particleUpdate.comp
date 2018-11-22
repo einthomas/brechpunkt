@@ -4,7 +4,7 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(std430) buffer;
 
 struct renderParticle {
-    vec3 position;
+    vec4 position;
     vec4 orientation;
 };
 
@@ -26,8 +26,8 @@ uniform float delta;
 void main(void) {
     uint id = gl_GlobalInvocationID.x;
 
-    vec3 force = vec3(
-        normalize(renderParticles[id].position.xy * vec2(1, -1)), 0
-    );
-    renderParticles[id].position = renderParticles[id].position + force * delta;
+    vec3 force = vec3(0);
+    force.xz =
+        normalize(renderParticles[id].position.xz) * mat2(-0.0, 1, -1, -0.0);
+    renderParticles[id].position.xyz += force * delta;
 }

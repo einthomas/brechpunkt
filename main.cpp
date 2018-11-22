@@ -214,10 +214,10 @@ int main(int argc, const char** argv) {
         glm::vec3(0.0f)
 	));
 
-    ParticleSystem particles(1000, 3, 4);
+    ParticleSystem particles(10000, 3, 4);
 
     std::normal_distribution<float> normalFloats;
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 10000; i++) {
         particles.add(
             {
                 normalFloats(random) * 5,
@@ -289,7 +289,12 @@ int main(int argc, const char** argv) {
     );
 
     particleShader = Program("shaders/particle.vert", "shaders/particle.frag");
+
     particleUpdateShader = Program("shaders/particleUpdate.comp");
+    particleUpdateShader.use();
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles.instanceVbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particles.physicVbo);
+    particleUpdateShader.setFloat("delta", 1.0f / 60.0f); // TODO: set per frame
 
 	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
@@ -401,6 +406,8 @@ int main(int argc, const char** argv) {
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     float hemisphereSamples[192];
     for (int i = 0; i < 64; i++) {
@@ -452,6 +459,9 @@ int main(int argc, const char** argv) {
             viewMatrix = camera.getViewMatrix();
             cameraPosition.reset();
         }
+
+        particleUpdateShader.use();
+        glDispatchCompute(particles.particleCount, 1, 1);
 
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 

@@ -10,20 +10,20 @@ ParticleSystem::ParticleSystem(
     glGenBuffers(1, &instanceVbo);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
     glBufferData(
-        GL_ARRAY_BUFFER, capacity * (3 + 4) * sizeof(float),
+        GL_ARRAY_BUFFER, capacity * (4 + 4) * sizeof(float),
         nullptr, GL_DYNAMIC_DRAW
     );
 
     glVertexAttribPointer(
         positionAttribute, 3, GL_FLOAT, GL_FALSE,
-        (3 + 4) * sizeof(float), reinterpret_cast<void*>(0)
+        (4 + 4) * sizeof(float), reinterpret_cast<void*>(0)
     );
     glEnableVertexAttribArray(positionAttribute);
     glVertexAttribDivisor(positionAttribute, 1);
 
     glVertexAttribPointer(
         orientationAttribute, 4, GL_FLOAT, GL_FALSE,
-        (3 + 4) * sizeof(float), reinterpret_cast<void*>(3 * sizeof(float))
+        (4 + 4) * sizeof(float), reinterpret_cast<void*>(4 * sizeof(float))
     );
     glEnableVertexAttribArray(orientationAttribute);
     glVertexAttribDivisor(orientationAttribute, 1);
@@ -48,8 +48,8 @@ void ParticleSystem::draw(Program &) {
 
 void ParticleSystem::add(glm::vec3 position, glm::quat orientation) {
     if (particleCount < capacity) {
-        float values[7] = {
-            position.x, position.y, position.z,
+        float values[8] = {
+            position.x, position.y, position.z, 0,
             orientation.x, orientation.y, orientation.z, orientation.w
         };
 
