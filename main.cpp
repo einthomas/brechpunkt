@@ -419,7 +419,6 @@ int main(int argc, const char** argv) {
 
     ssdoPass.shader.use();
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
-    glUniform2f(glGetUniformLocation(ssdoPass.shader.program, "size"), DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
     float lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {

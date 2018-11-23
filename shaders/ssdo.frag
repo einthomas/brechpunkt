@@ -14,7 +14,6 @@ uniform sampler2DMS gEmissionTex;
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 hemisphereSamples[64];
-uniform vec2 size;
 
 in vec2 texCoord;
 
@@ -24,8 +23,7 @@ void main() {
     vec3 normal = normalize(texelFetch(gNormalTex, ivec2(gl_FragCoord.xy), 0).xyz);
     vec3 worldPos = texelFetch(gWorldPosTex, ivec2(gl_FragCoord.xy), 0).xyz;
 
-    vec2 noiseStep = size / 4.0f;
-    vec3 noise = texture(noiseTex, texCoord * noiseStep).xyz;
+    vec3 noise = texelFetch(noiseTex, ivec2(mod(gl_FragCoord.xy, 4)), 0).xyz;
     
     vec3 right = normalize(noise - normal * dot(noise, normal));
     vec3 forward = normalize(cross(normal, right));
@@ -40,7 +38,10 @@ void main() {
         samplePosImageSpace.xyz /= samplePosImageSpace.w;
         samplePosImageSpace.xyz = samplePosImageSpace.xyz * 0.5f + 0.5f;
 
-        vec4 sampleProjected = texelFetch(gWorldPosTex, ivec2(samplePosImageSpace.xy * size), 0);
+        vec4 sampleProjected = texelFetch(
+            gWorldPosTex,
+            ivec2(samplePosImageSpace.xy * textureSize(gWorldPosTex)), 0
+        );
         
         float visibility = 1.0f;
         if (samplePosImageSpace.x >= 0.0f && samplePosImageSpace.x <= 1.0f &&
