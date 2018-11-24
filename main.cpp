@@ -46,6 +46,7 @@ static int windowWidth = 0, windowHeight = 0;
 
 static vector<PointLight> pointLights;
 static Camera camera;
+static float focus = 4;
 static Program gBufferShader, particleShader, composeShader, ssdoShader;
 static Program environmentShader;
 static Program particleUpdateShader;
@@ -63,8 +64,8 @@ GLuint generateTexture();
 GLuint generateTexture(int width, int height);
 void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-GLuint blur(int width, int height, GLuint texture, Program &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal);
 
 glm::vec3 getHemisphereSample(glm::vec2 u) {
     // source: "Physically Based Rendering: From Theory to Implementation" [Pharr and Humphreys, 2016]
@@ -161,6 +162,7 @@ int main(int argc, const char** argv) {
         return -1;
     }
     glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetScrollCallback(window, scrollCallback);
     glfwSetKeyCallback(window, keyCallback);
 
     std::default_random_engine random;
@@ -269,17 +271,19 @@ int main(int argc, const char** argv) {
 
     float near = 0.1f;
     float far = 100.0f;
+    float fov = glm::radians(45.0f);
     glm::mat4 projectionMatrix = glm::perspective(
-        glm::radians(45.0f), (float)windowWidth / (float)windowHeight, near, far
+        fov, (float)windowWidth / (float)windowHeight, near, far
     );
 
     Animation<glm::vec3> cameraPosition{
-        {0, {0, 0.5, 4}, HandleType::STOP},
-        {4, {3, 0.5, 4}},
-        {10, {3, 0.5, 7}, HandleType::SMOOTH_IN},
-        {10, {0, 0.5, 4}, HandleType::SMOOTH_OUT},
-        {14, {3, 0.5, 4}},
-        {20, {3, 0.5, 7}, HandleType::STOP},
+        {0, {7.5, 3.5, -21}, HandleType::STOP},
+        {10, {7.5, 3.5, -21}, HandleType::STOP},
+    };
+
+    Animation<glm::vec3> cameraFocus{
+        {0, {4.5, 2.5, -21}, HandleType::STOP},
+        {10, {-6.5, 2.5, -18}, HandleType::STOP},
     };
 
     gBufferShader = Program("shaders/gBuffer.vert", "shaders/gBuffer.frag");
@@ -428,12 +432,14 @@ int main(int argc, const char** argv) {
 
         glm::mat4 viewMatrix;
         if (useAnimatedCamera) {
-            cameraPosition.update(1.0f / 60); // TODO: get delta from music playback
+            cameraPosition.update(deltaTime);
+            cameraFocus.update(deltaTime);
             viewMatrix = glm::lookAt(
                 cameraPosition.get(),
-                cameraPosition.get() + glm::vec3(0.0f, 0.0f, 1.0f),
+                cameraFocus.get(),
                 glm::vec3(0.0f, 1.0f, 0.0f)
             );
+            focus = glm::length(cameraPosition.get() - cameraFocus.get());
         } else {
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
                 camera.pos += camera.front * CAMERA_SPEED * deltaTime;
@@ -521,8 +527,23 @@ int main(int argc, const char** argv) {
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
 
+        const float aperture = 0.1f;
+        const float focalLength = 0.2f;
+        const int step = 2;
+        int dofRadius = min(32, static_cast<int>(
+            aperture * focalLength / (focus - focalLength) *
+            windowWidth / std::tan(fov * 0.5f) / step
+        ));
+        dofCocPass.shader.use();
+        dofCocPass.shader.setFloat("focus", focus);
         dofCocPass.render();
+        dofCoarsePass.shader.use();
+        dofCoarsePass.shader.setInteger("radius", dofRadius);
         dofCoarsePass.render();
+        dofFinePass.shader.use();
+        dofFinePass.shader.setInteger(
+            "radius", static_cast<int>(dofRadius * std::sqrt(3.0f) * 0.5f)
+        );
         dofFinePass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -539,37 +560,13 @@ int main(int argc, const char** argv) {
     return 0;
 }
 
-GLuint blur(int width, int height, GLuint texture, Program &shader, int kernelSize, GLuint screenQuadVAO, GLuint gNormal) {
-    shader.use();
-    shader.setVector2f("size", glm::vec2(width, height));
-
-    // blur horizontally
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFBO1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, width, height);
-    shader.setVector2f("dir", glm::vec2(1, 0));
-    shader.setTexture2D("tex", GL_TEXTURE0, texture, 0);
-    shader.setTexture2D("normalTex", GL_TEXTURE1, gNormal, 1);
-    shader.setInteger("kernelSize", kernelSize);
-    drawScreenQuad(screenQuadVAO);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // blur vertically
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFBO0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, width, height);
-    shader.setVector2f("dir", glm::vec2(0, 1));
-    shader.setTexture2D("tex", GL_TEXTURE0, blurBuffer1, 0);
-    shader.setTexture2D("normalTex", GL_TEXTURE1, gNormal, 1);
-    shader.setInteger("kernelSize", kernelSize);
-    drawScreenQuad(screenQuadVAO);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    return blurBuffer0;
+void mouseCallback(GLFWwindow*, double xPos, double yPos) {
+    camera.processMouseMovement(xPos, yPos);
 }
 
-void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
-    camera.processMouseMovement(xPos, yPos);
+void scrollCallback(GLFWwindow*, double, double yoffset) {
+    focus += static_cast<float>(yoffset) * 1.0f;
+    focus = std::min(std::max(focus, 0.5f), 50.0f);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {

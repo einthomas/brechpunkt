@@ -1,11 +1,9 @@
 #version 330 core
 
 uniform sampler2DMS depthTex;
+uniform float focus;
 
 out float coc;
-
-const float aperture = 1;
-const float focus = 8;
 
 float depth(float x) {
 	// stackoverflow.com/questions/6652253
@@ -19,7 +17,7 @@ float depth(float x) {
 }
 
 float signedCoc(float depth) {
-    return aperture * (depth - focus) / depth;
+    return (depth - focus) / depth;
 }
 
 void main() {

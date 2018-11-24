@@ -2,10 +2,10 @@
 
 uniform sampler2D colorTex;
 uniform sampler2D cocTex;
+uniform int radius; // = aperture * focalLength / (focus - focalLength) / step
 
 out vec4 coarse;
 
-const int radius = 31;
 const int step = 2;
 const float exaggeration = 1;
 
@@ -18,16 +18,11 @@ void main() {
 
     float centerCoc = texelFetch(cocTex, center, 0).r;
 
-    float centerWeight = 1 / (abs(centerCoc) + 0.01);
+    coarse = vec4(0);
+    float count = 0;
 
-    coarse = vec4(
-        pow(texelFetch(colorTex, center, 0).rgb, vec3(exaggeration)),
-        centerCoc
-    ) * centerWeight;
-    float count = centerWeight;
-
-    for (int x = -radius; x <= radius; x += step) {
-        ivec2 offset = ivec2(x, 0);
+    for (int i = -radius; i <= radius; i++) {
+        ivec2 offset = ivec2(i * step, 0);
         vec3 current = pow(texelFetch(
             colorTex, center + offset, 0
         ).rgb, vec3(exaggeration));
@@ -35,12 +30,12 @@ void main() {
         float blurriness = abs(min(coc, centerCoc));
         float weight = 1 / (blurriness + 0.01);
 
-        float pixelCoc = radius * blurriness + 1;
+        float stepCoc = radius * blurriness + 1;
 
         // anti-aliasing
-        weight *= linearStep(pixelCoc, pixelCoc - 1, abs(x));
+        weight *= linearStep(stepCoc, stepCoc - 1, abs(i));
 
-        bool mask = abs(x) <= pixelCoc;
+        bool mask = abs(i) <= stepCoc;
 
         coarse += mix(
             vec4(0),

@@ -2,11 +2,10 @@
 
 uniform sampler2D coarseTex;
 uniform sampler2DMS depthTex;
+uniform int radius;
 
 out vec3 color;
 
-const int radius = 26; // 31 * sqrt(3) / 2
-const int fineRadius = 2;
 const int step = 2;
 const float exaggeration = 1;
 
@@ -18,7 +17,7 @@ ivec2 center;
 vec4 coarse;
 float centerCoc;
 
-vec4 getSample(ivec2 offset, float x) {
+vec4 getSample(ivec2 offset, float i) {
     vec4 current = texelFetch(
         coarseTex, center + offset, 0
     );
@@ -26,15 +25,15 @@ vec4 getSample(ivec2 offset, float x) {
     float blurriness = abs(min(coc, centerCoc));
     float weight = 1 / (blurriness + 0.01);
 
-    float pixelCoc = radius * blurriness + 1;
+    float stepCoc = radius * blurriness + 1;
 
     // anti-aliasing
-    weight *= linearStep(pixelCoc, pixelCoc - 1, abs(x));
+    weight *= linearStep(stepCoc, stepCoc - 1, abs(i));
 
     return mix(
         vec4(0),
         vec4(current.rgb * weight, weight),
-        bvec4(abs(x) <= pixelCoc)
+        bvec4(abs(i) <= stepCoc)
     );
 }
 
@@ -47,9 +46,9 @@ void main() {
     vec4 colorA = vec4(0);
     vec4 colorB = vec4(0);
 
-    for (int x = -radius; x <= radius; x += step) {
-        colorA += getSample(ivec2(x * 0.5, x), x);
-        colorB += getSample(ivec2(x * -0.5, x), x);
+    for (int i = -radius; i <= radius; i++) {
+        colorA += getSample(ivec2(i * step / 2, i * step), i);
+        colorB += getSample(ivec2(-i * step / 2, i * step), i);
     }
 
     color = pow(
