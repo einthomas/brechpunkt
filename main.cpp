@@ -43,6 +43,7 @@ const int DEFAULT_HEIGHT = 720;
 const float CAMERA_SPEED = 10.0f;
 
 static int windowWidth = 0, windowHeight = 0;
+static float frameRate;
 
 static vector<PointLight> pointLights;
 static Camera camera;
@@ -52,10 +53,7 @@ static Program environmentShader;
 static Program particleUpdateShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
-static float deltaTime;
 static bool useAnimatedCamera = true;
-static GLuint blurFBO0, blurFBO1;
-static GLuint blurBuffer0, blurBuffer1;
 
 GLFWwindow *initGLFW();
 bool initGLEW();
@@ -440,10 +438,20 @@ int main(int argc, const char** argv) {
     glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
 
     float lastTime = glfwGetTime();
+    float lastFrameTime = lastTime;
+    float frameTime = lastTime;
+
     while (!glfwWindowShouldClose(window)) {
         float currentTime = glfwGetTime();
-        deltaTime = currentTime - lastTime;
+        float rawDeltaTime = currentTime - lastTime;
         lastTime = currentTime;
+
+        // smooth out deltas
+        float alignedDelta = std::round(rawDeltaTime * frameRate) / frameRate;
+        frameTime += alignedDelta;
+        frameTime = glm::mix(frameTime, currentTime, 0.05f);
+        float deltaTime = frameTime - lastFrameTime;
+        lastFrameTime = frameTime;
 
         glm::mat4 viewMatrix;
         if (useAnimatedCamera) {
@@ -482,6 +490,7 @@ int main(int argc, const char** argv) {
         }
 
         particleUpdateShader.use();
+        particleUpdateShader.setFloat("delta", deltaTime);
         glDispatchCompute(particles.particleCount, 1, 1);
 
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
@@ -543,7 +552,7 @@ int main(int argc, const char** argv) {
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
 
-        const float aperture = 0.1f;
+        const float aperture = 0.05f;
         const float focalLength = 0.2f;
         float infinityRadius =
             aperture * focalLength / (focus - focalLength) *
@@ -625,6 +634,7 @@ GLFWwindow *initGLFW() {
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
     windowWidth = mode->width;
     windowHeight = mode->height;
+    frameRate = mode->refreshRate;
     GLFWwindow *window;
 
     if (debug_flag) {
