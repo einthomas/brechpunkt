@@ -2,10 +2,11 @@
 
 uniform sampler2D coarseTex;
 uniform sampler2DMS depthTex;
-uniform int radius;
+
 
 out vec3 color;
 
+const int radius = 14;
 const int step = 2;
 const float exaggeration = 1;
 

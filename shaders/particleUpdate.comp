@@ -29,5 +29,5 @@ void main(void) {
     vec3 force = vec3(0);
     force.xz =
         normalize(renderParticles[id].position.xz) * mat2(-0.0, 1, -1, -0.0);
-    renderParticles[id].position.xyz += force * delta;
+    renderParticles[id].position.xyz += force * delta * 0.25;
 }

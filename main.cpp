@@ -53,7 +53,7 @@ static Program particleUpdateShader;
 static vector<Mesh> meshes;
 static Mesh lightMesh;
 static float deltaTime;
-static bool useAnimatedCamera = false;
+static bool useAnimatedCamera = true;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;
 
@@ -169,7 +169,7 @@ int main(int argc, const char** argv) {
 
     GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
     GLuint gBuffer = generateFramebufferMultisample(
-        windowWidth, windowHeight, 4, {
+        windowWidth, windowHeight, 1, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB16F},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB16F},
@@ -269,7 +269,7 @@ int main(int argc, const char** argv) {
         glm::vec3(0.0f)
     ));
 
-    float near = 0.1f;
+    float near = 0.5f;
     float far = 100.0f;
     float fov = glm::radians(45.0f);
     glm::mat4 projectionMatrix = glm::perspective(
@@ -277,13 +277,28 @@ int main(int argc, const char** argv) {
     );
 
     Animation<glm::vec3> cameraPosition{
-        {0, {7.5, 3.5, -21}, HandleType::STOP},
-        {10, {7.5, 3.5, -21}, HandleType::STOP},
+        {0, {0, 60.0, -2.4}, HandleType::STOP},
+        {18, {-3.7, 0.8, -3.4}, HandleType::STOP},
+        {20, {-3.7, 0.8, -3.4}, HandleType::STOP},
+
+        {10, {8.5, 1.5, -10.0}, HandleType::SMOOTH_OUT},
+        {30, {8.5, 1.5, 0.0}, HandleType::SMOOTH_IN},
+
+        {30, {4.9, 2.8, -1.1}, HandleType::STOP},
+        {40, {4.9, 2.8, -1.1}, HandleType::STOP},
     };
 
     Animation<glm::vec3> cameraFocus{
-        {0, {4.5, 2.5, -21}, HandleType::STOP},
-        {10, {-6.5, 2.5, -18}, HandleType::STOP},
+        {0, {0, 2, 0}, HandleType::STOP},
+        {20, {-0.8, 2, -1}, HandleType::STOP},
+
+        {10, {4, 0.0, -8.0}, HandleType::SMOOTH_OUT},
+        {30, {4, 0.0, -2.0}, HandleType::SMOOTH_IN},
+
+        {30, {-19, 2.8, -1.1}, HandleType::STOP},
+        {34, {-19, 2.8, -1.1}, HandleType::STOP},
+        {36, {0.8, 2.8, -1.1}, HandleType::STOP},
+        {40, {0.8, 2.8, -1.1}, HandleType::STOP},
     };
 
     gBufferShader = Program("shaders/gBuffer.vert", "shaders/gBuffer.frag");
@@ -435,11 +450,12 @@ int main(int argc, const char** argv) {
             cameraPosition.update(deltaTime);
             cameraFocus.update(deltaTime);
             viewMatrix = glm::lookAt(
-                cameraPosition.get(),
+                glm::mix(cameraPosition.get(), cameraFocus.get(), -0.02),
                 cameraFocus.get(),
                 glm::vec3(0.0f, 1.0f, 0.0f)
             );
-            focus = glm::length(cameraPosition.get() - cameraFocus.get());
+            focus =
+                glm::length(cameraPosition.get() - cameraFocus.get()) * 1.02f;
         } else {
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
                 camera.pos += camera.front * CAMERA_SPEED * deltaTime;
@@ -529,21 +545,15 @@ int main(int argc, const char** argv) {
 
         const float aperture = 0.1f;
         const float focalLength = 0.2f;
-        const int step = 2;
-        int dofRadius = min(32, static_cast<int>(
+        float infinityRadius =
             aperture * focalLength / (focus - focalLength) *
-            windowWidth / std::tan(fov * 0.5f) / step
-        ));
+            windowWidth / std::tan(fov * 0.5f) / 16;
+
         dofCocPass.shader.use();
         dofCocPass.shader.setFloat("focus", focus);
+        dofCocPass.shader.setFloat("infinityRadius", infinityRadius);
         dofCocPass.render();
-        dofCoarsePass.shader.use();
-        dofCoarsePass.shader.setInteger("radius", dofRadius);
         dofCoarsePass.render();
-        dofFinePass.shader.use();
-        dofFinePass.shader.setInteger(
-            "radius", static_cast<int>(dofRadius * std::sqrt(3.0f) * 0.5f)
-        );
         dofFinePass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

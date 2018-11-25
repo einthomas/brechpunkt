@@ -2,10 +2,10 @@
 
 uniform sampler2D colorTex;
 uniform sampler2D cocTex;
-uniform int radius; // = aperture * focalLength / (focus - focalLength) / step
 
 out vec4 coarse;
 
+const int radius = 16;
 const int step = 2;
 const float exaggeration = 1;
 
