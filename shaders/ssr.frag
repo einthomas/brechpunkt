@@ -6,6 +6,9 @@ uniform sampler2DMS gWorldPosTex;
 uniform sampler2DMS gReflectionTex;
 uniform samplerCube environmentColor;
 uniform sampler2DMS depthTex;
+uniform sampler2DMS gRefractionTex;
+uniform sampler2D backfaceRefractionTex;
+uniform sampler2D backfacePosTex;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -25,15 +28,34 @@ vec3 worldToScreenSpace(vec3 worldPos) {
 const float MARCH_STEP_SIZE = 1.0f;
 
 void main() {
-    vec3 reflectionFactor = texelFetch(
+    float reflectionFactor = texelFetch(
         gReflectionTex, ivec2(gl_FragCoord.xy), 0
-    ).xyz;
+    ).x;
+    float refractionFactor = texelFetch(
+        gRefractionTex, ivec2(gl_FragCoord.xy), 0
+    ).x;
 
-    vec3 worldPos = texelFetch(gWorldPosTex, ivec2(gl_FragCoord.xy), 0).xyz;
+    if (reflectionFactor == 0.0f && refractionFactor == 0.0f) {
+        color = vec4(texture(gColorTex, texCoord).xyz, 1.0f);
+        return;
+    }
+
+    if (refractionFactor > 0.0f) {
+        reflectionFactor = 1.0f;
+    }
+
     vec3 normal = normalize(
         texelFetch(gNormalTex, ivec2(gl_FragCoord.xy), 0).xyz
     );
-    vec3 reflectionDir = normalize(reflect(normalize(worldPos), normal));
+    vec3 worldPos;
+    vec3 reflectionDir;
+    if (refractionFactor > 0.0f) {
+        worldPos = texture(backfacePosTex, texCoord).xyz;
+        reflectionDir = texture(backfaceRefractionTex, texCoord).xyz;
+    } else {
+        worldPos = texelFetch(gWorldPosTex, ivec2(gl_FragCoord.xy), 0).xyz;
+        reflectionDir = normalize(reflect(worldPos, normal));
+    }
 
     vec3 hitColor = vec3(0.0f);
     vec3 marchStep = reflectionDir * MARCH_STEP_SIZE;
@@ -42,19 +64,19 @@ void main() {
         samplePos += marchStep;
         vec3 screenSpacePos = worldToScreenSpace(samplePos);
 
-        float depth = texelFetch(
+        vec3 fetchedWorldPos = texelFetch(
             gWorldPosTex, ivec2(screenSpacePos.xy * size), 0
-        ).z;
-        if (samplePos.z < depth) {
+        ).xyz;
+        if (samplePos.z < fetchedWorldPos.z) {
             // binary search
             for (int k = 0; k < 6; k++) {
                 marchStep *= 0.5f;
                 screenSpacePos = worldToScreenSpace(samplePos);
 
-                depth = texelFetch(
+                fetchedWorldPos = texelFetch(
                     gWorldPosTex, ivec2(screenSpacePos.xy * size), 0
-                ).z;
-                if (samplePos.z < depth) {
+                ).xyz;
+                if (samplePos.z < fetchedWorldPos.z) {
                     samplePos += marchStep;
                 } else {
                     samplePos -= marchStep;
@@ -66,11 +88,14 @@ void main() {
             {
                 hitColor = texture(gColorTex, screenSpacePos.xy).xyz;
             } else {
-                hitColor = texture(environmentColor, worldPos + reflectionDir).xyz;
+                hitColor = texture(
+                    environmentColor,
+                    worldPos + reflectionDir
+                ).xyz;
             }
             break;
         }
     }
 
-    color = vec4(hitColor * reflectionFactor, 1.0f);
+    color = vec4(mix(texture(gColorTex, texCoord).xyz, hitColor, reflectionFactor), 1.0f);
 }

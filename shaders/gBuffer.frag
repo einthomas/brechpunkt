@@ -19,17 +19,14 @@ uniform PointLight pointLights[NUM_LIGHTS];
 uniform sampler2D diffuseTex;
 uniform sampler2D reflectionTex;
 uniform sampler2D normalTex;
-uniform sampler2D noiseTex;
 uniform bool useDiffuseTex;
 uniform bool useNormalTex;
 uniform bool useReflectionTex;
 uniform vec3 diffuseColor;
 uniform vec3 emissionColor;
-uniform vec2 size;
 
 uniform mat4 view;
 uniform mat4 model;
-//uniform vec3 color;
 
 in vec3 worldPos;
 in vec3 normal;
@@ -74,4 +71,6 @@ void main() {
     } else {
         reflectionOut = vec4(0.0f);
     }
+
+    colorOut = vec4(1.0f);
 }

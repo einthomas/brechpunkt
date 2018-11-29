@@ -5,12 +5,14 @@
 const int NUM_SAMPLES = 16;
 const float RADIUS = 0.5f;
 
-uniform sampler2D gColorTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gWorldPosTex;
 uniform sampler2D noiseTex;
 uniform samplerCube environmentColor;
+
+uniform sampler2D gColorTex;
+uniform sampler2DMS gWorldPosTex;
+uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gEmissionTex;
+
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 hemisphereSamples[64];
@@ -44,8 +46,7 @@ void main() {
         
         float visibility = 1.0f;
         if (samplePosImageSpace.x >= 0.0f && samplePosImageSpace.x <= 1.0f &&
-            samplePosImageSpace.y >= 0.0f && samplePosImageSpace.y <= 1.0f &&
-            sampleProjected.w > 0.0f)
+            samplePosImageSpace.y >= 0.0f && samplePosImageSpace.y <= 1.0f)
         {
             visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
         }

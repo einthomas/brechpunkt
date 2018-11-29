@@ -21,8 +21,7 @@ struct MeshInfo {
 
 class Mesh {
 public:
-	glm::vec3 diffuseColor;
-    glm::vec3 emissionColor;
+	glm::vec3 diffuseColor, emissionColor;
     bool useDiffuseTexture, useReflectionTexture, useNormalTexture;
     GLuint diffuseTexture, reflectionTexture, normalTexture;
     glm::mat4 model;
@@ -30,6 +29,10 @@ public:
     GLsizei count;
     
     Mesh();
-    Mesh(MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor, glm::vec3 emissionColor);
+    Mesh(
+        MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor,
+        glm::vec3 emissionColor
+    );
     void draw(Shader &shader);
+    void drawRefractive(Shader &shader);
 };

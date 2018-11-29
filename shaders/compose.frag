@@ -15,5 +15,7 @@ void main() {
 
     color = vec4(pow(inColor, vec3(1.0f / 2.2f)), 1.0f);
 
-    color = vec4(pow(texture(bloomTex, texCoord).rgb, vec3(1.0f / 2.2f)), 1.0f);
+    color = vec4(texture(dofTex, texCoord).xyz, 1.0f);
+
+    //color = vec4(pow(texture(bloomTex, texCoord).rgb, vec3(1.0f / 2.2f)), 1.0f);
 }
