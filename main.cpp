@@ -16,6 +16,7 @@
 #include "Framebuffer.h"
 #include "Effect.h"
 #include "ParticleSystem.h"
+#include "Scene.h"
 
 using namespace std;
 
@@ -51,8 +52,6 @@ static float focus = 4;
 static Program gBufferShader, particleShader, composeShader, ssdoShader;
 static Program environmentShader;
 static Program particleUpdateShader;
-static vector<Mesh> meshes;
-static Mesh lightMesh;
 static bool useAnimatedCamera = true;
 
 GLFWwindow *initGLFW();
@@ -196,23 +195,30 @@ int main(int argc, const char** argv) {
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
+    Scene environmentScene, mainScene;
+
     MeshInfo musicCubeMeshInfo("scenes/scene3/", "MusicCube.obj");
     MeshInfo floorMeshInfo("scenes/scene3/", "Floor.obj");
     MeshInfo centerCubeMeshInfo("scenes/scene3/", "CenterCube.obj");
     MeshInfo lightRimInfo("scenes/scene3/", "LightRim.obj");
 
-    Mesh lightRimMesh = Mesh(
+    Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
             glm::mat4(1.0f), glm::vec3(0, 0, 0)
         ), {}, {2, 2, 2}
     );
 
-    meshes.push_back(Mesh(
+    mainScene.objects.insert(&lightRimObject);
+    environmentScene.objects.insert(&lightRimObject);
+
+    Mesh floorObject = Mesh(
         floorMeshInfo,
         glm::mat4(1.0f),
         glm::vec3(1.0f, 1.0f, 1.0f),
         glm::vec3(0.0f)
-	));
+    );
+
+    mainScene.objects.insert(&floorObject);
 
     ParticleSystem particles(10000, 3, 4);
 
@@ -232,6 +238,8 @@ int main(int argc, const char** argv) {
         );
     }
 
+    Mesh musicCubes[36];
+
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
         auto pos = glm::vec3(0.0f, 0.0f, -20.0f);
@@ -243,12 +251,14 @@ int main(int argc, const char** argv) {
 
         auto color = glm::rgbColor(glm::vec3((360.0f / 36.0f) * i, 0.9f, 1.0f));
 
-        meshes.push_back(Mesh(
+        musicCubes[i] = Mesh(
             musicCubeMeshInfo,
             model,
             glm::vec3(0.0f),
     	    color
-        ));
+        );
+
+        mainScene.objects.insert(&musicCubes[i]);
 
         pointLights.push_back(PointLight(
             model * glm::vec4(0.0f, lightFloorOffset, 0.0f, 1.0f),
@@ -259,13 +269,16 @@ int main(int argc, const char** argv) {
         ));
     }
 
-    auto centerCubeModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-    meshes.push_back(Mesh(
+    auto centerCubeModel =
+        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
+    Mesh centerCubeObject(
         centerCubeMeshInfo,
         centerCubeModel,
         glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
         glm::vec3(0.0f)
-    ));
+    );
+
+    mainScene.objects.insert(&centerCubeObject);
 
     float near = 0.5f;
     float far = 100.0f;
@@ -499,9 +512,8 @@ int main(int argc, const char** argv) {
         glViewport(0, 0, 256, 256);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
-        environmentShader.setMatrix4("model", glm::mat4(1.0f));
         environmentShader.setMatrix4("view", viewMatrix);
-        lightRimMesh.draw(environmentShader);
+        environmentScene.draw(environmentShader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
         glViewport(0, 0, windowWidth, windowHeight);
@@ -515,10 +527,7 @@ int main(int argc, const char** argv) {
             gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
         }
 
-        for (int i = 0; i < meshes.size(); i++) {
-            meshes[i].draw(gBufferShader);
-        }
-        lightRimMesh.draw(gBufferShader);
+        mainScene.draw(gBufferShader);
 
         particleShader.use();
         particleShader.setMatrix4("view", viewMatrix);
