@@ -5,7 +5,7 @@
 const int NUM_SAMPLES = 16;
 const float RADIUS = 0.5f;
 
-uniform sampler2D gColorTex;
+uniform sampler2DMS gColorTex;
 uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gWorldPosTex;
 uniform sampler2D noiseTex;
@@ -60,6 +60,6 @@ void main() {
     }
 
     vec3 emissionColor = texelFetch(gEmissionTex, ivec2(gl_FragCoord.xy), 0).xyz;
-    vec3 diffuseColor = texture(gColorTex, texCoord).xyz;
+    vec3 diffuseColor = texelFetch(gColorTex, ivec2(gl_FragCoord.xy), 0).xyz;
     color = vec4((c / NUM_SAMPLES) * diffuseColor + emissionColor, 1.0f);
 }

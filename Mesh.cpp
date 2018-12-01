@@ -143,8 +143,9 @@ void Mesh::draw(Program &shader) {
 void Mesh::setUniforms(Program &shader) {
     if (useDiffuseTexture) {
         shader.setInteger("useDiffuseTex", 1);
-        shader.setTexture2D(
-            "diffuseTex", GL_TEXTURE0, diffuseTexture, 0
+        shader.setTexture(
+            "diffuseTex", GL_TEXTURE_2D, GL_TEXTURE0,
+            diffuseTexture, 0
         );
     } else {
         shader.setInteger("useDiffuseTex", 0);
@@ -153,14 +154,16 @@ void Mesh::setUniforms(Program &shader) {
         );
     }
     if (useReflectionTexture) {
-        shader.setTexture2D(
-            "reflectionTex", GL_TEXTURE1, reflectionTexture, 1
+        shader.setTexture(
+            "reflectionTex", GL_TEXTURE_2D, GL_TEXTURE1,
+            reflectionTexture, 1
         );
     }
     if (useNormalTexture) {
         shader.setInteger("useNormalTex", 1);
-        shader.setTexture2D(
-            "normalTex", GL_TEXTURE2, normalTexture, 2
+        shader.setTexture(
+            "normalTex", GL_TEXTURE_2D, GL_TEXTURE2,
+            normalTexture, 2
         );
     } else {
         shader.setInteger("useNormalTex", 0);

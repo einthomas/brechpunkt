@@ -30,7 +30,7 @@ public:
 	void setVector3f(std::string name, GLfloat x, GLfloat y, GLfloat z);
 	void setVector3f(std::string name, glm::vec3 value);
 	void setMatrix4(std::string name, const glm::mat4 &value) const;
-	void setTexture2D(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
+	void setTexture(std::string name, GLenum target, GLenum activeTexture, GLuint texture, GLuint loc);
 	void setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
 
 private:

@@ -156,14 +156,11 @@ void Program::setMatrix4(std::string name, const glm::mat4 &value) const {
 	glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void Program::setTexture2D(std::string name, GLenum activeTexture, GLuint texture, GLuint loc) {
+void Program::setTexture(
+    std::string name, GLenum target, GLenum activeTexture,
+    GLuint texture, GLuint loc
+) {
 	glActiveTexture(activeTexture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glUniform1i(glGetUniformLocation(program, name.c_str()), loc);
-}
-
-void Program::setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc) {
-	glActiveTexture(activeTexture);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+    glBindTexture(target, texture);
 	glUniform1i(glGetUniformLocation(program, name.c_str()), loc);
 }

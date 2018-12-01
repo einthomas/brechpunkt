@@ -176,10 +176,11 @@ int main(int argc, const char** argv) {
         }, {
         }
     );
-    GLuint gColorFiltered;
+
+    GLuint filteredBuffer;
     GLuint filterFramebuffer = generateFramebuffer(
         windowWidth, windowHeight, {
-            {GL_COLOR_ATTACHMENT0, gColorFiltered, GL_RGB16F}
+            {GL_COLOR_ATTACHMENT0, filteredBuffer, GL_RGB16F}
         }, {}
     );
 
@@ -190,6 +191,15 @@ int main(int argc, const char** argv) {
             {GL_COLOR_ATTACHMENT0, environmentColor, GL_RGB16F},
             {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
         }, {
+        }
+    );
+
+    GLuint multisampleColor, multisampleDepth;
+    GLuint multisampleBuffer = generateFramebufferMultisample(
+        windowWidth, windowHeight, 8, {
+            {GL_COLOR_ATTACHMENT0, multisampleColor, GL_RGB16F},
+        }, {
+            {GL_DEPTH_ATTACHMENT, multisampleDepth, GL_DEPTH_COMPONENT16},
         }
     );
 
@@ -324,7 +334,6 @@ int main(int argc, const char** argv) {
     particleUpdateShader.use();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles.instanceVbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particles.physicVbo);
-    particleUpdateShader.setFloat("delta", 1.0f / 60.0f); // TODO: set per frame
 
 	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
@@ -348,7 +357,7 @@ int main(int argc, const char** argv) {
         {
             {"noiseTex", GL_TEXTURE_2D, noiseTexture},
             {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
-            {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
+            {"gColorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
             {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
             {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
@@ -374,10 +383,24 @@ int main(int argc, const char** argv) {
         { {"color", ssdoTexture, GL_RGB16F} }
     );
 
+    Program antiAliasingProgram(
+        "shaders/antiAlias.vert", "shaders/antiAlias.frag"
+    );
+    antiAliasingProgram.use();
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "colorTex"), 0
+    );
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "gDepthTex"), 1
+    );
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "gNormalTex"), 2
+    );
+
     GLuint bloomHorizontalTexture, bloomTexture;
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", windowWidth / 2, windowHeight / 2,
-        { {"colorTex", GL_TEXTURE_2D, ssdoTexture} },
+        { {"colorTex", GL_TEXTURE_2D_MULTISAMPLE, multisampleColor} },
         { {"color", bloomHorizontalTexture, GL_RGB16F} }
     );
     auto bloomVerticalPass = Effect(
@@ -412,7 +435,7 @@ int main(int argc, const char** argv) {
 
     auto composePass = Effect(
         "shaders/compose.frag", windowWidth, windowHeight, {
-            {"dofTex", GL_TEXTURE_2D, dofTexture},
+            {"dofTex", GL_TEXTURE_2D, filteredBuffer},
             {"bloomTex", GL_TEXTURE_2D, bloomTexture},
         },
         0
@@ -509,6 +532,7 @@ int main(int argc, const char** argv) {
         glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
+        //glDepthFunc(GL_LESS);
         glViewport(0, 0, 256, 256);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
@@ -538,16 +562,6 @@ int main(int argc, const char** argv) {
         }
         particles.draw(particleShader);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glBlitFramebuffer(
-            0, 0, windowWidth, windowHeight,
-            0, 0, windowWidth, windowHeight,
-            GL_COLOR_BUFFER_BIT, GL_NEAREST
-        );
-
         glBindVertexArray(screenQuadVAO);
 
         ssdoPass.shader.use();
@@ -557,9 +571,6 @@ int main(int argc, const char** argv) {
 
         blurSSDOHorizontal.render();
         blurSSDOVertical.render();
-
-        bloomHorizontalPass.render();
-        bloomVerticalPass.render();
 
         const float aperture = 0.05f;
         const float focalLength = 0.2f;
@@ -573,6 +584,36 @@ int main(int argc, const char** argv) {
         dofCocPass.render();
         dofCoarsePass.render();
         dofFinePass.render();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, multisampleBuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glDepthFunc(GL_EQUAL);
+        antiAliasingProgram.use();
+        antiAliasingProgram.setMatrix4("view", viewMatrix);
+        antiAliasingProgram.setMatrix4("projection", projectionMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, dofTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gDepth);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gNormal);
+        mainScene.draw(antiAliasingProgram);
+        //particles.draw(antiAliasingProgram);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleBuffer);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(
+            0, 0, windowWidth, windowHeight,
+            0, 0, windowWidth, windowHeight,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+
+        glBindVertexArray(screenQuadVAO);
+
+        bloomHorizontalPass.render();
+        bloomVerticalPass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer

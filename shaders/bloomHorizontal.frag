@@ -1,6 +1,6 @@
 #version 330 core
 
-uniform sampler2D colorTex;
+uniform sampler2DMS colorTex;
 
 out vec4 color;
 
