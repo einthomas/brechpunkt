@@ -5,6 +5,7 @@ layout(location = 1) out vec4 positionOut;
 layout(location = 2) out vec4 normalOut;
 layout(location = 3) out vec4 reflectionOut;
 layout(location = 4) out vec3 emissionOut;
+layout(location = 5) out float primitiveIDOut;
 
 struct PointLight {
     vec3 pos;
@@ -66,4 +67,6 @@ void main() {
     positionOut = vec4(worldPos, 1.0f);
     
 	reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+
+    primitiveIDOut = mod(gl_PrimitiveID, 256) / 255.0f;
 }

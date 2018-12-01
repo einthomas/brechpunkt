@@ -5,12 +5,12 @@
 const int NUM_SAMPLES = 16;
 const float RADIUS = 0.5f;
 
-uniform sampler2DMS gColorTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gWorldPosTex;
+uniform sampler2D gColorTex;
+uniform sampler2D gNormalTex;
+uniform sampler2D gWorldPosTex;
+uniform sampler2D gEmissionTex;
 uniform sampler2D noiseTex;
 uniform samplerCube environmentColor;
-uniform sampler2DMS gEmissionTex;
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 hemisphereSamples[64];
@@ -40,7 +40,7 @@ void main() {
 
         vec4 sampleProjected = texelFetch(
             gWorldPosTex,
-            ivec2(samplePosImageSpace.xy * textureSize(gWorldPosTex)), 0
+            ivec2(samplePosImageSpace.xy * textureSize(gWorldPosTex, 0)), 0
         );
         
         float visibility = 1.0f;

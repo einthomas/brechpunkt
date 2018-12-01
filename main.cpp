@@ -164,14 +164,15 @@ int main(int argc, const char** argv) {
 
     std::default_random_engine random;
 
-    GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
-    GLuint gBuffer = generateFramebufferMultisample(
-        windowWidth, windowHeight, 1, {
+    GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gPrimitiveID, gDepth;
+    GLuint gBuffer = generateFramebuffer(
+        windowWidth, windowHeight, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB16F},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB16F},
             {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB16F},
             {GL_COLOR_ATTACHMENT4, gEmission, GL_RGB16F},
+            {GL_COLOR_ATTACHMENT5, gPrimitiveID, GL_R8},
             {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT16},
         }, {
         }
@@ -357,10 +358,10 @@ int main(int argc, const char** argv) {
         {
             {"noiseTex", GL_TEXTURE_2D, noiseTexture},
             {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
-            {"gColorTex", GL_TEXTURE_2D_MULTISAMPLE, gColor},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-            {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
-            {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
+            {"gColorTex", GL_TEXTURE_2D, gColor},
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
+            {"gWorldPosTex", GL_TEXTURE_2D, gWorldPos},
+            {"gEmissionTex", GL_TEXTURE_2D, gEmission}
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
     );
@@ -370,7 +371,7 @@ int main(int argc, const char** argv) {
         "shaders/blurSSDOHorizontal.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoUnblurredTexture},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal}
+            {"gNormalTex", GL_TEXTURE_2D, gNormal}
         },
         { {"color", ssdoBlurHorizontalTexture, GL_RGB16F} }
     );
@@ -378,7 +379,7 @@ int main(int argc, const char** argv) {
         "shaders/blurSSDOVertical.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoBlurHorizontalTexture},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal}
+            {"gNormalTex", GL_TEXTURE_2D, gNormal}
         },
         { {"color", ssdoTexture, GL_RGB16F} }
     );
@@ -391,10 +392,7 @@ int main(int argc, const char** argv) {
         glGetUniformLocation(antiAliasingProgram.program, "colorTex"), 0
     );
     glUniform1i(
-        glGetUniformLocation(antiAliasingProgram.program, "gDepthTex"), 1
-    );
-    glUniform1i(
-        glGetUniformLocation(antiAliasingProgram.program, "gNormalTex"), 2
+        glGetUniformLocation(antiAliasingProgram.program, "gPrimitiveIDTex"), 1
     );
 
     GLuint bloomHorizontalTexture, bloomTexture;
@@ -412,7 +410,7 @@ int main(int argc, const char** argv) {
     GLuint dofCocTexture, dofCoarseTexture, dofTexture;
     auto dofCocPass = Effect(
         "shaders/dofCoc.frag", windowWidth, windowHeight, {
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
+            {"depthTex", GL_TEXTURE_2D, gDepth},
         }, {
             {"coc", dofCocTexture, GL_R8_SNORM},
         }
@@ -594,9 +592,7 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, dofTexture);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gDepth);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gNormal);
+        glBindTexture(GL_TEXTURE_2D, gPrimitiveID);
         mainScene.draw(antiAliasingProgram);
         //particles.draw(antiAliasingProgram);
 

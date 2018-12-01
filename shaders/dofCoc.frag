@@ -1,6 +1,6 @@
 #version 330 core
 
-uniform sampler2DMS depthTex;
+uniform sampler2D depthTex;
 uniform float focus;
 uniform float infinityRadius;
 

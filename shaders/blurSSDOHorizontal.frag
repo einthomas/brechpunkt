@@ -1,7 +1,7 @@
 #version 330 core
 
 uniform sampler2D colorTex;
-uniform sampler2DMS gNormalTex;
+uniform sampler2D gNormalTex;
 
 in vec2 texCoord;
 
