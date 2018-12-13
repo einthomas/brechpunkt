@@ -165,10 +165,10 @@ int main(int argc, const char** argv) {
 
     Scene environmentScene, mainScene;
 
-    MeshInfo musicCubeMeshInfo("scenes/scene3/", "MusicCube.obj");
-    MeshInfo floorMeshInfo("scenes/scene3/", "Floor.obj");
-    MeshInfo centerCubeMeshInfo("scenes/scene3/", "CenterCube.obj");
-    MeshInfo lightRimInfo("scenes/scene3/", "LightRim.obj");
+    MeshInfo musicCubeMeshInfo("scenes/scene1/", "MusicCube.obj");
+    MeshInfo floorMeshInfo("scenes/scene1/", "Floor.obj");
+    MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
+    MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
 
     Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
