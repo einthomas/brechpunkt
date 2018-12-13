@@ -167,6 +167,7 @@ int main(int argc, const char** argv) {
 
     MeshInfo musicCubeMeshInfo("scenes/scene1/", "MusicCube.obj");
     MeshInfo floorMeshInfo("scenes/scene1/", "Floor.obj");
+    MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
     MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
     MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
 
@@ -181,12 +182,19 @@ int main(int argc, const char** argv) {
 
     Mesh floorObject = Mesh(
         floorMeshInfo,
-        glm::mat4(1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::mat4(glm::mat3(80/144.0f)),
+        glm::vec3(1.0f),
+        glm::vec3(0.0f)
+    );
+    Mesh mirrorsObject = Mesh(
+        mirrorsMeshInfo,
+        glm::mat4(glm::mat3(80/144.0f)),
+        glm::vec3(0.1f),
         glm::vec3(0.0f)
     );
 
     mainScene.objects.insert(&floorObject);
+    mainScene.objects.insert(&mirrorsObject);
 
     ParticleSystem particles(10000, 3, 4);
 
