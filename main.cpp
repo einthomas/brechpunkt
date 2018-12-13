@@ -526,7 +526,7 @@ int main(int argc, const char** argv) {
         bloomHorizontalPass.render();
         bloomVerticalPass.render();
 
-        const float aperture = 0.05f;
+        const float aperture = 0.1f;
         const float focalLength = 0.2f;
         float infinityRadius =
             aperture * focalLength / (focus - focalLength) *
