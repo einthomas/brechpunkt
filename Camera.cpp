@@ -6,8 +6,8 @@
 
 Camera::Camera(glm::vec3 pos) :
     pos(pos) {
-    yaw = 0.0f;
-    pitch = 0.0f;
+    yaw = 90.0f;
+    pitch = 90.0f;
 }
 
 void Camera::update() {

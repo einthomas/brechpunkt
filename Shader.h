@@ -8,12 +8,18 @@
 #include <string>
 #include <fstream>
 
-class Shader {
+class Program {
 public:
-	GLuint program = -1;
+    GLuint program = -1;
 
-	Shader() = default;
-	Shader(std::string vertexShaderPath, std::string fragmentShaderPath);
+    Program() = default;
+    Program(std::string vertexShaderPath, std::string fragmentShaderPath);
+    Program(
+        std::string vertexShaderPath, std::string geometryShaderPath,
+        std::string fragmentShaderPath
+    );
+    Program(std::string computeShaderPath);
+
 	void use();
 	void reload();
 
@@ -28,8 +34,15 @@ public:
 	void setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
 
 private:
-	GLuint loadShader(GLuint shaderType, std::string shaderCode);
-	void compileShader(std::string vertexShaderPath, std::string fragmentShaderPath);
+    GLuint loadShader(GLuint shaderType, std::string shaderPath);
+    void compileProgram(
+        std::string vertexShaderPath, std::string geometryShaderPath,
+        std::string fragmentShaderPath,
+        std::string computeShaderPath
+    );
+
 	std::string vertexShaderPath;
+    std::string geometryShaderPath;
 	std::string fragmentShaderPath;
+    std::string computeShaderPath;
 };

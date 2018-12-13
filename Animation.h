@@ -88,7 +88,10 @@ void Animation<T>::update(float delta) {
     }
 
     if (index >= keyFrames.size()) {
-        value = keyFrames.back().value;
+        // loop
+        value = keyFrames.front().value;
+        time -= keyFrames.back().time;
+        index = 0;
 
     } else if (index <= 0) {
         value = keyFrames.front().value;

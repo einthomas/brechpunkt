@@ -1,0 +1,33 @@
+#version 430 core
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(std430) buffer;
+
+struct renderParticle {
+    vec4 position;
+    vec4 orientation;
+};
+
+struct physicParticle {
+    vec3 momentum;
+    vec3 angularMomentum;
+};
+
+buffer render {
+    renderParticle renderParticles[];
+};
+
+buffer physic {
+    physicParticle physicParticles[];
+};
+
+uniform float delta;
+
+void main(void) {
+    uint id = gl_GlobalInvocationID.x;
+
+    vec3 force = vec3(0);
+    force.xz =
+        normalize(renderParticles[id].position.xz) * mat2(-0.0, 1, -1, -0.0);
+    renderParticles[id].position.xyz += force * delta * 0.25;
+}
