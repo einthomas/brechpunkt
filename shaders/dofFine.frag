@@ -27,11 +27,7 @@ vec4 getSample(ivec2 offset, float i) {
     // anti-aliasing
     weight *= clamp(stepCoc - abs(i), 0, 1);
 
-    return mix(
-        vec4(0),
-        vec4(current.rgb * weight, weight),
-        bvec4(abs(i) <= stepCoc)
-    );
+    return vec4(current.rgb * weight, weight);
 }
 
 void main() {
