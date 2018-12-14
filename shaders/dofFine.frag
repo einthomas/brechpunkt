@@ -7,12 +7,8 @@ uniform sampler2DMS depthTex;
 out vec3 color;
 
 const int radius = 14;
-const int step = 2;
+const int step = 1;
 const float exaggeration = 1;
-
-float linearStep(float start, float end, float x) {
-    return clamp((x - start) / (end - start), 0, 1);
-}
 
 ivec2 center;
 vec4 coarse;
@@ -24,12 +20,12 @@ vec4 getSample(ivec2 offset, float i) {
     );
     float coc = current.a;
     float blurriness = abs(min(coc, centerCoc));
-    float weight = 1 / (blurriness + 0.01);
+    float weight = 1.0 / (blurriness + 0.01);
 
     float stepCoc = radius * blurriness + 1;
 
     // anti-aliasing
-    weight *= linearStep(stepCoc, stepCoc - 1, abs(i));
+    weight *= clamp(stepCoc - abs(i), 0, 1);
 
     return mix(
         vec4(0),

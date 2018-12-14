@@ -6,12 +6,8 @@ uniform sampler2D cocTex;
 out vec4 coarse;
 
 const int radius = 16;
-const int step = 2;
+const int step = 1;
 const float exaggeration = 1;
-
-float linearStep(float start, float end, float x) {
-    return clamp((x - start) / (end - start), 0, 1);
-}
 
 void main() {
     ivec2 center = ivec2(gl_FragCoord.xy);
@@ -33,7 +29,7 @@ void main() {
         float stepCoc = radius * blurriness + 1;
 
         // anti-aliasing
-        weight *= linearStep(stepCoc, stepCoc - 1, abs(i));
+        weight *= clamp(stepCoc - abs(i), 0, 1);
 
         bool mask = abs(i) <= stepCoc;
 

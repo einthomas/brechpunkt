@@ -4,7 +4,7 @@ ParticleSystem::ParticleSystem(
     unsigned int capacity, GLint positionAttribute, GLint orientationAttribute
 ) : capacity(capacity) {
     mesh = Mesh(
-        {"scenes/scene3/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, {0, 0, 0}
+        {"scenes/scene1/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, {0, 0, 0}
     );
 
     glGenBuffers(1, &instanceVbo);

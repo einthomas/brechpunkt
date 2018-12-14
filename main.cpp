@@ -76,72 +76,40 @@ glm::vec3 getHemisphereSample(glm::vec2 u) {
 }
 
 // generated using the method from "Sampling with Hammersley and Halton Points" [Wong et al., 1997]
-// with parameters p1 = 2, p2 = 7
-const glm::vec2 HALTON_POINTS[64] = {
-    glm::vec2(0, 0),
-    glm::vec2(0.5, 0.142857),
-    glm::vec2(0.25, 0.285714),
-    glm::vec2(0.75, 0.428571),
-    glm::vec2(0.125, 0.571429),
-    glm::vec2(0.625, 0.714286),
-    glm::vec2(0.375, 0.857143),
-    glm::vec2(0.875, 0.0204082),
-    glm::vec2(0.0625, 0.163265),
-    glm::vec2(0.5625, 0.306122),
-    glm::vec2(0.3125, 0.44898),
-    glm::vec2(0.8125, 0.591837),
-    glm::vec2(0.1875, 0.734694),
-    glm::vec2(0.6875, 0.877551),
-    glm::vec2(0.4375, 0.0408163),
-    glm::vec2(0.9375, 0.183673),
-    glm::vec2(0.03125, 0.326531),
-    glm::vec2(0.53125, 0.469388),
-    glm::vec2(0.28125, 0.612245),
-    glm::vec2(0.78125, 0.755102),
-    glm::vec2(0.15625, 0.897959),
-    glm::vec2(0.65625, 0.0612245),
-    glm::vec2(0.40625, 0.204082),
-    glm::vec2(0.90625, 0.346939),
-    glm::vec2(0.09375, 0.489796),
-    glm::vec2(0.59375, 0.632653),
-    glm::vec2(0.34375, 0.77551),
-    glm::vec2(0.84375, 0.918367),
-    glm::vec2(0.21875, 0.0816327),
-    glm::vec2(0.71875, 0.22449),
-    glm::vec2(0.46875, 0.367347),
-    glm::vec2(0.96875, 0.510204),
-    glm::vec2(0.015625, 0.653061),
-    glm::vec2(0.515625, 0.795918),
-    glm::vec2(0.265625, 0.938776),
-    glm::vec2(0.765625, 0.102041),
-    glm::vec2(0.140625, 0.244898),
-    glm::vec2(0.640625, 0.387755),
-    glm::vec2(0.390625, 0.530612),
-    glm::vec2(0.890625, 0.673469),
-    glm::vec2(0.078125, 0.816327),
-    glm::vec2(0.578125, 0.959184),
-    glm::vec2(0.328125, 0.122449),
-    glm::vec2(0.828125, 0.265306),
-    glm::vec2(0.203125, 0.408163),
-    glm::vec2(0.703125, 0.55102),
-    glm::vec2(0.453125, 0.693878),
-    glm::vec2(0.953125, 0.836735),
-    glm::vec2(0.046875, 0.979592),
-    glm::vec2(0.546875, 0.00291545),
-    glm::vec2(0.296875, 0.145773),
-    glm::vec2(0.796875, 0.28863),
-    glm::vec2(0.171875, 0.431487),
-    glm::vec2(0.671875, 0.574344),
-    glm::vec2(0.421875, 0.717201),
-    glm::vec2(0.921875, 0.860058),
-    glm::vec2(0.109375, 0.0233236),
-    glm::vec2(0.609375, 0.166181),
-    glm::vec2(0.359375, 0.309038),
-    glm::vec2(0.859375, 0.451895),
-    glm::vec2(0.234375, 0.594752),
-    glm::vec2(0.734375, 0.737609),
-    glm::vec2(0.484375, 0.880467),
-    glm::vec2(0.984375, 0.0437318)
+// with parameters p1 = 2, p2 = 5, p3 = 7, interleaved
+const float HALTON_POINTS[64 * 3] = {
+    0.500f, 0.333f, 0.200f, 0.250f, 0.667f, 0.400f,
+    0.750f, 0.111f, 0.600f, 0.125f, 0.444f, 0.800f,
+    0.625f, 0.778f, 0.040f, 0.375f, 0.222f, 0.240f,
+    0.875f, 0.556f, 0.440f, 0.062f, 0.889f, 0.640f,
+    0.562f, 0.037f, 0.840f, 0.312f, 0.370f, 0.080f,
+    0.812f, 0.704f, 0.280f, 0.188f, 0.148f, 0.480f,
+    0.688f, 0.481f, 0.680f, 0.438f, 0.815f, 0.880f,
+    0.938f, 0.259f, 0.120f, 0.031f, 0.593f, 0.320f,
+    0.531f, 0.926f, 0.520f, 0.281f, 0.074f, 0.720f,
+    0.781f, 0.407f, 0.920f, 0.156f, 0.741f, 0.160f,
+    0.656f, 0.185f, 0.360f, 0.406f, 0.519f, 0.560f,
+    0.906f, 0.852f, 0.760f, 0.094f, 0.296f, 0.960f,
+    0.594f, 0.630f, 0.008f, 0.344f, 0.963f, 0.208f,
+    0.844f, 0.012f, 0.408f, 0.219f, 0.346f, 0.608f,
+    0.719f, 0.679f, 0.808f, 0.469f, 0.123f, 0.048f,
+    0.969f, 0.457f, 0.248f, 0.016f, 0.790f, 0.448f,
+    0.516f, 0.235f, 0.648f, 0.266f, 0.568f, 0.848f,
+    0.766f, 0.901f, 0.088f, 0.141f, 0.049f, 0.288f,
+    0.641f, 0.383f, 0.488f, 0.391f, 0.716f, 0.688f,
+    0.891f, 0.160f, 0.888f, 0.078f, 0.494f, 0.128f,
+    0.578f, 0.827f, 0.328f, 0.328f, 0.272f, 0.528f,
+    0.828f, 0.605f, 0.728f, 0.203f, 0.938f, 0.928f,
+    0.703f, 0.086f, 0.168f, 0.453f, 0.420f, 0.368f,
+    0.953f, 0.753f, 0.568f, 0.047f, 0.198f, 0.768f,
+    0.547f, 0.531f, 0.968f, 0.297f, 0.864f, 0.016f,
+    0.797f, 0.309f, 0.216f, 0.172f, 0.642f, 0.416f,
+    0.672f, 0.975f, 0.616f, 0.422f, 0.025f, 0.816f,
+    0.922f, 0.358f, 0.056f, 0.109f, 0.691f, 0.256f,
+    0.609f, 0.136f, 0.456f, 0.359f, 0.469f, 0.656f,
+    0.859f, 0.802f, 0.856f, 0.234f, 0.247f, 0.096f,
+    0.734f, 0.580f, 0.296f, 0.484f, 0.914f, 0.496f,
+    0.984f, 0.062f, 0.696f, 0.008f, 0.395f, 0.896f
 };
 
 int main(int argc, const char** argv) {
@@ -173,7 +141,7 @@ int main(int argc, const char** argv) {
             {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB16F},
             {GL_COLOR_ATTACHMENT4, gEmission, GL_RGB16F},
             {GL_COLOR_ATTACHMENT5, gPrimitiveID, GL_R8},
-            {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT16},
+            {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT24},
         }, {
         }
     );
@@ -188,7 +156,7 @@ int main(int argc, const char** argv) {
     glEnable(GL_DEPTH_TEST);
     GLuint environmentColor, environmentDepth;
     GLuint cubemapFramebuffer = generateFramebuffer(
-        256, 256, GL_TEXTURE_CUBE_MAP, {
+        32, 32, GL_TEXTURE_CUBE_MAP, {
             {GL_COLOR_ATTACHMENT0, environmentColor, GL_RGB16F},
             {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
         }, {
@@ -197,10 +165,10 @@ int main(int argc, const char** argv) {
 
     GLuint multisampleColor, multisampleDepth;
     GLuint multisampleBuffer = generateFramebufferMultisample(
-        windowWidth, windowHeight, 8, {
+        windowWidth, windowHeight, 4, {
             {GL_COLOR_ATTACHMENT0, multisampleColor, GL_RGB16F},
         }, {
-            {GL_DEPTH_ATTACHMENT, multisampleDepth, GL_DEPTH_COMPONENT16},
+            {GL_DEPTH_ATTACHMENT, multisampleDepth, GL_DEPTH_COMPONENT24},
         }
     );
 
@@ -208,10 +176,11 @@ int main(int argc, const char** argv) {
 
     Scene environmentScene, mainScene;
 
-    MeshInfo musicCubeMeshInfo("scenes/scene3/", "MusicCube.obj");
-    MeshInfo floorMeshInfo("scenes/scene3/", "Floor.obj");
-    MeshInfo centerCubeMeshInfo("scenes/scene3/", "CenterCube.obj");
-    MeshInfo lightRimInfo("scenes/scene3/", "LightRim.obj");
+    MeshInfo musicCubeMeshInfo("scenes/scene1/", "MusicCube.obj");
+    MeshInfo floorMeshInfo("scenes/scene1/", "Floor.obj");
+    MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
+    MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
+    MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
 
     Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
@@ -224,12 +193,19 @@ int main(int argc, const char** argv) {
 
     Mesh floorObject = Mesh(
         floorMeshInfo,
-        glm::mat4(1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::mat4(glm::mat3(80/144.0f)),
+        glm::vec3(1.0f),
+        glm::vec3(0.0f)
+    );
+    Mesh mirrorsObject = Mesh(
+        mirrorsMeshInfo,
+        glm::mat4(glm::mat3(80/144.0f)),
+        glm::vec3(0.1f),
         glm::vec3(0.0f)
     );
 
     mainScene.objects.insert(&floorObject);
+    mainScene.objects.insert(&mirrorsObject);
 
     ParticleSystem particles(10000, 3, 4);
 
@@ -336,23 +312,16 @@ int main(int argc, const char** argv) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles.instanceVbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particles.physicVbo);
 
-	GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
-    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-	glm::vec3 randomValues[16];
-	for (int k = 0; k < 16; k++) {
-		randomValues[k] = glm::vec3(
-            randomFloats(random) * 2.0f - 1.0f,
-            randomFloats(random) * 2.0f - 1.0f,
-			0.0f
-		);
-	}
+    GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
 	glGenTextures(1, &noiseTexture);
 	glBindTexture(GL_TEXTURE_2D, noiseTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &randomValues[0]);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_FLOAT, HALTON_POINTS
+    );
     auto ssdoPass = Effect(
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
@@ -360,7 +329,7 @@ int main(int argc, const char** argv) {
             {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
             {"gColorTex", GL_TEXTURE_2D, gColor},
             {"gNormalTex", GL_TEXTURE_2D, gNormal},
-            {"gWorldPosTex", GL_TEXTURE_2D, gWorldPos},
+            {"gDepthTex", GL_TEXTURE_2D, gDepth},
             {"gEmissionTex", GL_TEXTURE_2D, gEmission}
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
@@ -371,7 +340,8 @@ int main(int argc, const char** argv) {
         "shaders/blurSSDOHorizontal.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoUnblurredTexture},
-            {"gNormalTex", GL_TEXTURE_2D, gNormal}
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
+            {"gDepthTex", GL_TEXTURE_2D, gDepth},
         },
         { {"color", ssdoBlurHorizontalTexture, GL_RGB16F} }
     );
@@ -379,7 +349,8 @@ int main(int argc, const char** argv) {
         "shaders/blurSSDOVertical.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoBlurHorizontalTexture},
-            {"gNormalTex", GL_TEXTURE_2D, gNormal}
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
+            {"gDepthTex", GL_TEXTURE_2D, gDepth},
         },
         { {"color", ssdoTexture, GL_RGB16F} }
     );
@@ -460,16 +431,6 @@ int main(int argc, const char** argv) {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    float hemisphereSamples[192];
-    for (int i = 0; i < 64; i++) {
-        glm::vec3 hemisphereSample = getHemisphereSample(HALTON_POINTS[i]) * randomFloats(random);
-        hemisphereSamples[i * 3] = hemisphereSample.x;
-        hemisphereSamples[i * 3 + 1] = hemisphereSample.y;
-        hemisphereSamples[i * 3 + 2] = hemisphereSample.z;
-    }
-
-    ssdoPass.shader.use();
-    glUniform3fv(glGetUniformLocation(ssdoPass.shader.program, "hemisphereSamples"), 64, &hemisphereSamples[0]);
 
     float lastTime = glfwGetTime();
     float lastFrameTime = lastTime;
@@ -521,20 +482,20 @@ int main(int argc, const char** argv) {
 
             viewMatrix = camera.getViewMatrix();
             cameraPosition.reset();
+            cameraFocus.reset();
         }
 
         particleUpdateShader.use();
         particleUpdateShader.setFloat("delta", deltaTime);
         glDispatchCompute(particles.particleCount, 1, 1);
 
-        glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+        glm::mat4 inverseProjectionMatrix = glm::inverse(projectionMatrix);
 
         glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
-        //glDepthFunc(GL_LESS);
-        glViewport(0, 0, 256, 256);
+        glViewport(0, 0, 32, 32);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
-        environmentShader.setMatrix4("view", viewMatrix);
+        environmentShader.setMatrix4("view", glm::mat4(1.0f));
         environmentScene.draw(environmentShader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -565,12 +526,23 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.use();
         ssdoPass.shader.setMatrix4("view", viewMatrix);
         ssdoPass.shader.setMatrix4("projection", projectionMatrix);
+        ssdoPass.shader.setMatrix4(
+            "inverseProjection", inverseProjectionMatrix
+        );
         ssdoPass.render();
 
+        blurSSDOHorizontal.shader.use();
+        blurSSDOHorizontal.shader.setMatrix4(
+            "inverseProjection", inverseProjectionMatrix
+        );
         blurSSDOHorizontal.render();
+        blurSSDOVertical.shader.use();
+        blurSSDOVertical.shader.setMatrix4(
+            "inverseProjection", inverseProjectionMatrix
+        );
         blurSSDOVertical.render();
 
-        const float aperture = 0.05f;
+        const float aperture = 0.1f;
         const float focalLength = 0.2f;
         float infinityRadius =
             aperture * focalLength / (focus - focalLength) *
@@ -583,9 +555,19 @@ int main(int argc, const char** argv) {
         dofCoarsePass.render();
         dofFinePass.render();
 
+        // copy aliased image to anti aliased buffer
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, dofFinePass.framebuffer);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleBuffer);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(
+            0, 0, windowWidth, windowHeight,
+            0, 0, windowWidth, windowHeight,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+
         glBindFramebuffer(GL_FRAMEBUFFER, multisampleBuffer);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //glDepthFunc(GL_EQUAL);
+        glClear(GL_DEPTH_BUFFER_BIT);
         antiAliasingProgram.use();
         antiAliasingProgram.setMatrix4("view", viewMatrix);
         antiAliasingProgram.setMatrix4("projection", projectionMatrix);
