@@ -33,13 +33,9 @@ void main() {
 
         bool mask = abs(i) <= stepCoc;
 
-        coarse += mix(
-            vec4(0),
-            vec4(current, blurriness) * weight,
-            bvec4(mask)
-        );
+        coarse += vec4(current, blurriness) * weight;
 
-        count += mix(0, weight, mask);
+        count += weight;
     }
 
     coarse = coarse / count;
