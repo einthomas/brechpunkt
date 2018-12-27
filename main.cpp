@@ -163,13 +163,25 @@ int main(int argc, const char** argv) {
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
-    Scene environmentScene, mainScene;
+    Scene environmentScene, mainScene, puzzleScene;
+    Scene* currentScene = &puzzleScene;
 
     MeshInfo musicCubeMeshInfo("scenes/scene1/", "MusicCube.obj");
     MeshInfo floorMeshInfo("scenes/scene1/", "Floor.obj");
     MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
     MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
     MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
+
+    MeshInfo puzzleCubeMeshInfo[] = {
+        {"scenes/scene2/", "PuzzleCube0.obj"},
+        {"scenes/scene2/", "PuzzleCube1.obj"},
+        {"scenes/scene2/", "PuzzleCube2.obj"},
+        {"scenes/scene2/", "PuzzleCube3.obj"},
+        {"scenes/scene2/", "PuzzleCube4.obj"},
+        {"scenes/scene2/", "PuzzleCube5.obj"},
+        {"scenes/scene2/", "PuzzleCube6.obj"},
+        {"scenes/scene2/", "PuzzleCube7.obj"},
+    };
 
     Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
@@ -245,16 +257,24 @@ int main(int argc, const char** argv) {
         ));
     }
 
-    auto centerCubeModel =
-        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
     Mesh centerCubeObject(
         centerCubeMeshInfo,
-        centerCubeModel,
-        glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
+        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f)),
+        glm::vec3(1.0f, 1.0f, 1.0f),
         glm::vec3(0.0f)
     );
-
     mainScene.objects.insert(&centerCubeObject);
+
+    Mesh puzzleCubeObjects[8];
+    for (int i = 0; i < 8; i++) {
+        puzzleCubeObjects[i] = {
+            puzzleCubeMeshInfo[i],
+            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f)),
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            glm::vec3(0.0f)
+        };
+        puzzleScene.objects.insert(&puzzleCubeObjects[i]);
+    }
 
     float near = 0.5f;
     float far = 100.0f;
@@ -464,9 +484,11 @@ int main(int argc, const char** argv) {
             cameraFocus.reset();
         }
 
-        particleUpdateShader.use();
-        particleUpdateShader.setFloat("delta", deltaTime);
-        glDispatchCompute(particles.particleCount, 1, 1);
+        if (currentScene == &mainScene) {
+            particleUpdateShader.use();
+            particleUpdateShader.setFloat("delta", deltaTime);
+            glDispatchCompute(particles.particleCount, 1, 1);
+        }
 
         glm::mat4 inverseProjectionMatrix = glm::inverse(projectionMatrix);
 
@@ -489,16 +511,18 @@ int main(int argc, const char** argv) {
             gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
         }
 
-        mainScene.draw(gBufferShader);
+        currentScene->draw(gBufferShader);
 
-        particleShader.use();
-        particleShader.setMatrix4("view", viewMatrix);
-        particleShader.setMatrix4("projection", projectionMatrix);
-        for (int i = 0; i < pointLights.size(); i++) {
-            particleShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
-            particleShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+        if (currentScene == &mainScene) {
+            particleShader.use();
+            particleShader.setMatrix4("view", viewMatrix);
+            particleShader.setMatrix4("projection", projectionMatrix);
+            for (int i = 0; i < pointLights.size(); i++) {
+                particleShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
+                particleShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+            }
+            particles.draw(particleShader);
         }
-        particles.draw(particleShader);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
