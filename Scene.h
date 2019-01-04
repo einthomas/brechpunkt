@@ -2,7 +2,7 @@
 #define SCENE_H
 
 #include <unordered_set>
-#include <Mesh.h>
+#include "Mesh.h"
 
 class Scene {
 public:
