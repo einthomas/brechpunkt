@@ -12,14 +12,6 @@ struct MeshInfo {
     int numTriangles;
 
 	MeshInfo() = default;
-
-    MeshInfo(GLuint VAO, GLuint VBO, std::string materialName, int numTriangles) :
-        VAO(VAO), VBO(VBO),
-		materialName(materialName),
-		numTriangles(numTriangles)
-	{
-	}
-
     MeshInfo(std::string basedir, std::string fileName);
 };
 
