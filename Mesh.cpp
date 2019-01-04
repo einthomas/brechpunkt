@@ -33,77 +33,118 @@ GLuint loadTexture(std::string textureFileName) {
     return texture;
 }
 
-MeshInfo::MeshInfo(std::string basedir, std::string objFileName) {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string err;
-    tinyobj::LoadObj(&attrib, &shapes, &materials, &err, (basedir + objFileName).c_str(), basedir.c_str());
-    if (!err.empty()) {
-        throw std::runtime_error(err);
-    }
+MeshInfo::MeshInfo(std::string basedir, std::string fileName) {
+    int fileExtensionDelimiter = fileName.find(".");
+    if (fileExtensionDelimiter != std::string::npos) {
+        std::string fileExtension = fileName.substr(fileExtensionDelimiter + 1);
+        if (fileExtension == "obj") {
+            tinyobj::attrib_t attrib;
+            std::vector<tinyobj::shape_t> shapes;
+            std::vector<tinyobj::material_t> materials;
+            std::string err;
+            tinyobj::LoadObj(&attrib, &shapes, &materials, &err, (basedir + fileName).c_str(), basedir.c_str());
+            if (!err.empty()) {
+                throw std::runtime_error(err);
+            }
 
-    for (int i = 0; i < materials.size(); i++) {
-        if (RessourceManager::materials.find(materials[i].name) == RessourceManager::materials.end()) {
-            RessourceManager::materials[materials[i].name] = materials[i];
-            if (materials[i].diffuse_texname.length() > 0 && RessourceManager::textures.find(materials[i].diffuse_texname) == RessourceManager::textures.end()) {
-                RessourceManager::textures[materials[i].diffuse_texname] = loadTexture(basedir + materials[i].diffuse_texname);
+            for (int i = 0; i < materials.size(); i++) {
+                if (RessourceManager::materials.find(materials[i].name) == RessourceManager::materials.end()) {
+                    RessourceManager::materials[materials[i].name] = materials[i];
+                    if (materials[i].diffuse_texname.length() > 0 && RessourceManager::textures.find(materials[i].diffuse_texname) == RessourceManager::textures.end()) {
+                        RessourceManager::textures[materials[i].diffuse_texname] = loadTexture(basedir + materials[i].diffuse_texname);
+                    }
+                    if (materials[i].metallic_texname.length() > 0 && RessourceManager::textures.find(materials[i].metallic_texname) == RessourceManager::textures.end()) {
+                        RessourceManager::textures[materials[i].metallic_texname] = loadTexture(basedir + materials[i].metallic_texname);
+                    }
+                    if (materials[i].normal_texname.length() > 0 && RessourceManager::textures.find(materials[i].normal_texname) == RessourceManager::textures.end()) {
+                        RessourceManager::textures[materials[i].normal_texname] = loadTexture(basedir + materials[i].normal_texname);
+                    }
+                }
             }
-            if (materials[i].metallic_texname.length() > 0 && RessourceManager::textures.find(materials[i].metallic_texname) == RessourceManager::textures.end()) {
-                RessourceManager::textures[materials[i].metallic_texname] = loadTexture(basedir + materials[i].metallic_texname);
+
+            std::vector<float> meshData;
+            int indexOffset = 0;
+            for (int k = 0; k < shapes[0].mesh.num_face_vertices.size(); k++) {
+                unsigned int faceVertices = shapes[0].mesh.num_face_vertices[k];
+                for (int m = 0; m < faceVertices; m++) {
+                    tinyobj::index_t index = shapes[0].mesh.indices[indexOffset + m];
+
+                    meshData.push_back(attrib.vertices[3 * index.vertex_index + 0]);
+                    meshData.push_back(attrib.vertices[3 * index.vertex_index + 1]);
+                    meshData.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+
+                    meshData.push_back(attrib.normals[3 * index.normal_index + 0]);
+                    meshData.push_back(attrib.normals[3 * index.normal_index + 1]);
+                    meshData.push_back(attrib.normals[3 * index.normal_index + 2]);
+
+                    if (index.texcoord_index > -1) {
+                        meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
+                        meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
+                    }
+                    else {
+                        meshData.push_back(0);
+                        meshData.push_back(0);
+                    }
+                }
+                indexOffset += faceVertices;
             }
-            if (materials[i].normal_texname.length() > 0 && RessourceManager::textures.find(materials[i].normal_texname) == RessourceManager::textures.end()) {
-                RessourceManager::textures[materials[i].normal_texname] = loadTexture(basedir + materials[i].normal_texname);
-            }
+
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+
+            glBindVertexArray(VAO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
+
+            // position
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+            // normal
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            // texture coordinate
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(2);
+
+            numTriangles = meshData.size() / 8;
+            materialName = materials[shapes[0].mesh.material_ids[0]].name;
+        } else if (fileExtension == "vbo") {
+            std::ifstream vboFile((basedir + fileName).c_str(), std::ifstream::binary);
+            std::vector<char> buffer((std::istreambuf_iterator<char>(vboFile)), std::istreambuf_iterator<char>());
+
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+
+            glBindVertexArray(VAO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            //glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizei>(buffer.size()), buffer.data(), GL_STATIC_DRAW);
+
+            // position
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+            // normal
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            // texture coordinate
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(2);
+            // opposite vertex position
+            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(8 * sizeof(float)));
+            glEnableVertexAttribArray(3);
+
+            glBindVertexArray(0);
+
+            numTriangles = buffer.size() / 11 / 4;
+            materialName = "";
+        } else {
+            throw std::runtime_error("Unsupported model file extension " + fileName);
         }
+    } else {
+        throw std::runtime_error("Unsupported model file extension " + fileName);
     }
-
-    std::vector<float> meshData;
-    int indexOffset = 0;
-    for (int k = 0; k < shapes[0].mesh.num_face_vertices.size(); k++) {
-        unsigned int faceVertices = shapes[0].mesh.num_face_vertices[k];
-        for (int m = 0; m < faceVertices; m++) {
-            tinyobj::index_t index = shapes[0].mesh.indices[indexOffset + m];
-
-            meshData.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-            meshData.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-            meshData.push_back(attrib.vertices[3 * index.vertex_index + 2]);
-
-            meshData.push_back(attrib.normals[3 * index.normal_index + 0]);
-            meshData.push_back(attrib.normals[3 * index.normal_index + 1]);
-            meshData.push_back(attrib.normals[3 * index.normal_index + 2]);
-
-            if (index.texcoord_index > -1) {
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
-            } else {
-                meshData.push_back(0);
-                meshData.push_back(0);
-            }
-        }
-        indexOffset += faceVertices;
-    }
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
-
-    // position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // normal
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // texture coordinate
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    numTriangles = meshData.size() / 8;
-    materialName = materials[shapes[0].mesh.material_ids[0]].name;
 }
 
 Mesh::Mesh(
@@ -182,7 +223,7 @@ void Mesh::setUniforms(Program &shader) {
     shader.setVector3f("emissionColor", emissionColor);
 }
 
-void Mesh::drawRefractive(Shader &shader) {
+void Mesh::drawRefractive(Program &shader) {
     if (useNormalTexture) {
         shader.setInteger("useNormalTex", 1);
         shader.setTexture2D(

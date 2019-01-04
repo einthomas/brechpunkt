@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/color_space.hpp>
+#include <stb_image.h>
 
 #include "RessourceManager.h"
 #include "Mesh.h"
@@ -67,9 +68,6 @@ static bool useAnimatedCamera = false;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;
 
-GLuint loadTexture(std::string textureFileName);
-MeshInfo loadMesh(std::string basedir, std::string objFileName);
-MeshInfo loadMeshFromVBOFile(std::string basedir, std::string vboFileName);
 GLFWwindow *initGLFW();
 bool initGLEW();
 GLuint getScreenQuadVAO();
@@ -172,7 +170,7 @@ int main(int argc, const char** argv) {
         gReflectionRefractive, gEmissionRefractive, gOppositePos,
         gDepthRefractive, gRefraction;
     GLuint gBufferRefractive = generateFramebufferMultisample(
-        windowWidth, windowHeight, 4, {
+        windowWidth, windowHeight, 1, {
             {GL_COLOR_ATTACHMENT0, gColorRefractive, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPosRefractive, GL_RGB16F},
             {GL_COLOR_ATTACHMENT2, gNormalRefractive, GL_RGB16F},
@@ -193,7 +191,7 @@ int main(int argc, const char** argv) {
 
     GLuint gWorldPosLayer2, gNormalLayer2, gDepthLayer2;
     GLuint gBufferLayer2 = generateFramebufferMultisample(
-        windowWidth, windowHeight, 4, {
+        windowWidth, windowHeight, 1, {
             {GL_COLOR_ATTACHMENT0, gWorldPosLayer2, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gNormalLayer2, GL_RGB16F},
             {GL_DEPTH_ATTACHMENT, gDepthLayer2, GL_DEPTH_COMPONENT16},
@@ -219,7 +217,7 @@ int main(int argc, const char** argv) {
     MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
     MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
     MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
-    MeshInfo susannaMeshInfo = loadMeshFromVBOFile("scenes/scene3/", "Bunny.vbo");
+    MeshInfo susannaMeshInfo("scenes/scene3/", "Bunny.vbo");
 
     Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
@@ -265,7 +263,6 @@ int main(int argc, const char** argv) {
     }
 
     Mesh musicCubes[36];
-    ));
 
     Mesh susannaMesh = Mesh(
         susannaMeshInfo,
@@ -390,7 +387,7 @@ int main(int argc, const char** argv) {
             {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
             {"gDepthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
-            {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission}
+            {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission},
             {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
@@ -420,7 +417,7 @@ int main(int argc, const char** argv) {
     auto refractivePass = Effect(
         "shaders/glassMaterial.frag", windowWidth, windowHeight,
         {
-            {"ssdoTex", GL_TEXTURE_2D_MULTISAMPLE, ssdoTexture},
+            {"ssdoTex", GL_TEXTURE_2D, ssdoTexture},
             {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
 
@@ -447,7 +444,6 @@ int main(int argc, const char** argv) {
           {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
           {"gReflectionTex", GL_TEXTURE_2D_MULTISAMPLE, gReflection},
           {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
-          {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
           {"backfaceRefractionTex", GL_TEXTURE_2D, backfaceRefraction},
           {"backfacePosTex", GL_TEXTURE_2D, backfacePos},
           {"gRefractionTex", GL_TEXTURE_2D_MULTISAMPLE, gRefraction},
@@ -493,8 +489,8 @@ int main(int argc, const char** argv) {
 
     auto composePass = Effect(
         "shaders/compose.frag", windowWidth, windowHeight, {
-            {"dofTex", GL_TEXTURE_2D, dofTexture},
-            {"bloomTex", GL_TEXTURE_2D, bloomTexture},
+            {"dofTex", GL_TEXTURE_2D, ssrTexture},
+            {"bloomTex", GL_TEXTURE_2D_MULTISAMPLE, gRefraction},
         },
         0
     );
@@ -519,7 +515,6 @@ int main(int argc, const char** argv) {
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-
 
     ssrPass.shader.use();
     glUniform2f(glGetUniformLocation(ssrPass.shader.program, "size"), windowWidth, windowHeight);
@@ -718,6 +713,7 @@ int main(int argc, const char** argv) {
             "inverseProjection", inverseProjectionMatrix
         );
         blurSSDOHorizontal.render();
+
         blurSSDOVertical.shader.use();
         blurSSDOVertical.shader.setMatrix4(
             "inverseProjection", inverseProjectionMatrix
@@ -753,18 +749,18 @@ int main(int argc, const char** argv) {
         // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //composePass.render();
+        composePass.render();
         
-        glActiveTexture(GL_TEXTURE0 + 0);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
-        glActiveTexture(GL_TEXTURE0 + 1);
-        //glBindTexture(GL_TEXTURE_2D, ssrTexture);
-        glBindTexture(GL_TEXTURE_2D, backfaceRefraction);
-        glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(GL_TEXTURE_2D, ssrTexture);
-		//glBindTexture(GL_TEXTURE_2D, refractiveResultTexture);
-        //glBindTexture(GL_TEXTURE_2D, dofTexture);
-        composeShader.use();
+  //      glActiveTexture(GL_TEXTURE0 + 0);
+  //      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
+  //      glActiveTexture(GL_TEXTURE0 + 1);
+  //      //glBindTexture(GL_TEXTURE_2D, ssrTexture);
+  //      glBindTexture(GL_TEXTURE_2D, backfaceRefraction);
+  //      glActiveTexture(GL_TEXTURE0 + 2);
+  //      glBindTexture(GL_TEXTURE_2D, bloomTexture);
+		////glBindTexture(GL_TEXTURE_2D, refractiveResultTexture);
+  //      //glBindTexture(GL_TEXTURE_2D, dofTexture);
+  //      composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
@@ -799,146 +795,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         std::cout << "Camera position: " << camera.pos.x << ", " << camera.pos.y << ", " << camera.pos.z << std::endl;
     }
-}
-
-MeshInfo loadMesh(std::string basedir, std::string objFileName) {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string err;
-    tinyobj::LoadObj(&attrib, &shapes, &materials, &err, (basedir + objFileName).c_str(), basedir.c_str());
-    if (!err.empty()) {
-        std::cout << err << std::endl;
-        return MeshInfo();
-    }
-
-    for (int i = 0; i < materials.size(); i++) {
-        if (RessourceManager::materials.find(materials[i].name) == RessourceManager::materials.end()) {
-            RessourceManager::materials[materials[i].name] = materials[i];
-            if (materials[i].diffuse_texname.length() > 0 && RessourceManager::textures.find(materials[i].diffuse_texname) == RessourceManager::textures.end()) {
-                RessourceManager::textures[materials[i].diffuse_texname] = loadTexture(basedir + materials[i].diffuse_texname);
-            }
-            if (materials[i].metallic_texname.length() > 0 && RessourceManager::textures.find(materials[i].metallic_texname) == RessourceManager::textures.end()) {
-                RessourceManager::textures[materials[i].metallic_texname] = loadTexture(basedir + materials[i].metallic_texname);
-            }
-            if (materials[i].normal_texname.length() > 0 && RessourceManager::textures.find(materials[i].normal_texname) == RessourceManager::textures.end()) {
-                RessourceManager::textures[materials[i].normal_texname] = loadTexture(basedir + materials[i].normal_texname);
-            }
-        }
-    }
-
-	vector<float> meshData;
-	int indexOffset = 0;
-	for (int k = 0; k < shapes[0].mesh.num_face_vertices.size(); k++) {
-		unsigned int faceVertices = shapes[0].mesh.num_face_vertices[k];
-		for (int m = 0; m < faceVertices; m++) {
-			tinyobj::index_t index = shapes[0].mesh.indices[indexOffset + m];
-
-			meshData.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-			meshData.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-			meshData.push_back(attrib.vertices[3 * index.vertex_index + 2]);
-
-			meshData.push_back(attrib.normals[3 * index.normal_index + 0]);
-			meshData.push_back(attrib.normals[3 * index.normal_index + 1]);
-			meshData.push_back(attrib.normals[3 * index.normal_index + 2]);
-
-            if (index.texcoord_index > -1) {
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-                meshData.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
-            } else {
-                meshData.push_back(0);
-                meshData.push_back(0);
-            }
-		}
-		indexOffset += faceVertices;
-	}
-
-	unsigned int VAO;
-	unsigned int VBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
-
-	// position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	// normal
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	// texture coordinate
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	glBindVertexArray(0);
-
-	return MeshInfo(
-		VAO,
-		materials[shapes[0].mesh.material_ids[0]].name,
-		meshData.size() / 8.0f
-	);
-}
-
-MeshInfo loadMeshFromVBOFile(std::string basedir, std::string vboFileName) {
-    std::ifstream vboFile((basedir + vboFileName).c_str(), std::ifstream::binary);
-    std::vector<char> buffer((std::istreambuf_iterator<char>(vboFile)), std::istreambuf_iterator<char>());
-
-    unsigned int VAO;
-    unsigned int VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    //glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float), &meshData[0], GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizei>(buffer.size()), buffer.data(), GL_STATIC_DRAW);
-
-    // position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // normal
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // texture coordinate
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-    // opposite vertex position
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(8 * sizeof(float)));
-    glEnableVertexAttribArray(3);
-
-    glBindVertexArray(0);
-
-    return MeshInfo(
-        VAO,
-        "",
-        buffer.size() / 11 / 4
-    );
-}
-
-GLuint loadTexture(std::string textureFileName) {
-    int width, height, channels;
-    unsigned char *data = stbi_load(textureFileName.c_str(), &width, &height, &channels, 0);
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    if (data != nullptr) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        stbi_image_free(data);
-    }
-
-    return texture;
 }
 
 GLuint generateTexture() {

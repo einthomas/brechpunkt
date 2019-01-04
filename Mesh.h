@@ -20,7 +20,7 @@ struct MeshInfo {
 	{
 	}
 
-    MeshInfo(std::string basedir, std::string objFileName);
+    MeshInfo(std::string basedir, std::string fileName);
 };
 
 class Mesh {
