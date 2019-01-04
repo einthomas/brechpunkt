@@ -54,14 +54,8 @@ static Program gBufferShader, particleShader, composeShader, ssdoShader;
 static Program environmentShader;
 static Program particleUpdateShader;
 
-//static Shader gBufferShader;
 static Program gBufferRefractiveShader;
 static Program gBufferLayer2Shader;
-//static Shader composeShader;
-//static Shader ssdoShader;
-//static Shader environmentShader;
-static vector<Mesh> meshes;
-static vector<Mesh> glassMeshes;
 static Mesh lightMesh;
 static float deltaTime;
 static bool useAnimatedCamera = false;
@@ -217,7 +211,7 @@ int main(int argc, const char** argv) {
     MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
     MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
     MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
-    MeshInfo susannaMeshInfo("scenes/scene3/", "Bunny.vbo");
+    MeshInfo bunnyGlassMeshInfo("scenes/scene3/", "Bunny.vbo");
 
     Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
@@ -264,14 +258,13 @@ int main(int argc, const char** argv) {
 
     Mesh musicCubes[36];
 
-    Mesh susannaMesh = Mesh(
-        susannaMeshInfo,
+    Mesh bunnyGlassMesh = Mesh(
+        bunnyGlassMeshInfo,
         glm::translate(glm::mat4(1.0f), glm::vec3(18.0f, 1.0f, 0.0f)),
         glm::vec3(1.0f, 1.0f, 1.0f),
         glm::vec3(0.0f)
     );
-    glassMeshes.push_back(susannaMesh);
-    //meshes.push_back(susannaMesh);
+    mainScene.glassObjects.insert(&bunnyGlassMesh);
 
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
@@ -312,13 +305,6 @@ int main(int argc, const char** argv) {
     );
 
     mainScene.objects.insert(&centerCubeObject);
-    //auto centerCubeModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-    //meshes.push_back(Mesh(
-    //    centerCubeMeshInfo,
-    //    centerCubeModel,
-    //    glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
-    //    glm::vec3(0.0f)
-    //));
 
     float near = 0.5f;
     float far = 100.0f;
@@ -664,9 +650,7 @@ int main(int argc, const char** argv) {
             gBufferRefractiveShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
         }
 
-        for (int i = 0; i < glassMeshes.size(); i++) {
-            glassMeshes[i].draw(gBufferRefractiveShader);
-        }
+        mainScene.drawGlassObjects(gBufferRefractiveShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBufferRefractive);
@@ -692,9 +676,7 @@ int main(int argc, const char** argv) {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gDepthRefractive);
 
-        for (int i = 0; i < glassMeshes.size(); i++) {
-            glassMeshes[i].drawRefractive(gBufferLayer2Shader);
-        }
+        mainScene.drawGlassObjects(gBufferLayer2Shader);
         glDepthFunc(GL_LESS);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
