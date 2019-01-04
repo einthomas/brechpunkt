@@ -10,6 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-# norm floor/normal.png     # from master
-norm floor2\GlazedBricks_normal.jpg
-map_Pm floor2\GlazedBricks_reflection.jpg
+norm floor\normal.png
+map_Pm floor\reflection.png
+# norm floor2\GlazedBricks_normal.jpg
+# map_Pm floor2\GlazedBricks_reflection.jpg
