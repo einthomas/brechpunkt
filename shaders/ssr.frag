@@ -5,7 +5,6 @@ uniform sampler2DMS gNormalTex;
 uniform sampler2DMS gWorldPosTex;
 uniform sampler2DMS gReflectionTex;
 uniform samplerCube environmentColor;
-uniform sampler2DMS depthTex;
 uniform sampler2DMS gRefractionTex;
 uniform sampler2D backfaceRefractionTex;
 uniform sampler2D backfacePosTex;
