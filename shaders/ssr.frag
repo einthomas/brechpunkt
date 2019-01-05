@@ -87,10 +87,12 @@ void main() {
             {
                 hitColor = texture(gColorTex, screenSpacePos.xy).xyz;
             } else {
+                /*
                 hitColor = texture(
                     environmentColor,
                     worldPos + reflectionDir
                 ).xyz;
+                */
             }
             break;
         }
