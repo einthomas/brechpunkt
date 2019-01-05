@@ -22,6 +22,7 @@
 !*.blend
 !*.mtl
 !*.obj
+!*.vbo
 
 x64
 Debug

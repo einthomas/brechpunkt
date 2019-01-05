@@ -459,7 +459,7 @@ int main(int argc, const char** argv) {
     );
     auto dofCoarsePass = Effect(
         "shaders/dofCoarse.frag", windowWidth, windowHeight, {
-            {"colorTex", GL_TEXTURE_2D, ssdoTexture},
+            {"colorTex", GL_TEXTURE_2D, ssrTexture},
             {"cocTex", GL_TEXTURE_2D, dofCocTexture},
         }, {
             {"coarse", dofCoarseTexture, GL_RGBA16F},
@@ -475,8 +475,8 @@ int main(int argc, const char** argv) {
 
     auto composePass = Effect(
         "shaders/compose.frag", windowWidth, windowHeight, {
-            {"dofTex", GL_TEXTURE_2D, ssrTexture},
-            {"bloomTex", GL_TEXTURE_2D_MULTISAMPLE, gRefraction},
+            {"dofTex", GL_TEXTURE_2D, dofTexture},
+            {"bloomTex", GL_TEXTURE_2D, bloomTexture},
         },
         0
     );
