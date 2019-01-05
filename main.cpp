@@ -175,7 +175,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, gDepthRefractive, GL_DEPTH_COMPONENT16},
         }, {
         }
-        );
+    );
     GLuint gColorRefractiveFiltered;
     GLuint filterRefractiveFramebuffer = generateFramebuffer(
         windowWidth, windowHeight, {
@@ -191,7 +191,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, gDepthLayer2, GL_DEPTH_COMPONENT16},
         }, {
         }
-        );
+    );
 
     GLuint environmentColor, environmentDepth;
     GLuint cubemapFramebuffer = generateFramebuffer(
@@ -200,7 +200,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
         }, {
         }
-        );
+    );
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
@@ -452,7 +452,7 @@ int main(int argc, const char** argv) {
     GLuint dofCocTexture, dofCoarseTexture, dofTexture;
     auto dofCocPass = Effect(
         "shaders/dofCoc.frag", windowWidth, windowHeight, {
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
+            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepthRefractive},
         }, {
             {"coc", dofCocTexture, GL_R8_SNORM},
         }
