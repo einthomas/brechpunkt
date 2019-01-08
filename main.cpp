@@ -269,7 +269,8 @@ int main(int argc, const char** argv) {
     for (int i = 0; i < 8; i++) {
         puzzleCubeObjects[i] = {
             puzzleCubeMeshInfo[i],
-            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f)),
+            glm::translate(glm::mat4(1.0f),
+            glm::vec3(0.0f, i < 4 ? 4.0f : 2.0f, 0.0f)),
             glm::vec3(1.0f, 1.0f, 1.0f),
             glm::vec3(0.0f)
         };
@@ -320,7 +321,11 @@ int main(int argc, const char** argv) {
     particleUpdateShader.use();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles.instanceVbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particles.physicVbo);
-    particleUpdateShader.setFloat("delta", 1.0f / 60.0f); // TODO: set per frame
+
+    auto lightVolumeProgram = Program(
+        "shaders/lightVolume.vert",
+        "shaders/lightVolume.frag"
+    );
 
     GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
 	glGenTextures(1, &noiseTexture);
@@ -368,7 +373,7 @@ int main(int argc, const char** argv) {
     GLuint bloomHorizontalTexture, bloomTexture;
     auto bloomHorizontalPass = Effect(
         "shaders/bloomHorizontal.frag", windowWidth / 2, windowHeight / 2,
-        { {"colorTex", GL_TEXTURE_2D, ssdoTexture} },
+        { {"colorTex", GL_TEXTURE_2D, gColorFiltered} },
         { {"color", bloomHorizontalTexture, GL_RGB16F} }
     );
     auto bloomVerticalPass = Effect(
@@ -403,7 +408,7 @@ int main(int argc, const char** argv) {
 
     auto composePass = Effect(
         "shaders/compose.frag", windowWidth, windowHeight, {
-            {"dofTex", GL_TEXTURE_2D, dofTexture},
+            {"dofTex", GL_TEXTURE_2D, gColorFiltered},
             {"bloomTex", GL_TEXTURE_2D, bloomTexture},
         },
         0
@@ -511,7 +516,22 @@ int main(int argc, const char** argv) {
             gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
         }
 
-        currentScene->draw(gBufferShader);
+        glEnablei(GL_BLEND, 0);
+        glBlendFunc(GL_ONE, GL_ONE);
+        glBlendEquation(GL_FUNC_ADD);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        lightVolumeProgram.use();
+        lightVolumeProgram.setMatrix4("model", glm::mat4(1.0f));
+        lightVolumeProgram.setMatrix4("view", viewMatrix);
+        lightVolumeProgram.setMatrix4("projection", projectionMatrix);
+        lightVolumeProgram.setVector3f(
+            "lightViewPos",
+            glm::vec3(viewMatrix * glm::mat4(1) * glm::vec4(0, 0, 0, 1))
+        );
+
+        currentScene->draw(lightVolumeProgram);
+        glDisablei(GL_BLEND, 0);
 
         if (currentScene == &mainScene) {
             particleShader.use();
