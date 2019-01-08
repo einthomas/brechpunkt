@@ -21,12 +21,12 @@ uniform sampler2D reflectionTex;
 uniform sampler2D normalTex;
 uniform bool useDiffuseTex;
 uniform bool useNormalTex;
+uniform bool useReflectionTex;
 uniform vec3 diffuseColor;
 uniform vec3 emissionColor;
 
 uniform mat4 view;
 uniform mat4 model;
-//uniform vec3 color;
 
 in vec3 worldPos;
 in vec3 normal;
@@ -39,6 +39,7 @@ void main() {
         mat3 tbn = mat3(tangent, bitangent, normalize(normal));
 
         vec3 textureNormal = texture(normalTex, texCoord).xyz * 2.0 - 1.0;
+
         normalOut = vec4(normalize(tbn * textureNormal), 1.0f);
     } else {
         normalOut = vec4(normal, 1.0f);
@@ -65,5 +66,11 @@ void main() {
 
     positionOut = vec4(worldPos, 1.0f);
     
-	reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+    if (useReflectionTex) {
+	    reflectionOut = vec4(texture(reflectionTex, texCoord).xyz, 1.0f);
+    } else {
+        reflectionOut = vec4(0.0f);
+    }
+
+    colorOut = vec4(1.0f);
 }
