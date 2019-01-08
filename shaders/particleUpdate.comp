@@ -35,6 +35,6 @@ void main(void) {
     renderParticles[id].position.xyz += force * delta * 0.25;
     */
 
-    //renderParticles[id].force.xyz *= 1.0f - delta;
+    renderParticles[id].force.xyz *= 1.0f - delta;
     renderParticles[id].position.xyz += renderParticles[id].force.xyz * delta;
 }
