@@ -9,6 +9,7 @@ layout(location = 4) out vec3 emissionOut;
 struct PointLight {
     vec3 pos;
     vec3 color;
+    float brightness;
     float constantTerm;
     float linearTerm;
     float quadraticTerm;
@@ -23,6 +24,7 @@ uniform bool useDiffuseTex;
 uniform bool useNormalTex;
 uniform bool useReflectionTex;
 uniform vec3 diffuseColor;
+uniform float emissionColorBrightness;
 uniform vec3 emissionColor;
 
 uniform mat4 view;
@@ -49,14 +51,14 @@ void main() {
     for (int i = 0; i < NUM_LIGHTS; i++) {
         vec3 lightDir = pointLights[i].pos - worldPos;
         float lightDist = length(lightDir);
-        float attenuation = 1.0f / (
+        float attenuation = pointLights[i].brightness / (
             pointLights[i].constantTerm +
             pointLights[i].linearTerm * lightDist +
             pointLights[i].quadraticTerm * lightDist * lightDist
         );
         emissive += max(0.0f, dot(normalOut.xyz, normalize(lightDir))) * pointLights[i].color * attenuation;
     }
-    emissionOut = emissionColor + emissive;
+    emissionOut = (emissionColor * emissionColorBrightness + emissive);
     
     vec3 diffuseColor_ = diffuseColor;
     if (useDiffuseTex) {

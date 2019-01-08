@@ -1,14 +1,24 @@
+#define GLFW_INCLUDE_NONE
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <iostream>
 #include <vector>
 #include <random>
 
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/color_space.hpp>
 #include <stb_image.h>
+#include <bass.h>
+
+#undef near
+#undef far
 
 #include "RessourceManager.h"
 #include "Mesh.h"
@@ -24,13 +34,15 @@ using namespace std;
 struct PointLight {
     glm::vec3 pos;
     glm::vec3 color;
+    float brightness;
     float constantTerm;
     float linearTerm;
     float quadraticTerm;
 
-    PointLight(glm::vec3 pos, glm::vec3 color, float constantTerm, float linearTerm, float quadraticTerm) :
+    PointLight(glm::vec3 pos, glm::vec3 color, float brightness, float constantTerm, float linearTerm, float quadraticTerm) :
         pos(pos),
         color(color),
+        brightness(brightness),
         constantTerm(constantTerm),
         linearTerm(linearTerm),
         quadraticTerm(quadraticTerm)
@@ -43,6 +55,7 @@ static bool debug_flag = false;
 const int DEFAULT_WIDTH = 1920;
 const int DEFAULT_HEIGHT = 1080;
 const float CAMERA_SPEED = 10.0f;
+const int NUM_MUSIC_CUBES = 36;
 
 static int windowWidth = 0, windowHeight = 0;
 static float frameRate;
@@ -139,6 +152,17 @@ int main(int argc, const char** argv) {
     glfwSetKeyCallback(window, keyCallback);
     glEnable(GL_DEPTH_TEST);
 
+    if (!BASS_Init(-1, 44100, 0, glfwGetWin32Window(window), NULL)) {
+        std::cout << "Can't initialize bass";
+        return 0;
+    }
+
+    DWORD bassStream;
+    bassStream = BASS_StreamCreateFile(FALSE, "music/music1basspart.mp3", 0, 0, BASS_SAMPLE_LOOP);
+    if (!bassStream) {
+        return 0;
+    }
+
     std::default_random_engine random;
 
     GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
@@ -216,7 +240,7 @@ int main(int argc, const char** argv) {
     Mesh lightRimObject = Mesh(
         lightRimInfo, glm::translate(
             glm::mat4(1.0f), glm::vec3(0, 0, 0)
-        ), {}, { 2, 2, 2 }
+        ), {}, 0.0f, { 2, 2, 2 }
     );
 
     mainScene.objects.insert(&lightRimObject);
@@ -226,42 +250,45 @@ int main(int argc, const char** argv) {
         floorMeshInfo,
         glm::mat4(glm::mat3(80/144.0f)),
         glm::vec3(1.0f),
+        0.0f,
         glm::vec3(0.0f)
     );
     Mesh mirrorsObject = Mesh(
         mirrorsMeshInfo,
         glm::mat4(glm::mat3(80/144.0f)),
         glm::vec3(0.1f),
+        0.0f,
         glm::vec3(0.0f)
     );
 
     mainScene.objects.insert(&floorObject);
     mainScene.objects.insert(&mirrorsObject);
 
-    ParticleSystem particles(10000, 3, 4);
+    ParticleSystem particles(1000000, 3, 4, 5);
 
     std::normal_distribution<float> normalFloats;
-    for (int i = 0; i < 10000; i++) {
-        particles.add(
-            {
-                normalFloats(random) * 5,
-                0.1,
-                normalFloats(random) * 5
-            }, glm::normalize(glm::quat(
-                normalFloats(random),
-                normalFloats(random),
-                normalFloats(random),
-                normalFloats(random)
-            ))
-        );
-    }
+    //for (int i = 0; i < 10000; i++) {
+    //    particles.add(
+    //        {
+    //            normalFloats(random) * 5,
+    //            0.1,
+    //            normalFloats(random) * 5
+    //        }, glm::normalize(glm::quat(
+    //            normalFloats(random),
+    //            normalFloats(random),
+    //            normalFloats(random),
+    //            normalFloats(random)
+    //        ))
+    //    );
+    //}
 
-    Mesh musicCubes[36];
+    Mesh musicCubes[NUM_MUSIC_CUBES];
 
     Mesh bunnyGlassMesh = Mesh(
         bunnyGlassMeshInfo,
         glm::translate(glm::mat4(1.0f), glm::vec3(18.0f, 1.0f, 0.0f)),
         glm::vec3(1.0f, 1.0f, 1.0f),
+        0.0f,
         glm::vec3(0.0f)
     );
     mainScene.glassObjects.insert(&bunnyGlassMesh);
@@ -281,6 +308,7 @@ int main(int argc, const char** argv) {
             musicCubeMeshInfo,
             model,
             glm::vec3(0.0f),
+            0.0f,
     	    color
         );
 
@@ -289,6 +317,7 @@ int main(int argc, const char** argv) {
         pointLights.push_back(PointLight(
             model * glm::vec4(0.0f, lightFloorOffset, 0.0f, 1.0f),
             color,
+            1.0f,
             1.0f,
             0.07f,
             0.20f
@@ -301,6 +330,7 @@ int main(int argc, const char** argv) {
         centerCubeMeshInfo,
         centerCubeModel,
         glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
+        0.0f,
         glm::vec3(0.0f)
     );
 
@@ -510,12 +540,14 @@ int main(int argc, const char** argv) {
 
     gBufferShader.use();
     for (int i = 0; i < pointLights.size(); i++) {
+        gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].brightness", pointLights[i].brightness);
         gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
         gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
         gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
     }
     gBufferRefractiveShader.use();
     for (int i = 0; i < pointLights.size(); i++) {
+        gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].brightness", pointLights[i].brightness);
         gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].constantTerm", pointLights[i].constantTerm);
         gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
         gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
@@ -525,10 +557,17 @@ int main(int argc, const char** argv) {
         glGetUniformLocation(gBufferLayer2Shader.program, "depthLayer1Tex"), 1
     );
 
+    particleUpdateShader.use();
+    particleUpdateShader.setVector3f("attractorPosition", glm::vec3(0.0f, 0.1f, 0.0f));
+
+    BASS_ChannelPlay(bassStream, FALSE);
+
     float lastTime = glfwGetTime();
     float lastFrameTime = lastTime;
     float frameTime = lastTime;
 
+    float fft[1024];
+    float avgBass = 0.0f;
     while (!glfwWindowShouldClose(window)) {
         float currentTime = glfwGetTime();
         float rawDeltaTime = currentTime - lastTime;
@@ -540,6 +579,48 @@ int main(int argc, const char** argv) {
         frameTime = glm::mix(frameTime, currentTime, 0.05f);
         float deltaTime = frameTime - lastFrameTime;
         lastFrameTime = frameTime;
+
+        BASS_ChannelGetData(bassStream, fft, BASS_DATA_FFT2048);
+        avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
+        float bassBrightness = 0.0f;
+        if (avgBass > 0.02f) {
+            bassBrightness = 3.0f * avgBass / 0.13f;
+        } else {
+            bassBrightness = 0.0f;
+        }
+        lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
+        //lightRimObject.emissionColorBrightness = 0.0f;
+        for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
+            if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
+                musicCubes[i].emissionColorBrightness = bassBrightness;
+                glm::vec3 particleSpawnPos = musicCubes[i].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f) + glm::vec4(0.0f, 0.1f, 0.0f, 0.0f);
+                for (int k = 0; k < 10; k++) {
+                    particles.add(
+                        particleSpawnPos,
+                        glm::normalize(glm::quat(
+                            normalFloats(random),
+                            normalFloats(random),
+                            normalFloats(random),
+                            normalFloats(random)
+                        )),
+                        glm::normalize(-particleSpawnPos) + glm::vec3(
+                            normalFloats(random) * 1.0f,
+                            -0.03f,
+                            normalFloats(random) * 1.0f
+                        ) * 3.0f
+                    );
+                }
+            } else {
+                musicCubes[i].emissionColorBrightness = 0.0f;
+            }
+        }
+        for (int i = 0; i < pointLights.size(); i++) {
+            if (i < pointLights.size() * (avgBass / 0.13f)) {
+                pointLights[i].brightness = bassBrightness;
+            } else {
+                pointLights[i].brightness = 0.0f;
+            }
+        }
 
         glm::mat4 viewMatrix;
         if (useAnimatedCamera) {
@@ -572,7 +653,7 @@ int main(int argc, const char** argv) {
                 camera.pos -= glm::vec3(0.0f, 1.0f, 0.0f) * CAMERA_SPEED * deltaTime;
             }
             camera.update();
-
+            //camera.front += glm::vec3(normalFloats(random), normalFloats(random), normalFloats(random)) * avgBass * 0.05f;
             viewMatrix = camera.getViewMatrix();
             cameraPosition.reset();
             cameraFocus.reset();
@@ -602,6 +683,7 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < pointLights.size(); i++) {
             gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
             gBufferShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+            gBufferShader.setFloat("pointLights[" + std::to_string(i) + "].brightness", pointLights[i].brightness);
         }
 
         mainScene.draw(gBufferShader);
@@ -612,6 +694,7 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < pointLights.size(); i++) {
             particleShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
             particleShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+            particleShader.setFloat("pointLights[" + std::to_string(i) + "].brightness", pointLights[i].brightness);
         }
         particles.draw(particleShader);
 
@@ -648,6 +731,7 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < pointLights.size(); i++) {
             gBufferRefractiveShader.setVector3f("pointLights[" + std::to_string(i) + "].pos", glm::vec3(viewMatrix * glm::vec4(pointLights[i].pos, 1.0f)));
             gBufferRefractiveShader.setVector3f("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
+            gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].brightness", pointLights[i].brightness);
         }
 
         mainScene.drawGlassObjects(gBufferRefractiveShader);
@@ -688,6 +772,7 @@ int main(int argc, const char** argv) {
         ssdoPass.shader.setMatrix4(
             "inverseProjection", inverseProjectionMatrix
         );
+        ssdoPass.shader.setFloat("environmentBrightness", lightRimObject.emissionColorBrightness);
         ssdoPass.render();
 
         blurSSDOHorizontal.shader.use();
@@ -732,23 +817,13 @@ int main(int argc, const char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         composePass.render();
-        
-  //      glActiveTexture(GL_TEXTURE0 + 0);
-  //      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gColor);
-  //      glActiveTexture(GL_TEXTURE0 + 1);
-  //      //glBindTexture(GL_TEXTURE_2D, ssrTexture);
-  //      glBindTexture(GL_TEXTURE_2D, backfaceRefraction);
-  //      glActiveTexture(GL_TEXTURE0 + 2);
-  //      glBindTexture(GL_TEXTURE_2D, bloomTexture);
-		////glBindTexture(GL_TEXTURE_2D, refractiveResultTexture);
-  //      //glBindTexture(GL_TEXTURE_2D, dofTexture);
-  //      composeShader.use();
         drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
+    BASS_Free();
     glfwTerminate();
     return 0;
 }

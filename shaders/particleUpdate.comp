@@ -6,6 +6,7 @@ layout(std430) buffer;
 struct renderParticle {
     vec4 position;
     vec4 orientation;
+    vec4 force;
 };
 
 struct physicParticle {
@@ -22,12 +23,18 @@ buffer physic {
 };
 
 uniform float delta;
+uniform vec3 attractorPosition;
 
 void main(void) {
     uint id = gl_GlobalInvocationID.x;
 
+    /*
     vec3 force = vec3(0);
     force.xz =
         normalize(renderParticles[id].position.xz) * mat2(-0.0, 1, -1, -0.0);
     renderParticles[id].position.xyz += force * delta * 0.25;
+    */
+
+    //renderParticles[id].force.xyz *= 1.0f - delta;
+    renderParticles[id].position.xyz += renderParticles[id].force.xyz * delta;
 }

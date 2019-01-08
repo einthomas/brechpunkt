@@ -23,6 +23,7 @@
 !*.mtl
 !*.obj
 !*.vbo
+!*.mp3
 
 x64
 Debug

@@ -1,32 +1,40 @@
 #include "ParticleSystem.h"
 
 ParticleSystem::ParticleSystem(
-    unsigned int capacity, GLint positionAttribute, GLint orientationAttribute
+    unsigned int capacity, GLint positionAttribute, GLint orientationAttribute,
+    GLint forceAttribute
 ) : capacity(capacity) {
     mesh = Mesh(
-        {"scenes/scene1/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, {0, 0, 0}
+        {"scenes/scene1/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, 0.0f, {0, 0, 0}
     );
 
     glGenBuffers(1, &instanceVbo);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
     glBufferData(
-        GL_ARRAY_BUFFER, capacity * (4 + 4) * sizeof(float),
+        GL_ARRAY_BUFFER, capacity * (4 + 4 + 4) * sizeof(float),
         nullptr, GL_DYNAMIC_DRAW
     );
 
     glVertexAttribPointer(
         positionAttribute, 3, GL_FLOAT, GL_FALSE,
-        (4 + 4) * sizeof(float), reinterpret_cast<void*>(0)
+        (4 + 4 + 4) * sizeof(float), reinterpret_cast<void*>(0)
     );
     glEnableVertexAttribArray(positionAttribute);
     glVertexAttribDivisor(positionAttribute, 1);
 
     glVertexAttribPointer(
         orientationAttribute, 4, GL_FLOAT, GL_FALSE,
-        (4 + 4) * sizeof(float), reinterpret_cast<void*>(4 * sizeof(float))
+        (4 + 4 + 4) * sizeof(float), reinterpret_cast<void*>(4 * sizeof(float))
     );
     glEnableVertexAttribArray(orientationAttribute);
     glVertexAttribDivisor(orientationAttribute, 1);
+
+    glVertexAttribPointer(
+        forceAttribute, 3, GL_FLOAT, GL_FALSE,
+        (4 + 4 + 4) * sizeof(float), reinterpret_cast<void*>(8 * sizeof(float))
+    );
+    glEnableVertexAttribArray(forceAttribute);
+    glVertexAttribDivisor(forceAttribute, 1);
 
     glGenBuffers(1, &physicVbo);
     glBindBuffer(GL_ARRAY_BUFFER, physicVbo);
@@ -46,11 +54,14 @@ void ParticleSystem::draw(Program &) {
     }
 }
 
-void ParticleSystem::add(glm::vec3 position, glm::quat orientation) {
+void ParticleSystem::add(
+    glm::vec3 position, glm::quat orientation, glm::vec3 force
+) {
     if (particleCount < capacity) {
-        float values[8] = {
+        float values[12] = {
             position.x, position.y, position.z, 0,
-            orientation.x, orientation.y, orientation.z, orientation.w
+            orientation.x, orientation.y, orientation.z, orientation.w,
+            force.x, force.y, force.z, 0
         };
 
         glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
@@ -61,4 +72,3 @@ void ParticleSystem::add(glm::vec3 position, glm::quat orientation) {
         particleCount++;
     }
 }
-

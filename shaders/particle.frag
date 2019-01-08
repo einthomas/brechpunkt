@@ -9,6 +9,7 @@ layout(location = 4) out vec3 emissionOut;
 struct PointLight {
     vec3 pos;
     vec3 color;
+    float brightness;
     float constantTerm;
     float linearTerm;
     float quadraticTerm;
@@ -34,7 +35,7 @@ void main() {
         float lightDist = length(lightDir);
         lightDir /= lightDist;
 
-        emissive += max(
+        emissive += pointLights[i].brightness * max(
             0.0f,
             pow(
                 dot(

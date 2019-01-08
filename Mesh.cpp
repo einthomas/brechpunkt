@@ -149,10 +149,11 @@ MeshInfo::MeshInfo(std::string basedir, std::string fileName) {
 
 Mesh::Mesh(
     MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor,
-    glm::vec3 emissionColor
+    float emissionColorBrightness, glm::vec3 emissionColor
 ) :
     diffuseColor(diffuseColor),
     emissionColor(emissionColor),
+    emissionColorBrightness(emissionColorBrightness),
     model(model),
     vao(meshInfo.VAO),
     count(meshInfo.numTriangles)
@@ -220,6 +221,7 @@ void Mesh::setUniforms(Program &shader) {
 
     shader.setMatrix4("model", model);
     shader.setVector3f("diffuseColor", diffuseColor);
+    shader.setFloat("emissionColorBrightness", emissionColorBrightness);
     shader.setVector3f("emissionColor", emissionColor);
 }
 

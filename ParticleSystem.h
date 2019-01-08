@@ -9,11 +9,12 @@ class ParticleSystem {
 public:
     ParticleSystem(
         unsigned int capacity,
-        GLint positionAttribute, GLint orientationAttribute
+        GLint positionAttribute, GLint orientationAttribute,
+        GLint forceAttribute
     );
 
     void draw(Program &shader);
-    void add(glm::vec3 position, glm::quat orientation = {});
+    void add(glm::vec3 position, glm::quat orientation, glm::vec3 force);
 
     Mesh mesh;
     GLuint instanceVbo;

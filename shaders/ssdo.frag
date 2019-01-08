@@ -7,6 +7,7 @@ const float RADIUS = 0.5f;
 
 uniform sampler2D noiseTex;
 uniform samplerCube environmentColor;
+uniform float environmentBrightness;
 
 uniform sampler2D gColorTex;
 uniform sampler2DMS gWorldPosTex;
@@ -64,32 +65,6 @@ void main() {
                 environmentColor,
                 transpose(mat3(view)) * hemisphereSample
             ).rgb;
-/*
-    vec3 c = vec3(0.0f);
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        vec3 hemisphereSample = basis * hemisphereSamples[i];
-        vec3 samplePos = worldPos + hemisphereSample * RADIUS;
-        
-        vec4 samplePosImageSpace = projection * vec4(samplePos, 1.0f);
-        samplePosImageSpace.xyz /= samplePosImageSpace.w;
-        samplePosImageSpace.xyz = samplePosImageSpace.xyz * 0.5f + 0.5f;
-
-        vec4 sampleProjected = texelFetch(gWorldPosTex, ivec2(samplePosImageSpace.xy * size), 0);
-        
-        float visibility = 1.0f;
-        if (samplePosImageSpace.x >= 0.0f && samplePosImageSpace.x <= 1.0f &&
-            samplePosImageSpace.y >= 0.0f && samplePosImageSpace.y <= 1.0f)
-        {
-            visibility = sampleProjected.z <= samplePos.z + 0.03 ? 1.0f : smoothstep(0.0f, 1.0f, abs(sampleProjected.z - worldPos.z));
-        }
-        
-        vec3 sampleCubeMap = texture(
-            environmentColor,
-            hemisphereSample
-        ).rgb;
-*/
-
-            //sampleCubeMap = vec3(1);
 
             if (any(greaterThan(sampleCubeMap, vec3(0.01)))) {
                 vec3 samplePos = worldPos + hemisphereSample * RADIUS;
@@ -115,7 +90,7 @@ void main() {
                             sampleCubeMap, sampleDepth > samplePosImageSpace.z
                         ),
                         float(sampleDepth > samplePosImageSpace.z - 0.01)
-                    );
+                    ) * environmentBrightness;
                 }
             } else {
                 c += vec4(0, 0, 0, 1);
