@@ -18,7 +18,8 @@ float depth(float x) {
 }
 
 float signedCoc(float depth) {
-    return (depth - focus) / depth * infinityRadius;
+    float realCoc = (depth - focus) / depth * infinityRadius;
+    return sign(realCoc) * max(abs(realCoc) - 0.1, 0);
 }
 
 void main() {
