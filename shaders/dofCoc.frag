@@ -12,7 +12,7 @@ float depth(float x) {
 	float z_n = 2.0 * z_b - 1.0;
 
     // TODO: make these uniforms
-    float near = 0.5, far = 100.0;
+    float near = 0.5, far = 200.0;
 
     return 2.0 * near * far / (far + near - z_n * (far - near));
 }

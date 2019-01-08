@@ -28,6 +28,7 @@
 #include "Effect.h"
 #include "ParticleSystem.h"
 #include "Scene.h"
+#include "Actions.h"
 
 using namespace std;
 
@@ -309,7 +310,7 @@ int main(int argc, const char** argv) {
             model,
             glm::vec3(0.0f),
             0.0f,
-    	    color
+            color
         );
 
         mainScene.objects.insert(&musicCubes[i]);
@@ -337,7 +338,7 @@ int main(int argc, const char** argv) {
     mainScene.objects.insert(&centerCubeObject);
 
     float near = 0.5f;
-    float far = 100.0f;
+    float far = 200.0f;
     float fov = glm::radians(45.0f);
     glm::mat4 projectionMatrix = glm::perspective(
         fov, (float)windowWidth / (float)windowHeight, near, far
@@ -368,6 +369,15 @@ int main(int argc, const char** argv) {
         {40, {0.8, 2.8, -1.1}, HandleType::STOP},
     };
 
+    Animation<Placement> lightRimAnimation{
+        {
+            {0, DOWN_SWEEP},
+            {1, DOWN_SWEEP},
+            {2, FORWARD_SWEEP},
+            {3, SIDEWAYS_SWEEP},
+        }, 4
+    };
+
     gBufferShader = Program("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     environmentShader = Program(
         "shaders/environment.vert", "shaders/environment.geom",
@@ -386,12 +396,12 @@ int main(int argc, const char** argv) {
     particleUpdateShader.setFloat("delta", 1.0f / 60.0f); // TODO: set per frame
 
     GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
-	glGenTextures(1, &noiseTexture);
-	glBindTexture(GL_TEXTURE_2D, noiseTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glGenTextures(1, &noiseTexture);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(
         GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_FLOAT, HALTON_POINTS
     );
@@ -588,8 +598,8 @@ int main(int argc, const char** argv) {
         } else {
             bassBrightness = 0.0f;
         }
-        lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
-        //lightRimObject.emissionColorBrightness = 0.0f;
+        //lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
+        lightRimObject.emissionColorBrightness = 1.0f;
         for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
             if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                 musicCubes[i].emissionColorBrightness = bassBrightness;
@@ -621,6 +631,9 @@ int main(int argc, const char** argv) {
                 pointLights[i].brightness = 0.0f;
             }
         }
+
+        lightRimAnimation.update(deltaTime);
+        lightRimObject.model = lightRimAnimation.get().to_matrix();
 
         glm::mat4 viewMatrix;
         if (useAnimatedCamera) {
