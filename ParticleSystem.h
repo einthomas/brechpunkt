@@ -20,6 +20,7 @@ public:
     GLuint instanceVbo;
     GLuint physicVbo;
     unsigned int particleCount;
+    unsigned int nextIndex;
     unsigned int capacity;
     unsigned int triangleCount;
 };

@@ -3,7 +3,7 @@
 ParticleSystem::ParticleSystem(
     unsigned int capacity, GLint positionAttribute, GLint orientationAttribute,
     GLint forceAttribute
-) : capacity(capacity) {
+) : capacity(capacity), nextIndex(0) {
     mesh = Mesh(
         {"scenes/scene1/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, 0.0f, {0, 0, 0}
     );
@@ -58,17 +58,19 @@ void ParticleSystem::add(
     glm::vec3 position, glm::quat orientation, glm::vec3 force
 ) {
     if (particleCount < capacity) {
-        float values[12] = {
-            position.x, position.y, position.z, 0,
-            orientation.x, orientation.y, orientation.z, orientation.w,
-            force.x, force.y, force.z, 0
-        };
-
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
-        glBufferSubData(
-            GL_ARRAY_BUFFER, particleCount * sizeof(values),
-            sizeof(values), values
-        );
         particleCount++;
     }
+
+    float values[12] = {
+        position.x, position.y, position.z, 0,
+        orientation.x, orientation.y, orientation.z, orientation.w,
+        force.x, force.y, force.z, 0
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
+    glBufferSubData(
+        GL_ARRAY_BUFFER, nextIndex * sizeof(values),
+        sizeof(values), values
+    );
+    nextIndex = (nextIndex + 1) % capacity;
 }

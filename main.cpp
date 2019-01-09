@@ -340,7 +340,7 @@ int main(int argc, const char** argv) {
     mainScene.objects.insert(&floorObject);
     mainScene.objects.insert(&mirrorsObject);
 
-    ParticleSystem particles(1000000, 3, 4, 5);
+    ParticleSystem particles(100000, 3, 4, 5);
 
     std::normal_distribution<float> normalFloats;
     //for (int i = 0; i < 10000; i++) {
