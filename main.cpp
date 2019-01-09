@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include <tuple>
 
 
 #include <GL/glew.h>
@@ -31,6 +32,7 @@
 #include "Actions.h"
 
 using namespace std;
+using namespace glm;
 
 struct PointLight {
     glm::vec3 pos;
@@ -220,12 +222,85 @@ int main(int argc, const char** argv) {
 
     GLuint environmentColor, environmentDepth;
     GLuint cubemapFramebuffer = generateFramebuffer(
-        32, 32, GL_TEXTURE_CUBE_MAP, {
+        256, 256, GL_TEXTURE_CUBE_MAP, {
             {GL_COLOR_ATTACHMENT0, environmentColor, GL_RGB16F},
             {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
         }, {
         }
     );
+
+    GLuint blurredEnvironmentColor;
+    GLuint blurredEnvironment = generateFramebuffer(
+        256, 256, GL_TEXTURE_CUBE_MAP, {
+            {GL_COLOR_ATTACHMENT0, blurredEnvironmentColor, GL_RGB16F},
+        }, {}
+    );
+
+    Program blurCube(
+        "shaders/cubeBlur.vert", "shaders/cubeBlur.geom",
+        "shaders/cubeBlur.frag"
+    );
+    blurCube.use();
+    glUniform1i(glGetUniformLocation(blurCube.program, "cubemap"), 0);
+
+    tuple<vec2, vec3, float> cubeMesh[24] = {
+        // X+
+        tuple<vec2, vec3, float>{{-1, -1}, {+1, +1, +1}, 0},
+        tuple<vec2, vec3, float>{{+1, -1}, {+1, +1, -1}, 0},
+        tuple<vec2, vec3, float>{{-1, +1}, {+1, -1, +1}, 0},
+        tuple<vec2, vec3, float>{{+1, +1}, {+1, -1, -1}, 0},
+        // X-
+        tuple<vec2, vec3, float>{{-1, -1}, {-1, +1, -1}, 1},
+        tuple<vec2, vec3, float>{{+1, -1}, {-1, +1, +1}, 1},
+        tuple<vec2, vec3, float>{{-1, +1}, {-1, -1, -1}, 1},
+        tuple<vec2, vec3, float>{{+1, +1}, {-1, -1, +1}, 1},
+        // Y+
+        tuple<vec2, vec3, float>{{-1, -1}, {-1, +1, -1}, 2},
+        tuple<vec2, vec3, float>{{+1, -1}, {+1, +1, -1}, 2},
+        tuple<vec2, vec3, float>{{-1, +1}, {-1, +1, +1}, 2},
+        tuple<vec2, vec3, float>{{+1, +1}, {+1, +1, +1}, 2},
+        // Y-
+        tuple<vec2, vec3, float>{{-1, -1}, {-1, -1, +1}, 3},
+        tuple<vec2, vec3, float>{{+1, -1}, {+1, -1, +1}, 3},
+        tuple<vec2, vec3, float>{{-1, +1}, {-1, -1, -1}, 3},
+        tuple<vec2, vec3, float>{{+1, +1}, {+1, -1, -1}, 3},
+        // Z+
+        tuple<vec2, vec3, float>{{-1, -1}, {-1, +1, +1}, 4},
+        tuple<vec2, vec3, float>{{+1, -1}, {+1, +1, +1}, 4},
+        tuple<vec2, vec3, float>{{-1, +1}, {-1, -1, +1}, 4},
+        tuple<vec2, vec3, float>{{+1, +1}, {+1, -1, +1}, 4},
+        // Z-
+        tuple<vec2, vec3, float>{{-1, -1}, {+1, +1, -1}, 5},
+        tuple<vec2, vec3, float>{{+1, -1}, {-1, +1, -1}, 5},
+        tuple<vec2, vec3, float>{{-1, +1}, {+1, -1, -1}, 5},
+        tuple<vec2, vec3, float>{{+1, +1}, {-1, -1, -1}, 5},
+    };
+    unsigned char cubeIndex[36] = {
+        0, 1, 2, 2, 1, 3,  4, 5, 6, 6, 5, 7,
+        8, 9, 10, 10, 9, 11,  12, 13, 14, 14, 13, 15,
+        16, 17, 18, 18, 17, 19,  20, 21, 22, 22, 21, 23
+    };
+    GLuint cubeVAO;
+    glGenVertexArrays(1, &cubeVAO);
+    glBindVertexArray(cubeVAO);
+
+    GLuint cubeVBO, cubeIndexVBO;
+    glGenBuffers(1, &cubeVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), &cubeMesh, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * 4, (GLvoid*)16);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * 4, (GLvoid*)(4));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * 4, (GLvoid*)(0));
+
+    glGenBuffers(1, &cubeIndexVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIndexVBO);
+    glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndex), &cubeIndex, GL_STATIC_DRAW
+    );
+
 
     GLuint screenQuadVAO = getScreenQuadVAO();
 
@@ -393,7 +468,6 @@ int main(int argc, const char** argv) {
     particleUpdateShader.use();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles.instanceVbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particles.physicVbo);
-    particleUpdateShader.setFloat("delta", 1.0f / 60.0f); // TODO: set per frame
 
     GLuint ssdoUnblurredTexture, ssdoTexture, noiseTexture;
     glGenTextures(1, &noiseTexture);
@@ -409,7 +483,7 @@ int main(int argc, const char** argv) {
         "shaders/ssdo.frag", windowWidth, windowHeight,
         {
             {"noiseTex", GL_TEXTURE_2D, noiseTexture},
-            {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
+            {"environmentColor", GL_TEXTURE_CUBE_MAP, blurredEnvironmentColor},
             {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
             {"gDepthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
@@ -469,7 +543,7 @@ int main(int argc, const char** argv) {
           {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
           {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
           {"gReflectionTex", GL_TEXTURE_2D_MULTISAMPLE, gReflection},
-          {"environmentColor", GL_TEXTURE_CUBE_MAP, environmentColor},
+          {"environmentColor", GL_TEXTURE_CUBE_MAP, blurredEnvironmentColor},
           {"backfaceRefractionTex", GL_TEXTURE_2D, backfaceRefraction},
           {"backfacePosTex", GL_TEXTURE_2D, backfacePos},
           {"gRefractionTex", GL_TEXTURE_2D_MULTISAMPLE, gRefraction},
@@ -679,11 +753,18 @@ int main(int argc, const char** argv) {
         glm::mat4 inverseProjectionMatrix = glm::inverse(projectionMatrix);
 
         glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
-        glViewport(0, 0, 32, 32);
+        glViewport(0, 0, 256, 256);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
         environmentShader.setMatrix4("view", glm::mat4(1.0f));
         environmentScene.draw(environmentShader);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, blurredEnvironment);
+        blurCube.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, environmentColor);
+        glBindVertexArray(cubeVAO);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 
         // render geometry, except refractive geometry, to gBuffer
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);

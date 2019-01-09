@@ -14,8 +14,8 @@ static glm::quat SIDEWAYS =
 static Action<Placement> DOWN_SWEEP {
     {
         {0, {{0, 50, 0}, {1, 0, 1}}, HandleType::STOP},
-        {1, {{0, -4, 0}}, HandleType::STOP},
-        {1, {{0, 50, 0}, {1, 0, 1}}, HandleType::STOP}
+        {0.5, {{0, 0, 0}, {1, 1, 1}}, HandleType::SMOOTH},
+        {1, {{0, -50, 0}, {1, 0, 1}}, HandleType::STOP},
     }, 1, ActionType::STRETCH
 };
 

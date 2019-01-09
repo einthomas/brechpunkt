@@ -2,7 +2,7 @@
 
 #define M_PI 3.141592653589
 
-const int NUM_SAMPLES = 6;
+const int NUM_SAMPLES = 3;
 const float RADIUS = 0.5f;
 
 uniform sampler2D noiseTex;
