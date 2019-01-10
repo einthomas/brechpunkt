@@ -24,6 +24,7 @@ public:
     glm::mat4 model;
     GLuint vao;
     GLsizei count;
+    float minHeight, maxHeight, currentHeight;
     
     Mesh() = default;
     Mesh(

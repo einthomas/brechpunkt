@@ -161,7 +161,7 @@ int main(int argc, const char** argv) {
     }
 
     DWORD bassStream;
-    bassStream = BASS_StreamCreateFile(FALSE, "music/music1basspart.mp3", 0, 0, BASS_SAMPLE_LOOP);
+    bassStream = BASS_StreamCreateFile(FALSE, "music/music1cut.mp3", 0, 0, BASS_SAMPLE_LOOP);
     if (!bassStream) {
         return 0;
     }
@@ -387,6 +387,9 @@ int main(int argc, const char** argv) {
             0.0f,
             color
         );
+        musicCubes[i].minHeight = sin(i / 2.0f) * 0.1f + 0.5f;
+        musicCubes[i].maxHeight = sin(i / 2.0f) * 0.3f + 1.5f;
+        musicCubes[i].currentHeight = 1.0f;
 
         mainScene.objects.insert(&musicCubes[i]);
 
@@ -701,8 +704,18 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < pointLights.size(); i++) {
             if (i < pointLights.size() * (avgBass / 0.13f)) {
                 pointLights[i].brightness = bassBrightness;
+                if (musicCubes[i].currentHeight < musicCubes[i].maxHeight) {
+                    float growthFactor = 1.15f;
+                    musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, growthFactor, 1.0f));
+                    musicCubes[i].currentHeight *= growthFactor;
+                }
             } else {
                 pointLights[i].brightness = 0.0f;
+                if (musicCubes[i].currentHeight > musicCubes[i].minHeight) {
+                    float shrinkFactor = 0.9f;
+                    musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, shrinkFactor, 1.0f));
+                    musicCubes[i].currentHeight *= shrinkFactor;
+                }
             }
         }
 
@@ -972,6 +985,7 @@ GLFWwindow *initGLFW() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 0); // turn off multisample for framebuffer 0
+    glfwSwapInterval(0);
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
