@@ -667,6 +667,7 @@ int main(int argc, const char** argv) {
         float deltaTime = frameTime - lastFrameTime;
         lastFrameTime = frameTime;
 
+        double musicTimestamp = BASS_ChannelBytes2Seconds(bassStream, BASS_ChannelGetPosition(bassStream, BASS_POS_BYTE));
         BASS_ChannelGetData(bassStream, fft, BASS_DATA_FFT2048);
         avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
         float bassBrightness = 0.0f;
