@@ -73,6 +73,4 @@ void main() {
     } else {
         reflectionOut = vec4(0.0f);
     }
-
-    colorOut = vec4(1.0f);
 }

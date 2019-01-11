@@ -73,7 +73,6 @@ static Program particleUpdateShader;
 static Program gBufferRefractiveShader;
 static Program gBufferLayer2Shader;
 static Mesh lightMesh;
-static float deltaTime;
 static bool useAnimatedCamera = false;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;
@@ -392,6 +391,7 @@ int main(int argc, const char** argv) {
         musicCubes[i].currentHeight = 1.0f;
 
         mainScene.objects.insert(&musicCubes[i]);
+        environmentScene.objects.insert(&musicCubes[i]);
 
         pointLights.push_back(PointLight(
             model * glm::vec4(0.0f, lightFloorOffset, 0.0f, 1.0f),
@@ -399,7 +399,7 @@ int main(int argc, const char** argv) {
             1.0f,
             1.0f,
             0.07f,
-            0.20f
+            4.0f
         ));
     }
 
@@ -676,6 +676,8 @@ int main(int argc, const char** argv) {
         } else {
             bassBrightness = 0.0f;
         }
+        //avgBass = 4.0f;
+        //bassBrightness = 3.0f;
         //lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
         lightRimObject.emissionColorBrightness = 1.0f;
         for (int i = 0; i < NUM_MUSIC_CUBES; i++) {

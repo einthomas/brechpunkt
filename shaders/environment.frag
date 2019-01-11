@@ -9,6 +9,7 @@ uniform bool useNormalTex;
 uniform bool useDiffuseTex;
 uniform vec3 diffuseColor;
 uniform vec3 emissionColor;
+uniform float emissionColorBrightness;
 
 in vec3 geometryNormal;
 in vec2 geometryTexCoord;
@@ -21,5 +22,5 @@ void main() {
         color = diffuseColor;
     }
 
-    colorOut = pow(color, vec3(2.2f)) + emissionColor;
+    colorOut = pow(color, vec3(2.2f)) + emissionColor * emissionColorBrightness;
 }

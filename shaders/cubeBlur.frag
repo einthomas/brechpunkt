@@ -21,7 +21,7 @@ void main() {
 
             color += texture(
                 cubemap,
-                uvw + (stepX * offset.x + stepY * offset.y) * 1.0
+                uvw + (stepX * offset.x + stepY * offset.y) * 0.5
             ).rgb;
         }
     }
