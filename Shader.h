@@ -14,25 +14,25 @@ public:
     GLuint program = -1;
 
     Program() = default;
-    Program(std::string vertexShaderPath, std::string fragmentShaderPath);
+    Program(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
     Program(
-        std::string vertexShaderPath, std::string geometryShaderPath,
-        std::string fragmentShaderPath
+        const std::string& vertexShaderPath, const std::string& geometryShaderPath,
+        const std::string& fragmentShaderPath
     );
-    Program(std::string computeShaderPath);
+    Program(const std::string& computeShaderPath);
 
 	void use();
 	void reload();
 
-	void setFloat(std::string name, GLfloat value);
-	void setInteger(std::string name, GLint value);
-	void setVector2f(std::string name, GLfloat x, GLfloat y);
-	void setVector2f(std::string name, glm::vec2 value);
-	void setVector3f(std::string name, GLfloat x, GLfloat y, GLfloat z);
-	void setVector3f(std::string name, glm::vec3 value);
-	void setMatrix4(std::string name, const glm::mat4 &value);
-	void setTexture2D(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
-	void setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
+	void setFloat(const std::string& name, GLfloat value);
+	void setInteger(const std::string& name, GLint value);
+	void setVector2f(const std::string& name, GLfloat x, GLfloat y);
+	void setVector2f(const std::string& name, glm::vec2 value);
+	void setVector3f(const std::string& name, GLfloat x, GLfloat y, GLfloat z);
+	void setVector3f(const std::string& name, glm::vec3 value);
+	void setMatrix4(const std::string& name, const glm::mat4 &value);
+	void setTexture2D(const std::string& name, GLenum activeTexture, GLuint texture, GLuint loc);
+	void setTextureCubeMap(const std::string& name, GLenum activeTexture, GLuint texture, GLuint loc);
 
 private:
     void compileProgram(

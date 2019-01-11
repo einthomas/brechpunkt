@@ -12,6 +12,10 @@ GLuint generateFramebuffer(
     glGenFramebuffers(1, &name);
     glBindFramebuffer(GL_FRAMEBUFFER, name);
 
+    if (textures.size() > 8) {
+        throw std::runtime_error("More than 8 outputs are not supported!");
+    }
+
     GLuint drawBuffers[8]{GL_NONE};
 
     for (unsigned int i = 0; i < textures.size(); i++) {

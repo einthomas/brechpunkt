@@ -11,7 +11,7 @@
 
 #include "RessourceManager.h"
 
-GLuint loadTexture(std::string textureFileName) {
+GLuint loadTexture(const std::string& textureFileName) {
     int width, height, channels;
     unsigned char *data = stbi_load(textureFileName.c_str(), &width, &height, &channels, 0);
 
@@ -33,8 +33,8 @@ GLuint loadTexture(std::string textureFileName) {
     return texture;
 }
 
-MeshInfo::MeshInfo(std::string basedir, std::string fileName) {
-    int fileExtensionDelimiter = fileName.find(".");
+MeshInfo::MeshInfo(const std::string& basedir, const std::string& fileName) {
+    int fileExtensionDelimiter = fileName.find('.');
     if (fileExtensionDelimiter != std::string::npos) {
         std::string fileExtension = fileName.substr(fileExtensionDelimiter + 1);
         if (fileExtension == "obj") {
@@ -47,17 +47,17 @@ MeshInfo::MeshInfo(std::string basedir, std::string fileName) {
                 throw std::runtime_error(err);
             }
 
-            for (int i = 0; i < materials.size(); i++) {
-                if (RessourceManager::materials.find(materials[i].name) == RessourceManager::materials.end()) {
-                    RessourceManager::materials[materials[i].name] = materials[i];
-                    if (materials[i].diffuse_texname.length() > 0 && RessourceManager::textures.find(materials[i].diffuse_texname) == RessourceManager::textures.end()) {
-                        RessourceManager::textures[materials[i].diffuse_texname] = loadTexture(basedir + materials[i].diffuse_texname);
+            for (auto & material : materials) {
+                if (RessourceManager::materials.find(material.name) == RessourceManager::materials.end()) {
+                    RessourceManager::materials[material.name] = material;
+                    if (material.diffuse_texname.length() > 0 && RessourceManager::textures.find(material.diffuse_texname) == RessourceManager::textures.end()) {
+                        RessourceManager::textures[material.diffuse_texname] = loadTexture(basedir + material.diffuse_texname);
                     }
-                    if (materials[i].metallic_texname.length() > 0 && RessourceManager::textures.find(materials[i].metallic_texname) == RessourceManager::textures.end()) {
-                        RessourceManager::textures[materials[i].metallic_texname] = loadTexture(basedir + materials[i].metallic_texname);
+                    if (material.metallic_texname.length() > 0 && RessourceManager::textures.find(material.metallic_texname) == RessourceManager::textures.end()) {
+                        RessourceManager::textures[material.metallic_texname] = loadTexture(basedir + material.metallic_texname);
                     }
-                    if (materials[i].normal_texname.length() > 0 && RessourceManager::textures.find(materials[i].normal_texname) == RessourceManager::textures.end()) {
-                        RessourceManager::textures[materials[i].normal_texname] = loadTexture(basedir + materials[i].normal_texname);
+                    if (material.normal_texname.length() > 0 && RessourceManager::textures.find(material.normal_texname) == RessourceManager::textures.end()) {
+                        RessourceManager::textures[material.normal_texname] = loadTexture(basedir + material.normal_texname);
                     }
                 }
             }

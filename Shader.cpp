@@ -4,12 +4,13 @@
 #include <streambuf>
 #include <sstream>
 #include <map>
+#include <utility>
 #include <vector>
 
 using namespace std::literals::string_literals;
 
 struct Shader {
-    Shader(GLenum type, std::string path) : name(0) {
+    Shader(GLenum type, const std::string& path) : name(0) {
         if (!path.empty()) {
             std::ifstream file(path.c_str());
 
@@ -24,7 +25,7 @@ struct Shader {
             file.close();
 
             char const* source_c_str = source.c_str();
-            GLint length = static_cast<GLint>(source.length());
+            auto length = static_cast<GLint>(source.length());
 
             name = glCreateShader(type);
             glShaderSource(name, 1, &source_c_str, &length);
@@ -60,7 +61,7 @@ struct Shader {
     GLuint name;
 };
 
-Program::Program(std::string vertexShaderPath, std::string fragmentShaderPath) :
+Program::Program(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) :
 	vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath)
 {
     compileProgram(vertexShaderPath, {}, fragmentShaderPath, {});
@@ -85,8 +86,8 @@ void Program::storeUniformLocations() {
 }
 
 Program::Program(
-    std::string vertexShaderPath, std::string geometryShaderPath,
-    std::string fragmentShaderPath
+    const std::string& vertexShaderPath, const std::string& geometryShaderPath,
+    const std::string& fragmentShaderPath
 ) :
     vertexShaderPath(vertexShaderPath), geometryShaderPath(geometryShaderPath),
     fragmentShaderPath(fragmentShaderPath) {
@@ -95,7 +96,7 @@ Program::Program(
 }
 
 Program::Program(
-    std::string computeShaderPath
+    const std::string& computeShaderPath
 ) :
     computeShaderPath(computeShaderPath)
 {
@@ -110,10 +111,10 @@ void Program::compileProgram(
     program = glCreateProgram();
 
     Shader shaders[] = {
-        {GL_VERTEX_SHADER, vertexShaderPath},
-        {GL_GEOMETRY_SHADER, geometryShaderPath},
-        {GL_FRAGMENT_SHADER, fragmentShaderPath},
-        {GL_COMPUTE_SHADER, computeShaderPath}
+        {GL_VERTEX_SHADER, std::move(vertexShaderPath)},
+        {GL_GEOMETRY_SHADER, std::move(geometryShaderPath)},
+        {GL_FRAGMENT_SHADER, std::move(fragmentShaderPath)},
+        {GL_COMPUTE_SHADER, std::move(computeShaderPath)}
     };
 
     for (auto& s : shaders) {
@@ -152,41 +153,41 @@ void Program::reload() {
     compileProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath, {});
 }
 
-void Program::setFloat(std::string name, GLfloat value) {
+void Program::setFloat(const std::string& name, GLfloat value) {
     glUniform1f(uniformLocations[name], value);
 }
 
-void Program::setInteger(std::string name, GLint value) {
+void Program::setInteger(const std::string& name, GLint value) {
 	glUniform1i(uniformLocations[name], value);
 }
 
-void Program::setVector2f(std::string name, GLfloat x, GLfloat y) {
+void Program::setVector2f(const std::string& name, GLfloat x, GLfloat y) {
 	glUniform2f(uniformLocations[name], x, y);
 }
 
-void Program::setVector2f(std::string name, glm::vec2 value) {
+void Program::setVector2f(const std::string& name, glm::vec2 value) {
 	glUniform2f(uniformLocations[name], value.x, value.y);
 }
 
-void Program::setVector3f(std::string name, GLfloat x, GLfloat y, GLfloat z) {
+void Program::setVector3f(const std::string& name, GLfloat x, GLfloat y, GLfloat z) {
 	glUniform3f(uniformLocations[name], x, y, z);
 }
 
-void Program::setVector3f(std::string name, glm::vec3 value) {
+void Program::setVector3f(const std::string& name, glm::vec3 value) {
 	glUniform3f(uniformLocations[name], value.x, value.y, value.z);
 }
 
-void Program::setMatrix4(std::string name, const glm::mat4 &value) {
+void Program::setMatrix4(const std::string& name, const glm::mat4 &value) {
 	glUniformMatrix4fv(uniformLocations[name], 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void Program::setTexture2D(std::string name, GLenum activeTexture, GLuint texture, GLuint loc) {
+void Program::setTexture2D(const std::string& name, GLenum activeTexture, GLuint texture, GLuint loc) {
 	glActiveTexture(activeTexture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glUniform1i(uniformLocations[name], loc);
 }
 
-void Program::setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc) {
+void Program::setTextureCubeMap(const std::string& name, GLenum activeTexture, GLuint texture, GLuint loc) {
 	glActiveTexture(activeTexture);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
 	glUniform1i(uniformLocations[name], loc);

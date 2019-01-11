@@ -4,15 +4,15 @@
 
 #include "Shader.h"
 
-GLuint loadTexture(std::string textureFileName);
+GLuint loadTexture(const std::string& textureFileName);
 
 struct MeshInfo {
-    GLuint VAO, VBO;
+    GLuint VAO{}, VBO{};
     std::string materialName;
     int numTriangles;
 
 	MeshInfo() = default;
-    MeshInfo(std::string basedir, std::string fileName);
+    MeshInfo(const std::string& basedir, const std::string& fileName);
 };
 
 class Mesh {

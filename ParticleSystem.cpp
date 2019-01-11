@@ -3,7 +3,7 @@
 ParticleSystem::ParticleSystem(
     unsigned int capacity, GLint positionAttribute, GLint orientationAttribute,
     GLint forceAttribute
-) : nextIndex(0), capacity(capacity) {
+) : physicVbo(0), instanceVbo(0), nextIndex(0), capacity(capacity) {
     mesh = Mesh(
         {"scenes/scene1/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, 0.0f, {0, 0, 0}
     );
