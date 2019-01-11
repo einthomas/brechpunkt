@@ -1,20 +1,26 @@
 #pragma once
 
 #include <initializer_list>
+#include <vector>
 
 #include <GL/glew.h>
 #include "Shader.h"
 
-struct EffectInput {
+struct EffectInputParameter {
     const char* identifier;
     GLenum textureTarget;
     GLuint textureName;
 };
 
-struct EffectOutput {
+struct EffectOutputParameter {
     const char* identifier;
     GLuint& textureName;
     GLint internalFormat;
+};
+
+struct EffectInput {
+    GLuint textureName;
+    GLenum textureTarget;
 };
 
 class Effect {
@@ -24,12 +30,12 @@ public:
 
     Effect(
         const char* fragmentShaderPath, int width, int height,
-        std::initializer_list<EffectInput> inputs,
-        std::initializer_list<EffectOutput> outputs
+        std::initializer_list<EffectInputParameter> inputs,
+        std::initializer_list<EffectOutputParameter> outputs
     );
     Effect(
         const char* fragmentShaderPath, int width, int height,
-        std::initializer_list<EffectInput> inputs,
+        std::initializer_list<EffectInputParameter> inputs,
         GLuint framebuffer
     );
     ~Effect();
@@ -39,13 +45,13 @@ public:
 private:
     Effect(
         const char* fragmentShaderPath, int width, int height,
-        std::initializer_list<EffectInput> inputs,
-        std::initializer_list<EffectOutput> outputs,
+        std::initializer_list<EffectInputParameter> inputs,
+        std::initializer_list<EffectOutputParameter> outputs,
         GLuint framebuffer
     );
 
-    GLsizei inputCount, outputCount;
+    GLsizei outputCount;
     GLuint outputTextures[8];
-    GLuint inputTextures[8];
-    GLenum inputTextureTargets[8];
+
+    std::vector<EffectInput> inputs;
 };

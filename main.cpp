@@ -819,9 +819,7 @@ int main(int argc, const char** argv) {
         );
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-        glReadBuffer(GL_DEPTH_ATTACHMENT);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gBufferRefractive);
-        glDrawBuffer(GL_DEPTH_ATTACHMENT);
         glBlitFramebuffer(
             0, 0, windowWidth, windowHeight,
             0, 0, windowWidth, windowHeight,
@@ -848,9 +846,7 @@ int main(int argc, const char** argv) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBufferRefractive);
-        glReadBuffer(GL_DEPTH_ATTACHMENT);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gBufferLayer2);
-        glDrawBuffer(GL_DEPTH_ATTACHMENT);
         glBlitFramebuffer(
             0, 0, windowWidth, windowHeight,
             0, 0, windowWidth, windowHeight,

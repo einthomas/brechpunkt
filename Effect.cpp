@@ -10,14 +10,13 @@ GLuint generateFramebuffer() {
 
 Effect::Effect(
     const char *fragmentShaderPath, int width, int height,
-    std::initializer_list<EffectInput> inputs,
-    std::initializer_list<EffectOutput> outputs,
+    std::initializer_list<EffectInputParameter> inputs,
+    std::initializer_list<EffectOutputParameter> outputs,
     GLuint framebuffer
 ) :
     shader("shaders/effect.vert", fragmentShaderPath),
     framebuffer(framebuffer)
 {
-    inputCount = static_cast<int>(inputs.size());
     outputCount = static_cast<int>(outputs.size());
 
     if (outputs.size() > 8) {
@@ -82,8 +81,7 @@ Effect::Effect(
     for (unsigned int i = 0; i < inputs.size(); i++) {
         auto input = *(inputs.begin() + i);
 
-        inputTextures[i] = input.textureName;
-        inputTextureTargets[i] = input.textureTarget;
+        this->inputs.push_back({input.textureName, input.textureTarget});
 
         glUniform1i(
             glGetUniformLocation(shader.program, input.identifier), i
@@ -93,15 +91,15 @@ Effect::Effect(
 
 Effect::Effect(
     const char *fragmentShaderPath, int width, int height,
-    std::initializer_list<EffectInput> inputs,
-    std::initializer_list<EffectOutput> outputs
+    std::initializer_list<EffectInputParameter> inputs,
+    std::initializer_list<EffectOutputParameter> outputs
 ) : Effect(
     fragmentShaderPath, width, height, inputs, outputs, generateFramebuffer()
 ) {}
 
 Effect::Effect(
     const char *fragmentShaderPath, int width, int height,
-    std::initializer_list<EffectInput> inputs, GLuint framebuffer
+    std::initializer_list<EffectInputParameter> inputs, GLuint framebuffer
 ) : Effect(
     fragmentShaderPath, width, height, inputs, {}, framebuffer
 ) {}
@@ -115,9 +113,9 @@ Effect::~Effect() {
 
 void Effect::render() {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    for (int i = 0; i < inputCount; i++) {
+    for (int i = 0; i < inputs.size(); i++) {
         glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(inputTextureTargets[i], inputTextures[i]);
+        glBindTexture(inputs[i].textureTarget, inputs[i].textureName);
     }
     shader.use();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
