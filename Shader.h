@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <fstream>
+#include <unordered_map>
 
 class Program {
 public:
@@ -29,18 +30,19 @@ public:
 	void setVector2f(std::string name, glm::vec2 value);
 	void setVector3f(std::string name, GLfloat x, GLfloat y, GLfloat z);
 	void setVector3f(std::string name, glm::vec3 value);
-	void setMatrix4(std::string name, const glm::mat4 &value) const;
+	void setMatrix4(std::string name, const glm::mat4 &value);
 	void setTexture2D(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
 	void setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc);
 
 private:
-    GLuint loadShader(GLuint shaderType, std::string shaderPath);
     void compileProgram(
         std::string vertexShaderPath, std::string geometryShaderPath,
         std::string fragmentShaderPath,
         std::string computeShaderPath
     );
+    void storeUniformLocations();
 
+    std::unordered_map<std::string, GLint> uniformLocations;
 	std::string vertexShaderPath;
     std::string geometryShaderPath;
 	std::string fragmentShaderPath;

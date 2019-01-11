@@ -3,6 +3,8 @@
 #include <iostream>
 #include <streambuf>
 #include <sstream>
+#include <map>
+#include <vector>
 
 using namespace std::literals::string_literals;
 
@@ -59,8 +61,27 @@ struct Shader {
 };
 
 Program::Program(std::string vertexShaderPath, std::string fragmentShaderPath) :
-	vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath) {
+	vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath)
+{
     compileProgram(vertexShaderPath, {}, fragmentShaderPath, {});
+    storeUniformLocations();
+}
+
+
+void Program::storeUniformLocations() {
+    GLint maxUniformNameLength;
+    glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformNameLength);
+    GLint uniformCount;
+    glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniformCount);
+
+    for (GLint i = 0; i < uniformCount; i++) {
+        GLint uniformNameLength, uniformSize;
+        GLenum uniformType;
+        std::vector<GLchar>uniformName(maxUniformNameLength, 0);
+        glGetActiveUniform(program, i, maxUniformNameLength, &uniformNameLength, &uniformSize, &uniformType, uniformName.data());
+        uniformLocations[uniformName.data()] = glGetUniformLocation(program, uniformName.data());
+        std::cout << uniformName.data() << std::endl;
+    }
 }
 
 Program::Program(
@@ -70,13 +91,16 @@ Program::Program(
     vertexShaderPath(vertexShaderPath), geometryShaderPath(geometryShaderPath),
     fragmentShaderPath(fragmentShaderPath) {
     compileProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath, {});
+    storeUniformLocations();
 }
 
 Program::Program(
     std::string computeShaderPath
 ) :
-    computeShaderPath(computeShaderPath) {
+    computeShaderPath(computeShaderPath)
+{
     compileProgram({}, {}, {}, computeShaderPath);
+    storeUniformLocations();
 }
 
 void Program::compileProgram(
@@ -129,41 +153,41 @@ void Program::reload() {
 }
 
 void Program::setFloat(std::string name, GLfloat value) {
-	glUniform1f(glGetUniformLocation(program, name.c_str()), value);
+    glUniform1f(uniformLocations[name], value);
 }
 
 void Program::setInteger(std::string name, GLint value) {
-	glUniform1i(glGetUniformLocation(program, name.c_str()), value);
+	glUniform1i(uniformLocations[name], value);
 }
 
 void Program::setVector2f(std::string name, GLfloat x, GLfloat y) {
-	glUniform2f(glGetUniformLocation(program, name.c_str()), x, y);
+	glUniform2f(uniformLocations[name], x, y);
 }
 
 void Program::setVector2f(std::string name, glm::vec2 value) {
-	glUniform2f(glGetUniformLocation(program, name.c_str()), value.x, value.y);
+	glUniform2f(uniformLocations[name], value.x, value.y);
 }
 
 void Program::setVector3f(std::string name, GLfloat x, GLfloat y, GLfloat z) {
-	glUniform3f(glGetUniformLocation(program, name.c_str()), x, y, z);
+	glUniform3f(uniformLocations[name], x, y, z);
 }
 
 void Program::setVector3f(std::string name, glm::vec3 value) {
-	glUniform3f(glGetUniformLocation(program, name.c_str()), value.x, value.y, value.z);
+	glUniform3f(uniformLocations[name], value.x, value.y, value.z);
 }
 
-void Program::setMatrix4(std::string name, const glm::mat4 &value) const {
-	glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+void Program::setMatrix4(std::string name, const glm::mat4 &value) {
+	glUniformMatrix4fv(uniformLocations[name], 1, GL_FALSE, glm::value_ptr(value));
 }
 
 void Program::setTexture2D(std::string name, GLenum activeTexture, GLuint texture, GLuint loc) {
 	glActiveTexture(activeTexture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glUniform1i(glGetUniformLocation(program, name.c_str()), loc);
+	glUniform1i(uniformLocations[name], loc);
 }
 
 void Program::setTextureCubeMap(std::string name, GLenum activeTexture, GLuint texture, GLuint loc) {
 	glActiveTexture(activeTexture);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-	glUniform1i(glGetUniformLocation(program, name.c_str()), loc);
+	glUniform1i(uniformLocations[name], loc);
 }
