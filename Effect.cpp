@@ -1,5 +1,6 @@
 #include "Effect.h"
 
+#include <iostream>
 
 GLuint generateFramebuffer() {
     GLuint framebuffer;
@@ -18,6 +19,10 @@ Effect::Effect(
 {
     inputCount = static_cast<int>(inputs.size());
     outputCount = static_cast<int>(outputs.size());
+
+    if (outputs.size() > 8) {
+        throw std::runtime_error("More than 8 outputs are not supported!");
+    }
 
     if (framebuffer != 0) {
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -63,6 +68,9 @@ Effect::Effect(
                     GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
                     GL_TEXTURE_2D, outputTextures[i], 0
                 );
+
+            } else {
+                std::cout << "Unused output " << output.identifier << std::endl;
             }
         }
 
