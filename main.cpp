@@ -964,7 +964,6 @@ int main(int argc, const char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         composePass.render();
-        drawScreenQuad(screenQuadVAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
