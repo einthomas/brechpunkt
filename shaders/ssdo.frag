@@ -10,10 +10,10 @@ uniform samplerCube environmentColor;
 uniform float environmentBrightness;
 
 uniform sampler2D gColorTex;
-uniform sampler2DMS gWorldPosTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gEmissionTex;
-uniform sampler2DMS gDepthTex;
+uniform sampler2D gWorldPosTex;
+uniform sampler2D gNormalTex;
+uniform sampler2D gEmissionTex;
+uniform sampler2D gDepthTex;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -80,7 +80,7 @@ void main() {
                 ) {
                     float sampleDepth = texelFetch(
                         gDepthTex,
-                        ivec2(samplePosImageSpace.xy * textureSize(gDepthTex)),
+                        ivec2(samplePosImageSpace.xy * textureSize(gDepthTex, 0)),
                         0
                     ).r;
 

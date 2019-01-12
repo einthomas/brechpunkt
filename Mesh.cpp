@@ -198,9 +198,7 @@ void Mesh::setUniforms(Program &shader) {
         );
     } else {
         shader.setInteger("useDiffuseTex", 0);
-        shader.setVector3f(
-            "diffuseColor", diffuseColor
-        );
+        shader.setVector3f("diffuseColor", diffuseColor);
     }
     if (useReflectionTexture) {
         shader.setInteger("useReflectionTex", 1);

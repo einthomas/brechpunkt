@@ -167,30 +167,32 @@ int main(int argc, const char** argv) {
 
     std::default_random_engine random;
 
-    GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gDepth;
-    GLuint gBuffer = generateFramebufferMultisample(
-        windowWidth, windowHeight, 1, {
+    GLuint gColor, gWorldPos, gNormal, gReflection, gEmission, gPrimitiveID, gDepth;
+    GLuint gBuffer = generateFramebuffer(
+        windowWidth, windowHeight, {
             {GL_COLOR_ATTACHMENT0, gColor, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPos, GL_RGB16F},
             {GL_COLOR_ATTACHMENT2, gNormal, GL_RGB16F},
             {GL_COLOR_ATTACHMENT3, gReflection, GL_RGB16F},
             {GL_COLOR_ATTACHMENT4, gEmission, GL_RGB16F},
-            {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT16},
+            {GL_COLOR_ATTACHMENT5, gPrimitiveID, GL_R8},
+            {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT24},
         }, {
         }
-        );
-    GLuint gColorFiltered;
+    );
+
+    GLuint filteredBuffer;
     GLuint filterFramebuffer = generateFramebuffer(
         windowWidth, windowHeight, {
-            {GL_COLOR_ATTACHMENT0, gColorFiltered, GL_RGB16F}
+            {GL_COLOR_ATTACHMENT0, filteredBuffer, GL_RGB16F}
         }, {}
     );
 
     GLuint gColorRefractive, gWorldPosRefractive, gNormalRefractive,
         gReflectionRefractive, gEmissionRefractive, gOppositePos,
         gDepthRefractive, gRefraction;
-    GLuint gBufferRefractive = generateFramebufferMultisample(
-        windowWidth, windowHeight, 1, {
+    GLuint gBufferRefractive = generateFramebuffer(
+        windowWidth, windowHeight, {
             {GL_COLOR_ATTACHMENT0, gColorRefractive, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gWorldPosRefractive, GL_RGB16F},
             {GL_COLOR_ATTACHMENT2, gNormalRefractive, GL_RGB16F},
@@ -198,23 +200,17 @@ int main(int argc, const char** argv) {
             {GL_COLOR_ATTACHMENT4, gEmissionRefractive, GL_RGB16F},
             {GL_COLOR_ATTACHMENT5, gOppositePos, GL_RGB16F},
             {GL_COLOR_ATTACHMENT6, gRefraction, GL_RGB16F},
-            {GL_DEPTH_ATTACHMENT, gDepthRefractive, GL_DEPTH_COMPONENT16},
+            {GL_DEPTH_ATTACHMENT, gDepthRefractive, GL_DEPTH_COMPONENT24},
         }, {
         }
     );
-    GLuint gColorRefractiveFiltered;
-    GLuint filterRefractiveFramebuffer = generateFramebuffer(
-        windowWidth, windowHeight, {
-            {GL_COLOR_ATTACHMENT0, gColorRefractiveFiltered, GL_RGB16F}
-        }, {}
-    );
 
     GLuint gWorldPosLayer2, gNormalLayer2, gDepthLayer2;
-    GLuint gBufferLayer2 = generateFramebufferMultisample(
-        windowWidth, windowHeight, 1, {
+    GLuint gBufferLayer2 = generateFramebuffer(
+        windowWidth, windowHeight, {
             {GL_COLOR_ATTACHMENT0, gWorldPosLayer2, GL_RGB16F},
             {GL_COLOR_ATTACHMENT1, gNormalLayer2, GL_RGB16F},
-            {GL_DEPTH_ATTACHMENT, gDepthLayer2, GL_DEPTH_COMPONENT16},
+            {GL_DEPTH_ATTACHMENT, gDepthLayer2, GL_DEPTH_COMPONENT24},
         }, {
         }
     );
@@ -223,8 +219,17 @@ int main(int argc, const char** argv) {
     GLuint cubemapFramebuffer = generateFramebuffer(
         128, 128, GL_TEXTURE_CUBE_MAP, {
             {GL_COLOR_ATTACHMENT0, environmentColor, GL_RGB16F},
-            {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
+            {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT24},
         }, {
+        }
+    );
+
+    GLuint multisampleColor, multisampleDepth;
+    GLuint multisampleBuffer = generateFramebufferMultisample(
+        windowWidth, windowHeight, 4, {
+            {GL_COLOR_ATTACHMENT0, multisampleColor, GL_RGB16F},
+        }, {
+            {GL_DEPTH_ATTACHMENT, multisampleDepth, GL_DEPTH_COMPONENT24},
         }
     );
 
@@ -487,11 +492,11 @@ int main(int argc, const char** argv) {
         {
             {"noiseTex", GL_TEXTURE_2D, noiseTexture},
             {"environmentColor", GL_TEXTURE_CUBE_MAP, blurredEnvironmentColor},
-            {"gColorTex", GL_TEXTURE_2D, gColorFiltered},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-            {"gDepthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
-            {"gEmissionTex", GL_TEXTURE_2D_MULTISAMPLE, gEmission},
-            {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
+            {"gColorTex", GL_TEXTURE_2D, gColor},
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
+            {"gDepthTex", GL_TEXTURE_2D, gDepth},
+            {"gEmissionTex", GL_TEXTURE_2D, gEmission},
+            {"gWorldPosTex", GL_TEXTURE_2D, gWorldPos},
         },
         { {"color", ssdoUnblurredTexture, GL_RGB16F} }
     );
@@ -501,8 +506,8 @@ int main(int argc, const char** argv) {
         "shaders/blurSSDOHorizontal.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoUnblurredTexture},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-            {"gDepthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
+            {"gDepthTex", GL_TEXTURE_2D, gDepth},
         },
         { {"color", ssdoBlurHorizontalTexture, GL_RGB16F} }
     );
@@ -510,8 +515,8 @@ int main(int argc, const char** argv) {
         "shaders/blurSSDOVertical.frag", windowWidth, windowHeight,
         {
             {"colorTex", GL_TEXTURE_2D, ssdoBlurHorizontalTexture},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-            {"gDepthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepth},
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
+            {"gDepthTex", GL_TEXTURE_2D, gDepth},
         },
         { {"color", ssdoTexture, GL_RGB16F} }
     );
@@ -521,16 +526,16 @@ int main(int argc, const char** argv) {
         "shaders/glassMaterial.frag", windowWidth, windowHeight,
         {
             {"ssdoTex", GL_TEXTURE_2D, ssdoTexture},
-            {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
-            {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
+            {"gWorldPosTex", GL_TEXTURE_2D, gWorldPos},
+            {"gNormalTex", GL_TEXTURE_2D, gNormal},
 
-            {"gWorldPosRefractiveTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPosRefractive},
-            {"gNormalRefractiveTex", GL_TEXTURE_2D_MULTISAMPLE, gNormalRefractive},
-            {"gOppositePosTex", GL_TEXTURE_2D_MULTISAMPLE, gOppositePos},
-            {"gRefractionTex", GL_TEXTURE_2D_MULTISAMPLE, gRefraction},
+            {"gWorldPosRefractiveTex", GL_TEXTURE_2D, gWorldPosRefractive},
+            {"gNormalRefractiveTex", GL_TEXTURE_2D, gNormalRefractive},
+            {"gOppositePosTex", GL_TEXTURE_2D, gOppositePos},
+            {"gRefractionTex", GL_TEXTURE_2D, gRefraction},
 
-            {"gWorldPosLayer2Tex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPosLayer2},
-            {"gNormalLayer2Tex", GL_TEXTURE_2D_MULTISAMPLE, gNormalLayer2},
+            {"gWorldPosLayer2Tex", GL_TEXTURE_2D, gWorldPosLayer2},
+            {"gNormalLayer2Tex", GL_TEXTURE_2D, gNormalLayer2},
         },
         {
             {"backfaceRefractionOut", backfaceRefraction, GL_RGB16F},
@@ -543,15 +548,26 @@ int main(int argc, const char** argv) {
         "shaders/ssr.frag", windowWidth, windowHeight,
         {
           {"gColorTex", GL_TEXTURE_2D, ssdoTexture},
-          {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
-          {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
-          {"gReflectionTex", GL_TEXTURE_2D_MULTISAMPLE, gReflection},
+          {"gNormalTex", GL_TEXTURE_2D, gNormal},
+          {"gWorldPosTex", GL_TEXTURE_2D, gWorldPos},
+          {"gReflectionTex", GL_TEXTURE_2D, gReflection},
           {"environmentColor", GL_TEXTURE_CUBE_MAP, blurredEnvironmentColor},
           {"backfaceRefractionTex", GL_TEXTURE_2D, backfaceRefraction},
           {"backfacePosTex", GL_TEXTURE_2D, backfacePos},
-          {"gRefractionTex", GL_TEXTURE_2D_MULTISAMPLE, gRefraction},
+          {"gRefractionTex", GL_TEXTURE_2D, gRefraction},
         },
         { {"color", ssrTexture, GL_RGB16F} }
+    );
+
+    Program antiAliasingProgram(
+        "shaders/antiAlias.vert", "shaders/antiAlias.frag"
+    );
+    antiAliasingProgram.use();
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "colorTexture"), 3
+    );
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "gPrimitiveIDTex"), 4
     );
 
     GLuint bloomHorizontalTexture, bloomTexture;
@@ -569,7 +585,7 @@ int main(int argc, const char** argv) {
     GLuint dofCocTexture, dofCoarseTexture, dofTexture;
     auto dofCocPass = Effect(
         "shaders/dofCoc.frag", windowWidth, windowHeight, {
-            {"depthTex", GL_TEXTURE_2D_MULTISAMPLE, gDepthRefractive},
+            {"depthTex", GL_TEXTURE_2D, gDepthRefractive},
         }, {
             {"coc", dofCocTexture, GL_R8_SNORM},
         }
@@ -592,7 +608,7 @@ int main(int argc, const char** argv) {
 
     auto composePass = Effect(
         "shaders/compose.frag", windowWidth, windowHeight, {
-            {"dofTex", GL_TEXTURE_2D, dofTexture},
+            {"dofTex", GL_TEXTURE_2D, filteredBuffer},
             {"bloomTex", GL_TEXTURE_2D, bloomTexture},
         },
         0
@@ -809,16 +825,6 @@ int main(int argc, const char** argv) {
         particles.draw(particleShader);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glBlitFramebuffer(
-            0, 0, windowWidth, windowHeight,
-            0, 0, windowWidth, windowHeight,
-            GL_COLOR_BUFFER_BIT, GL_NEAREST
-        );
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gBufferRefractive);
         glBlitFramebuffer(
             0, 0, windowWidth, windowHeight,
@@ -864,7 +870,7 @@ int main(int argc, const char** argv) {
         gBufferLayer2Shader.setMatrix4("projection", projectionMatrix);
         //gBufferLayer2Shader.setTexture2D("depthTex", GL_TEXTURE0, gWorldPos, 0);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, gDepthRefractive);
+        glBindTexture(GL_TEXTURE_2D, gDepthRefractive);
 
         mainScene.drawGlassObjects(gBufferLayer2Shader);
         glDepthFunc(GL_LESS);
@@ -902,9 +908,6 @@ int main(int argc, const char** argv) {
         ssrPass.shader.setMatrix4("projection", projectionMatrix);
         ssrPass.render();
 
-        bloomHorizontalPass.render();
-        bloomVerticalPass.render();
-
         const float aperture = 0.1f;
         const float focalLength = 0.2f;
         float infinityRadius =
@@ -917,6 +920,44 @@ int main(int argc, const char** argv) {
         dofCocPass.render();
         dofCoarsePass.render();
         dofFinePass.render();
+
+        // copy aliased image to anti aliased buffer
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, dofFinePass.framebuffer);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleBuffer);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(
+            0, 0, windowWidth, windowHeight,
+            0, 0, windowWidth, windowHeight,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+
+        glBindFramebuffer(GL_FRAMEBUFFER, multisampleBuffer);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        antiAliasingProgram.use();
+        antiAliasingProgram.setMatrix4("view", viewMatrix);
+        antiAliasingProgram.setMatrix4("projection", projectionMatrix);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, dofTexture);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, gPrimitiveID);
+        mainScene.draw(antiAliasingProgram);
+        //particles.draw(antiAliasingProgram);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleBuffer);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, filterFramebuffer);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(
+            0, 0, windowWidth, windowHeight,
+            0, 0, windowWidth, windowHeight,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+
+        glBindVertexArray(screenQuadVAO);
+
+        bloomHorizontalPass.render();
+        bloomVerticalPass.render();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // need to clear because default FB has a depth buffer

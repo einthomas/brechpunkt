@@ -1,8 +1,8 @@
 #version 330 core
 
 uniform sampler2D colorTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gDepthTex;
+uniform sampler2D gNormalTex;
+uniform sampler2D gDepthTex;
 uniform mat4 inverseProjection;
 
 in vec2 texCoord;
