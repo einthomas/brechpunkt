@@ -7,7 +7,6 @@ layout(location = 4) in vec4 _orientation;
 
 uniform mat4 view;
 uniform mat4 projection;
-uniform bool useNormalTex;
 
 out vec3 viewPosition;
 out vec3 normal;
@@ -24,7 +23,7 @@ void main() {
             _position, 1.0f
         )
     );
-    
+
     normal =
         transpose(inverse(mat3(view))) * rotate_vector(_orientation, _normal);
     

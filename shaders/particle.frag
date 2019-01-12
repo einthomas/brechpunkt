@@ -5,6 +5,7 @@ layout(location = 1) out vec4 positionOut;
 layout(location = 2) out vec4 normalOut;
 layout(location = 3) out vec4 reflectionOut;
 layout(location = 4) out vec3 emissionOut;
+layout(location = 5) out float primitiveIDOut;
 
 struct PointLight {
     vec3 pos;
@@ -22,7 +23,6 @@ uniform mat4 view;
 
 in vec3 viewPosition;
 in vec3 normal;
-in vec2 texCoord;
 
 void main() {
     normalOut = vec4(normalize(normal), 1.0f);
@@ -52,4 +52,6 @@ void main() {
     colorOut = vec4(diffuseColor_, 1.0f);
 
     positionOut = vec4(viewPosition, 1.0f);
+
+    primitiveIDOut = mod(gl_PrimitiveID, 256) / 255.0f;
 }

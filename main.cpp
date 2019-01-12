@@ -562,7 +562,17 @@ int main(int argc, const char** argv) {
     Program antiAliasingProgram(
         "shaders/antiAlias.vert", "shaders/antiAlias.frag"
     );
+    Program antiAliasingParticleProgram(
+        "shaders/antiAliasParticle.vert", "shaders/antiAlias.frag"
+    );
     antiAliasingProgram.use();
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "colorTexture"), 3
+    );
+    glUniform1i(
+        glGetUniformLocation(antiAliasingProgram.program, "gPrimitiveIDTex"), 4
+    );
+    antiAliasingParticleProgram.use();
     glUniform1i(
         glGetUniformLocation(antiAliasingProgram.program, "colorTexture"), 3
     );
@@ -934,15 +944,18 @@ int main(int argc, const char** argv) {
 
         glBindFramebuffer(GL_FRAMEBUFFER, multisampleBuffer);
         glClear(GL_DEPTH_BUFFER_BIT);
-        antiAliasingProgram.use();
-        antiAliasingProgram.setMatrix4("view", viewMatrix);
-        antiAliasingProgram.setMatrix4("projection", projectionMatrix);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, dofTexture);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, gPrimitiveID);
+        antiAliasingProgram.use();
+        antiAliasingProgram.setMatrix4("view", viewMatrix);
+        antiAliasingProgram.setMatrix4("projection", projectionMatrix);
         mainScene.draw(antiAliasingProgram);
-        //particles.draw(antiAliasingProgram);
+        antiAliasingParticleProgram.use();
+        antiAliasingParticleProgram.setMatrix4("view", viewMatrix);
+        antiAliasingParticleProgram.setMatrix4("projection", projectionMatrix);
+        particles.draw(antiAliasingParticleProgram);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleBuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
