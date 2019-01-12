@@ -26,7 +26,7 @@ void main() {
         vec3 worldPos = texelFetch(gWorldPosRefractiveTex, ivec2(gl_FragCoord.xy), 0).xyz;
         vec3 normal = texelFetch(gNormalRefractiveTex, ivec2(gl_FragCoord.xy), 0).xyz;
 
-        vec3 refractionVector = normalize(refract(normalize(worldPos), normal, 0.75f));
+        vec3 refractionVector = normalize(refract(normalize(worldPos), normal, 1.5f));
         float depthLayer2 = texelFetch(gWorldPosLayer2Tex, ivec2(gl_FragCoord.xy), 0).z;
         float oppositeVertexDistance = length(
             texelFetch(gOppositePosTex, ivec2(gl_FragCoord.xy), 0).xyz - worldPos
@@ -43,7 +43,7 @@ void main() {
         hitPointImageSpace.xyz = hitPointImageSpace.xyz * 0.5f + 0.5f;
 
         vec3 backfaceNormal = texelFetch(gNormalLayer2Tex, ivec2(hitPointImageSpace.xy * size), 0).xyz;
-        vec3 backfaceRefraction = normalize(refract(refractionVector, -backfaceNormal, 0.75f));
+        vec3 backfaceRefraction = normalize(refract(refractionVector, -backfaceNormal, 0.67f));
 
         backfaceRefractionOut = vec4(backfaceRefraction, 1.0f);
         backfacePosOut = vec4(backfaceHitPoint, 1.0f);

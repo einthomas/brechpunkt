@@ -224,20 +224,3 @@ void Mesh::setUniforms(Program &shader) {
     shader.setFloat("emissionColorBrightness", emissionColorBrightness);
     shader.setVector3f("emissionColor", emissionColor);
 }
-
-void Mesh::drawRefractive(Program &shader) {
-    if (useNormalTexture) {
-        shader.setInteger("useNormalTex", 1);
-        shader.setTexture2D(
-            "normalTex", GL_TEXTURE0, normalTexture, 0
-        );
-    } else {
-        shader.setInteger("useNormalTex", 0);
-    }
-
-    shader.setMatrix4("model", model);
-    //shader.setVector3f("diffuseColor", diffuseColor);
-
-    glBindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, count);
-}
