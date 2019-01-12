@@ -20,6 +20,5 @@ void main() {
     
     normal = transpose(inverse(mat3(view * model))) * _normal;
     
-    texCoord = _texCoord;
     gl_Position = projection * worldPos4;
 }

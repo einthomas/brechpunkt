@@ -8,6 +8,7 @@
 #include <vector>
 #include <random>
 #include <tuple>
+#include <array>
 
 
 #include <GL/glew.h>
@@ -366,7 +367,7 @@ int main(int argc, const char** argv) {
 
     Mesh bunnyGlassMesh = Mesh(
         bunnyGlassMeshInfo,
-        glm::translate(glm::mat4(1.0f), glm::vec3(18.0f, 1.0f, 0.0f)),
+        glm::translate(glm::mat4(1.0f), glm::vec3(18.0f, 0.5f, 0.0f)),
         glm::vec3(1.0f, 1.0f, 1.0f),
         0.0f,
         glm::vec3(0.0f)
@@ -665,10 +666,6 @@ int main(int argc, const char** argv) {
         gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].linearTerm", pointLights[i].linearTerm);
         gBufferRefractiveShader.setFloat("pointLights[" + std::to_string(i) + "].quadraticTerm", pointLights[i].quadraticTerm);
     }
-    gBufferLayer2Shader.use();
-    glUniform1i(
-        glGetUniformLocation(gBufferLayer2Shader.program, "depthLayer1Tex"), 1
-    );
 
     particleUpdateShader.use();
     particleUpdateShader.setVector3f("attractorPosition", glm::vec3(0.0f, 0.1f, 0.0f));
@@ -702,16 +699,17 @@ int main(int argc, const char** argv) {
         } else {
             bassBrightness = 0.0f;
         }
-        //avgBass = 4.0f;
-        //bassBrightness = 3.0f;
-        //lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
+        avgBass = 4.0f;
+        bassBrightness = 3.0f;
+        lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
         lightRimObject.emissionColorBrightness = 1.0f;
         for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
             if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                 musicCubes[i].emissionColorBrightness = bassBrightness;
                 glm::vec3 particleSpawnPos = musicCubes[i].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f) + glm::vec4(0.0f, 0.1f, 0.0f, 0.0f);
-                for (int k = 0; k < 10; k++) {
-                    particles.add(
+                array<Particle, 10> newParticles;
+                for (unsigned int k = 0; k < 10; k++) {
+                    newParticles[k] = {
                         particleSpawnPos,
                         glm::normalize(glm::quat(
                             normalFloats(random),
@@ -724,8 +722,9 @@ int main(int argc, const char** argv) {
                             -0.03f,
                             normalFloats(random) * 1.0f
                         ) * 3.0f
-                    );
+                    };
                 }
+                particles.add(newParticles.begin(), newParticles.end());
             } else {
                 musicCubes[i].emissionColorBrightness = 0.0f;
             }
@@ -861,30 +860,19 @@ int main(int argc, const char** argv) {
         mainScene.drawGlassObjects(gBufferRefractiveShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBufferRefractive);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gBufferLayer2);
-        glBlitFramebuffer(
-            0, 0, windowWidth, windowHeight,
-            0, 0, windowWidth, windowHeight,
-            GL_DEPTH_BUFFER_BIT, GL_NEAREST
-        );
-
         // render depth peeled refractive geometry to gBufferLayer2
         glBindFramebuffer(GL_FRAMEBUFFER, gBufferLayer2);
-        glDepthFunc(GL_GREATER);
         glViewport(0, 0, windowWidth, windowHeight);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_FRONT);
         gBufferLayer2Shader.use();
         gBufferLayer2Shader.setMatrix4("model", glm::mat4(1.0f));
         gBufferLayer2Shader.setMatrix4("view", viewMatrix);
         gBufferLayer2Shader.setMatrix4("projection", projectionMatrix);
-        //gBufferLayer2Shader.setTexture2D("depthTex", GL_TEXTURE0, gWorldPos, 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gDepthRefractive);
 
         mainScene.drawGlassObjects(gBufferLayer2Shader);
-        glDepthFunc(GL_LESS);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCullFace(GL_BACK);
 
         glBindVertexArray(screenQuadVAO);
 

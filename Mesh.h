@@ -32,6 +32,5 @@ public:
         float emissionColorBrightness, glm::vec3 emissionColor
     );
     void draw(Program &shader);
-    void drawRefractive(Program &shader);
     void setUniforms(Program &shader);
 };
