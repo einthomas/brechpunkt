@@ -8,6 +8,7 @@
 #include <vector>
 #include <random>
 #include <tuple>
+#include <array>
 
 
 #include <GL/glew.h>
@@ -680,8 +681,9 @@ int main(int argc, const char** argv) {
             if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                 musicCubes[i].emissionColorBrightness = bassBrightness;
                 glm::vec3 particleSpawnPos = musicCubes[i].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f) + glm::vec4(0.0f, 0.1f, 0.0f, 0.0f);
-                for (int k = 0; k < 10; k++) {
-                    particles.add(
+                array<Particle, 10> newParticles;
+                for (unsigned int k = 0; k < 10; k++) {
+                    newParticles[k] = {
                         particleSpawnPos,
                         glm::normalize(glm::quat(
                             normalFloats(random),
@@ -694,8 +696,9 @@ int main(int argc, const char** argv) {
                             -0.03f,
                             normalFloats(random) * 1.0f
                         ) * 3.0f
-                    );
+                    };
                 }
+                particles.add(newParticles.begin(), newParticles.end());
             } else {
                 musicCubes[i].emissionColorBrightness = 0.0f;
             }

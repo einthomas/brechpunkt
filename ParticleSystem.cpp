@@ -74,3 +74,16 @@ void ParticleSystem::add(
     );
     nextIndex = (nextIndex + 1) % capacity;
 }
+
+void ParticleSystem::add(Particle* begin, Particle* end) {
+    auto count = static_cast<unsigned int>(end - begin);
+    particleCount = glm::min(capacity, particleCount + count);
+
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
+    glBufferSubData(
+        GL_ARRAY_BUFFER, nextIndex * sizeof(Particle),
+        count * sizeof(Particle), begin
+    );
+
+    nextIndex = (nextIndex + count) % capacity;
+}
