@@ -62,7 +62,7 @@ struct Shader {
 };
 
 Program::Program(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) :
-	vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath)
+    vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath)
 {
     compileProgram(vertexShaderPath, {}, fragmentShaderPath, {});
     storeUniformLocations();
@@ -131,25 +131,25 @@ void Program::compileProgram(
         }
     }
 
-	GLint success;
+    GLint success;
     GLchar *infoLog;
     GLint infoLogLength = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-	infoLog = new GLchar[infoLogLength];
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success) {
+    infoLog = new GLchar[infoLogLength];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
         glGetProgramInfoLog(program, infoLogLength, nullptr, infoLog);
-		std::cout << "ERROR::SHADERPROGRAM::LINKING\n" << infoLog << std::endl;
-	}
+        std::cout << "ERROR::SHADERPROGRAM::LINKING\n" << infoLog << std::endl;
+    }
     delete[] infoLog;
 }
 
 void Program::use() {
-	glUseProgram(program);
+    glUseProgram(program);
 }
 
 void Program::reload() {
-	glDeleteProgram(program);
+    glDeleteProgram(program);
     compileProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath, {});
 }
 

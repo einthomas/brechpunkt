@@ -66,7 +66,7 @@ void main() {
                 transpose(mat3(view)) * hemisphereSample
             ).rgb;
 
-            if (any(greaterThan(sampleCubeMap, vec3(0.01)))) {
+            //if (any(greaterThan(sampleCubeMap, vec3(0.01)))) {
                 vec3 samplePos = worldPos + hemisphereSample * RADIUS;
                 vec4 samplePosImageSpace = projection * vec4(samplePos, 1.0f);
                 samplePosImageSpace.xyz /= samplePosImageSpace.w;
@@ -92,9 +92,9 @@ void main() {
                         float(sampleDepth > samplePosImageSpace.z - 0.01)
                     ) * environmentBrightness;
                 }
-            } else {
-                c += vec4(0, 0, 0, 1);
-            }
+            //} else {
+            //    c += vec4(0, 0, 0, 1);
+            //}
         }
     }
 
