@@ -222,7 +222,7 @@ int main(int argc, const char** argv) {
 
     GLuint environmentColor, environmentDepth;
     GLuint cubemapFramebuffer = generateFramebuffer(
-        128, 128, GL_TEXTURE_CUBE_MAP, {
+        256, 256, GL_TEXTURE_CUBE_MAP, {
             {GL_COLOR_ATTACHMENT0, environmentColor, GL_RGB16F},
             {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT16},
         }, {
@@ -231,7 +231,7 @@ int main(int argc, const char** argv) {
 
     GLuint blurredEnvironmentColor;
     GLuint blurredEnvironment = generateFramebuffer(
-        128, 128, GL_TEXTURE_CUBE_MAP, {
+        16, 16, GL_TEXTURE_CUBE_MAP, {
             {GL_COLOR_ATTACHMENT0, blurredEnvironmentColor, GL_RGB16F},
         }, {}
     );
@@ -768,13 +768,14 @@ int main(int argc, const char** argv) {
         glm::mat4 inverseProjectionMatrix = glm::inverse(projectionMatrix);
 
         glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
-        glViewport(0, 0, 128, 128);
+        glViewport(0, 0, 256, 256);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         environmentShader.use();
         environmentShader.setMatrix4("view", glm::mat4(1.0f));
         environmentScene.draw(environmentShader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, blurredEnvironment);
+        glViewport(0, 0, 16, 16);
         blurCube.use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, environmentColor);
