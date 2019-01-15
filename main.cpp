@@ -73,6 +73,7 @@ static Program particleUpdateShader;
 static Program gBufferRefractiveShader;
 static Program gBufferLayer2Shader;
 static Mesh lightMesh;
+static bool muteSong = false;
 static bool useAnimatedCamera = false;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;
@@ -361,7 +362,7 @@ int main(int argc, const char** argv) {
 
     Mesh bunnyGlassMesh = Mesh(
         bunnyGlassMeshInfo,
-        glm::translate(glm::mat4(1.0f), glm::vec3(18.0f, 0.5f, 0.0f)),
+        glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, 0.0f)),
         glm::vec3(1.0f, 1.0f, 1.0f),
         0.0f,
         glm::vec3(0.0f)
@@ -519,7 +520,7 @@ int main(int argc, const char** argv) {
     GLuint backfaceRefraction, backfacePos;
     auto refractivePass = Effect(
         "shaders/glassMaterial.frag", windowWidth, windowHeight,
-        {
+        { 
             {"ssdoTex", GL_TEXTURE_2D, ssdoTexture},
             {"gWorldPosTex", GL_TEXTURE_2D_MULTISAMPLE, gWorldPos},
             {"gNormalTex", GL_TEXTURE_2D_MULTISAMPLE, gNormal},
@@ -930,6 +931,12 @@ void scrollCallback(GLFWwindow*, double, double yoffset) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
+        muteSong = !muteSong;
+        if (muteSong) {
+            BASS_SetConfig(BASS_CONFIG_GVOL_STREAM, 0);
+        } else {
+            BASS_SetConfig(BASS_CONFIG_GVOL_STREAM, 10000);
+        }
     }
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
