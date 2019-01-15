@@ -62,7 +62,7 @@ struct Shader {
 };
 
 Program::Program(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) :
-	vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath)
+    vertexShaderPath(vertexShaderPath), fragmentShaderPath(fragmentShaderPath)
 {
     compileProgram(vertexShaderPath, {}, fragmentShaderPath, {});
     storeUniformLocations();
@@ -131,64 +131,95 @@ void Program::compileProgram(
         }
     }
 
-	GLint success;
+    GLint success;
     GLchar *infoLog;
     GLint infoLogLength = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-	infoLog = new GLchar[infoLogLength];
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success) {
+    infoLog = new GLchar[infoLogLength];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
         glGetProgramInfoLog(program, infoLogLength, nullptr, infoLog);
-		std::cout << "ERROR::SHADERPROGRAM::LINKING\n" << infoLog << std::endl;
-	}
+        std::cout << "ERROR::SHADERPROGRAM::LINKING\n" << infoLog << std::endl;
+    }
     delete[] infoLog;
 }
 
 void Program::use() {
-	glUseProgram(program);
+    glUseProgram(program);
 }
 
 void Program::reload() {
-	glDeleteProgram(program);
+    glDeleteProgram(program);
     compileProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath, {});
 }
 
 void Program::setFloat(const std::string& name, GLfloat value) {
-    glUniform1f(uniformLocations[name], value);
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniform1f(location->second, value);
+    }
 }
 
 void Program::setInteger(const std::string& name, GLint value) {
-	glUniform1i(uniformLocations[name], value);
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniform1i(location->second, value);
+    }
 }
 
 void Program::setVector2f(const std::string& name, GLfloat x, GLfloat y) {
-	glUniform2f(uniformLocations[name], x, y);
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniform2f(location->second, x, y);
+    }
 }
 
 void Program::setVector2f(const std::string& name, glm::vec2 value) {
-	glUniform2f(uniformLocations[name], value.x, value.y);
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniform2f(location->second, value.x, value.y);
+    }
 }
 
 void Program::setVector3f(const std::string& name, GLfloat x, GLfloat y, GLfloat z) {
-	glUniform3f(uniformLocations[name], x, y, z);
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniform3f(location->second, x, y, z);
+    }
 }
 
 void Program::setVector3f(const std::string& name, glm::vec3 value) {
-	glUniform3f(uniformLocations[name], value.x, value.y, value.z);
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniform3f(location->second, value.x, value.y, value.z);
+    }
 }
 
 void Program::setMatrix4(const std::string& name, const glm::mat4 &value) {
-	glUniformMatrix4fv(uniformLocations[name], 1, GL_FALSE, glm::value_ptr(value));
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glUniformMatrix4fv(location->second, 1, GL_FALSE, glm::value_ptr(value));
+    }
 }
 
-void Program::setTexture2D(const std::string& name, GLenum activeTexture, GLuint texture, GLuint loc) {
-	glActiveTexture(activeTexture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glUniform1i(uniformLocations[name], loc);
+void Program::setTexture2D(
+    const std::string& name, GLenum activeTexture, GLuint texture, GLuint slot
+) {
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glActiveTexture(activeTexture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(location->second, slot);
+    }
 }
 
-void Program::setTextureCubeMap(const std::string& name, GLenum activeTexture, GLuint texture, GLuint loc) {
-	glActiveTexture(activeTexture);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-	glUniform1i(uniformLocations[name], loc);
+void Program::setTextureCubeMap(
+    const std::string& name, GLenum activeTexture, GLuint texture, GLuint slot
+) {
+    auto location = uniformLocations.find(name);
+    if (location != uniformLocations.end()) {
+        glActiveTexture(activeTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+        glUniform1i(location->second, slot);
+    }
 }

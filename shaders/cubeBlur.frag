@@ -2,8 +2,8 @@
 
 layout(location = 0) out vec3 color;
 
-const int NUM_SAMPLES = 12;
-const float RADIUS = 0.5f;
+const int NUM_SAMPLES = 16;
+const float RADIUS = 0.33f;
 
 uniform samplerCube cubemap;
 

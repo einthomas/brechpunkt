@@ -4,16 +4,16 @@ layout(location = 0) out vec4 backfaceRefractionOut;
 layout(location = 1) out vec4 backfacePosOut;
 
 uniform sampler2D ssdoTex;
-uniform sampler2DMS gWorldPosTex;
-uniform sampler2DMS gNormalTex;
+uniform sampler2D gWorldPosTex;
+uniform sampler2D gNormalTex;
 
-uniform sampler2DMS gWorldPosRefractiveTex;
-uniform sampler2DMS gNormalRefractiveTex;
-uniform sampler2DMS gOppositePosTex;
-uniform sampler2DMS gRefractionTex;
+uniform sampler2D gWorldPosRefractiveTex;
+uniform sampler2D gNormalRefractiveTex;
+uniform sampler2D gOppositePosTex;
+uniform sampler2D gRefractionTex;
 
-uniform sampler2DMS gWorldPosLayer2Tex;
-uniform sampler2DMS gNormalLayer2Tex;
+uniform sampler2D gWorldPosLayer2Tex;
+uniform sampler2D gNormalLayer2Tex;
 
 uniform mat4 projection;
 uniform mat4 view;

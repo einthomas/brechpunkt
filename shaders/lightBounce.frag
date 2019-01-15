@@ -3,8 +3,8 @@
 #define M_PI 3.141592653589
 
 uniform sampler2D gColorTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gWorldPosTex;
+uniform sampler2D gNormalTex;
+uniform sampler2D gWorldPosTex;
 uniform sampler2D noiseTex;
 uniform mat4 view;
 uniform mat4 projection;

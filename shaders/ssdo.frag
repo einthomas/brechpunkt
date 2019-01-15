@@ -10,10 +10,10 @@ uniform samplerCube environmentColor;
 uniform float environmentBrightness;
 
 uniform sampler2D gColorTex;
-uniform sampler2DMS gWorldPosTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gEmissionTex;
-uniform sampler2DMS gDepthTex;
+uniform sampler2D gWorldPosTex;
+uniform sampler2D gNormalTex;
+uniform sampler2D gEmissionTex;
+uniform sampler2D gDepthTex;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -66,7 +66,7 @@ void main() {
                 transpose(mat3(view)) * hemisphereSample
             ).rgb;
 
-            if (any(greaterThan(sampleCubeMap, vec3(0.01)))) {
+            //if (any(greaterThan(sampleCubeMap, vec3(0.01)))) {
                 vec3 samplePos = worldPos + hemisphereSample * RADIUS;
                 vec4 samplePosImageSpace = projection * vec4(samplePos, 1.0f);
                 samplePosImageSpace.xyz /= samplePosImageSpace.w;
@@ -80,7 +80,7 @@ void main() {
                 ) {
                     float sampleDepth = texelFetch(
                         gDepthTex,
-                        ivec2(samplePosImageSpace.xy * textureSize(gDepthTex)),
+                        ivec2(samplePosImageSpace.xy * textureSize(gDepthTex, 0)),
                         0
                     ).r;
 
@@ -92,9 +92,9 @@ void main() {
                         float(sampleDepth > samplePosImageSpace.z - 0.01)
                     ) * environmentBrightness;
                 }
-            } else {
-                c += vec4(0, 0, 0, 1);
-            }
+            //} else {
+            //    c += vec4(0, 0, 0, 1);
+            //}
         }
     }
 

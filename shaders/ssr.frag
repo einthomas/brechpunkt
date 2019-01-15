@@ -1,11 +1,11 @@
 #version 330 core
 
 uniform sampler2D gColorTex;
-uniform sampler2DMS gNormalTex;
-uniform sampler2DMS gWorldPosTex;
-uniform sampler2DMS gReflectionTex;
+uniform sampler2D gNormalTex;
+uniform sampler2D gWorldPosTex;
+uniform sampler2D gReflectionTex;
 uniform samplerCube environmentColor;
-uniform sampler2DMS gRefractionTex;
+uniform sampler2D gRefractionTex;
 uniform sampler2D backfaceRefractionTex;
 uniform sampler2D backfacePosTex;
 

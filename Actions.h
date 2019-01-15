@@ -4,6 +4,7 @@
 
 #include "Animation.h"
 #include "Placement.h"
+#include "LinearTuple.h"
 
 static glm::quat FORWARD =
     glm::angleAxis(glm::radians(90.0f), glm::vec3{1, 0, 0});
@@ -32,5 +33,53 @@ static Action<Placement> SIDEWAYS_SWEEP {
         {0, {{-100, 0, 0}, {1, 0, 1}, SIDEWAYS}, HandleType::STOP},
         {0.5, {{0, 0, 0}, {1, 2, 1}, SIDEWAYS}, HandleType::SMOOTH},
         {1, {{100, 0, 0}, {1, 0, 1}, SIDEWAYS}, HandleType::STOP}
+    }, 1, ActionType::STRETCH
+};
+
+static Action<Placement> HORIZONTAL_ON {
+    {
+        {0, {{0, 20, 0}, {1, 0, 1}}, HandleType::STOP},
+        {1, {{0, 20, 0}, {1, 1, 1}}, HandleType::STOP}
+    }, 1, ActionType::STRETCH
+};
+
+static Action<Placement> HORIZONTAL_OFF {
+    {
+        {0, {{0, 20, 0}, {1, 1, 1}}, HandleType::STOP},
+        {1, {{0, 20, 0}, {1, 0, 1}}, HandleType::STOP}
+    }, 1, ActionType::STRETCH
+};
+
+static Action<glm::vec3> CLAP {
+    {
+        {0, {0.8, 0.8, 0.8}, HandleType::SMOOTH_OUT},
+        {0.1f, {0.5, 0.5, 0.5}, HandleType::SMOOTH_IN},
+        {0.1f, {0.5, 0.5, 0.5}, HandleType::STOP},
+        {0.3f, {0.5, 0.5, 0.5}, HandleType::STOP},
+        {1, {0.8, 0.8, 0.8}, HandleType::SMOOTH_IN},
+    }, 1, ActionType::STRETCH
+};
+
+static Action<glm::vec3> RUBIKS_X {
+    {
+        {0, {0, 0, 0}, HandleType::SMOOTH_OUT},
+        {1, {glm::radians(90.0f), 0, 0}, HandleType::STOP},
+        {1, {0, 0, 0}, HandleType::STOP},
+    }, 1, ActionType::STRETCH
+};
+
+static Action<glm::vec3> RUBIKS_Y {
+    {
+        {0, {0, 0, 0}, HandleType::SMOOTH_OUT},
+        {1, {0, glm::radians(90.0f), 0}, HandleType::STOP},
+        {1, {0, 0, 0}, HandleType::STOP},
+    }, 1, ActionType::STRETCH
+};
+
+static Action<glm::vec3> RUBIKS_Z {
+    {
+        {0, {0, 0, 0}, HandleType::SMOOTH_OUT},
+        {1, {0, 0, glm::radians(90.0f)}, HandleType::STOP},
+        {1, {0, 0, 0}, HandleType::STOP},
     }, 1, ActionType::STRETCH
 };
