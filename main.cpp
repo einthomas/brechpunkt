@@ -409,17 +409,17 @@ int main(int argc, const char** argv) {
         ));
     }
 
-    auto centerCubeModel =
-        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-    Mesh centerCubeObject(
-        centerCubeMeshInfo,
-        centerCubeModel,
-        glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
-        0.0f,
-        glm::vec3(0.0f)
-    );
-
-    mainScene.objects.insert(&centerCubeObject);
+    Mesh centerCubes[8];
+    for (int i = 0; i < 8; i++) {
+        centerCubes[i] = {
+            centerCubeMeshInfo,
+            mat4(1),
+            glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
+            0.0f,
+            glm::vec3(0.0f)
+        };
+        mainScene.objects.insert(&centerCubes[i]);
+    }
 
     float near = 0.5f;
     float far = 200.0f;
@@ -459,6 +459,25 @@ int main(int argc, const char** argv) {
             {1, DOWN_SWEEP},
             {2, FORWARD_SWEEP},
             {3, SIDEWAYS_SWEEP},
+            {4, HORIZONTAL_ON},
+            {14, HORIZONTAL_OFF},
+        }, 16
+    };
+
+    Animation<vec3> centerCubeOffset{
+        {
+            {0, CLAP},
+            {2, CLAP},
+            {3, CLAP},
+        }, 4
+    };
+
+    Animation<vec3> centerCubeRotation{
+        {
+            {0, RUBIKS_X},
+            {1, RUBIKS_Y},
+            {2, RUBIKS_X},
+            {3, RUBIKS_Z},
         }, 4
     };
 
@@ -660,7 +679,7 @@ int main(int argc, const char** argv) {
     particleUpdateShader.use();
     particleUpdateShader.setVector3f("attractorPosition", glm::vec3(0.0f, 0.1f, 0.0f));
 
-    BASS_ChannelPlay(bassStream, FALSE);
+    //BASS_ChannelPlay(bassStream, FALSE);
 
     float lastTime = glfwGetTime();
     float lastFrameTime = lastTime;
@@ -739,6 +758,36 @@ int main(int argc, const char** argv) {
 
         lightRimAnimation.update(deltaTime);
         lightRimObject.model = lightRimAnimation.get().to_matrix();
+
+        centerCubeOffset.update(deltaTime);
+        centerCubeRotation.update(deltaTime);
+
+        mat4 centerCubeBase =
+            Placement({0, 2, 0}, {0.5, 0.5, 0.5}, {}).to_matrix();
+
+        for (int i = 0; i < 8; i++) {
+            vec3 offset{
+                i & 1 ? 1 : -1,
+                i & 2 ? 1 : -1,
+                i & 4 ? 1 : -1,
+            };
+            mat4 rotation{1};
+            if (i & 1) {
+                rotation =
+                    rotate(rotation, centerCubeRotation.get().x, {1, 0, 0});
+            }
+            if (i & 2) {
+                rotation =
+                    rotate(rotation, centerCubeRotation.get().y, {0, 1, 0});
+            }
+            if (i & 4) {
+                rotation =
+                    rotate(rotation, centerCubeRotation.get().z, {0, 0, 1});
+            }
+            centerCubes[i].model =
+                centerCubeBase * rotation *
+                translate(mat4(1), offset * centerCubeOffset.get());
+        }
 
         glm::mat4 viewMatrix;
         if (useAnimatedCamera) {
