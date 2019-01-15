@@ -9,6 +9,7 @@
 !*.frag
 !*.geom
 !*.comp
+!*.py
 
 !*.txt
 
