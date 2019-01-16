@@ -735,7 +735,7 @@ int main(int argc, const char** argv) {
                 }
                 particles.add(&*newParticles.begin(), &*newParticles.end());
             } else {
-                musicCubes[i].emissionColorBrightness = 0.0f;
+                    musicCubes[i].emissionColorBrightness *= 0.7f;
             }
         }
         for (int i = 0; i < pointLights.size(); i++) {
@@ -749,7 +749,7 @@ int main(int argc, const char** argv) {
             } else {
                 pointLights[i].brightness = 0.0f;
                 if (musicCubes[i].currentHeight > musicCubes[i].minHeight) {
-                    float shrinkFactor = 0.9f;
+                    float shrinkFactor = 0.97f;
                     musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, shrinkFactor, 1.0f));
                     musicCubes[i].currentHeight *= shrinkFactor;
                 }
