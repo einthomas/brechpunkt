@@ -82,7 +82,6 @@ void Program::storeUniformLocations() {
         std::vector<GLchar>uniformName(maxUniformNameLength, 0);
         glGetActiveUniform(program, i, maxUniformNameLength, &uniformNameLength, &uniformSize, &uniformType, uniformName.data());
         uniformLocations[uniformName.data()] = glGetUniformLocation(program, uniformName.data());
-        std::cout << uniformName.data() << std::endl;
     }
 }
 
