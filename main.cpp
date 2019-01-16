@@ -576,6 +576,8 @@ int main(int argc, const char** argv) {
           {"backfaceRefractionTex", GL_TEXTURE_2D, backfaceRefraction},
           {"backfacePosTex", GL_TEXTURE_2D, backfacePos},
           {"gRefractionTex", GL_TEXTURE_2D, gRefraction},
+          {"gWorldPosRefractive", GL_TEXTURE_2D, gWorldPosRefractive},
+          {"gNormalRefractive", GL_TEXTURE_2D, gNormalRefractive}
         },
         { {"color", ssrTexture, GL_RGB16F} }
     );
