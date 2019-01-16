@@ -680,7 +680,7 @@ int main(int argc, const char** argv) {
     particleUpdateShader.use();
     particleUpdateShader.setVector3f("attractorPosition", glm::vec3(0.0f, 0.1f, 0.0f));
 
-    //BASS_ChannelPlay(bassStream, FALSE);
+    BASS_ChannelPlay(bassStream, FALSE);
 
     float lastTime = glfwGetTime();
     float lastFrameTime = lastTime;
@@ -709,10 +709,7 @@ int main(int argc, const char** argv) {
         } else {
             bassBrightness = 0.0f;
         }
-        avgBass = 4.0f;
-        bassBrightness = 3.0f;
         lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
-        lightRimObject.emissionColorBrightness = 1.0f;
         for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
             if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                 musicCubes[i].emissionColorBrightness = bassBrightness;
@@ -734,7 +731,7 @@ int main(int argc, const char** argv) {
                         ) * 3.0f
                     };
                 }
-                particles.add(newParticles.begin(), newParticles.end());
+                particles.add(&*newParticles.begin(), &*newParticles.end());
             } else {
                 musicCubes[i].emissionColorBrightness = 0.0f;
             }
@@ -1069,7 +1066,7 @@ GLFWwindow *initGLFW() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 0); // turn off multisample for framebuffer 0
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);

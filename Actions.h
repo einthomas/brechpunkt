@@ -4,7 +4,6 @@
 
 #include "Animation.h"
 #include "Placement.h"
-#include "LinearTuple.h"
 
 static glm::quat FORWARD =
     glm::angleAxis(glm::radians(90.0f), glm::vec3{1, 0, 0});

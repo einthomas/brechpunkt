@@ -37,6 +37,7 @@ struct Shader {
             if (!success) {
                 glGetShaderInfoLog(name, 1024, nullptr, info_log);
                 glDeleteShader(name);
+                std::cout << info_log << std::endl;
                 throw std::runtime_error(
                     "Compilation of "s + path + " failed:\n" + info_log
                 );
