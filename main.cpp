@@ -183,6 +183,13 @@ int main(int argc, const char** argv) {
         }
     );
 
+    GLuint lowResDepth;
+    GLuint lowResFramebuffer = generateFramebuffer(
+        windowWidth / 4, windowHeight / 4, {
+            {GL_DEPTH_ATTACHMENT, lowResDepth, GL_DEPTH_COMPONENT24}
+        }, {}
+    );
+
     GLuint filteredBuffer;
     GLuint filterFramebuffer = generateFramebuffer(
         windowWidth, windowHeight, {
@@ -516,6 +523,7 @@ int main(int argc, const char** argv) {
             {"gColorTex", GL_TEXTURE_2D, gColor},
             {"gNormalTex", GL_TEXTURE_2D, gNormal},
             {"gDepthTex", GL_TEXTURE_2D, gDepth},
+            {"lowResDepthTex", GL_TEXTURE_2D, lowResDepth},
             {"gEmissionTex", GL_TEXTURE_2D, gEmission},
             {"gWorldPosTex", GL_TEXTURE_2D, gWorldPos},
         },
@@ -882,7 +890,13 @@ int main(int argc, const char** argv) {
             GL_DEPTH_BUFFER_BIT, GL_NEAREST
         );
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lowResFramebuffer);
+        glBlitFramebuffer(
+            0, 0, windowWidth, windowHeight,
+            0, 0, windowWidth / 4, windowHeight / 4,
+            GL_DEPTH_BUFFER_BIT, GL_NEAREST
+        );
 
         // render refractive geometry to gBufferRefractive
         glBindFramebuffer(GL_FRAMEBUFFER, gBufferRefractive);
