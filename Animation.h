@@ -2,6 +2,7 @@
 
 #include <initializer_list>
 #include <vector>
+#include <cmath>
 
 enum class HandleType {
     SMOOTH, SMOOTH_IN, SMOOTH_OUT, STOP
@@ -41,7 +42,7 @@ public:
     Animation(std::initializer_list<KeyFrame<T>> keyFrames, float duration = 0);
     Animation(std::initializer_list<Command<T>> commands, float duration = 0);
 
-    void update(float delta);
+    void update(float time);
     void reset();
 
     T get() const;
@@ -91,11 +92,11 @@ Animation<T>::Animation(std::initializer_list<Command<T> > commands, float durat
 }
 
 template<class T>
-void Animation<T>::update(float delta) {
-    time += delta;
+void Animation<T>::update(float time) {
+    time = std::fmod(time, duration);
+    this->time = time;
 
-    while (time >= duration) {
-        time -= duration;
+    if (index > 0 && keyFrames[index - 1].time > time) {
         index = 0;
     }
 

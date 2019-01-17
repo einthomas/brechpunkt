@@ -60,6 +60,9 @@ const int DEFAULT_HEIGHT = 1080;
 const float CAMERA_SPEED = 10.0f;
 const int NUM_MUSIC_CUBES = 36;
 
+const double BEATS_PER_SECOND = 128.0 / 60.0;
+const double BEAT_OFFSET = -1.032;
+
 static int windowWidth = 0, windowHeight = 0;
 static float frameRate;
 
@@ -161,8 +164,8 @@ int main(int argc, const char** argv) {
     }
 
     DWORD bassStream;
-    bassStream = BASS_StreamCreateFile(FALSE, "music/music1cut.mp3", 0, 0, BASS_SAMPLE_LOOP);
-    DWORD bassStreamDecoded = BASS_StreamCreateFile(FALSE, "music/music1cut.mp3", 0, 0, BASS_SAMPLE_LOOP | BASS_STREAM_PRESCAN | BASS_STREAM_DECODE);
+    bassStream = BASS_StreamCreateFile(FALSE, "music/music1uncut.mp3", 0, 0, BASS_SAMPLE_LOOP);
+    DWORD bassStreamDecoded = BASS_StreamCreateFile(FALSE, "music/music1uncut.mp3", 0, 0, BASS_SAMPLE_LOOP | BASS_STREAM_PRESCAN | BASS_STREAM_DECODE);
     if (!bassStream) {
         return 0;
     }
@@ -464,17 +467,18 @@ int main(int argc, const char** argv) {
     Animation<Placement> lightRimAnimation{
         {
             {0, DOWN_SWEEP},
-            {1, DOWN_SWEEP},
-            {2, FORWARD_SWEEP},
-            {3, SIDEWAYS_SWEEP},
-            {4, HORIZONTAL_ON},
-            {14, HORIZONTAL_OFF},
-        }, 16
+            {2, DOWN_SWEEP},
+            {4, FORWARD_SWEEP},
+            {6, SIDEWAYS_SWEEP},
+            {8, HORIZONTAL_ON},
+            {31, HORIZONTAL_OFF},
+        }, 32
     };
 
     Animation<vec3> centerCubeOffset{
         {
             {0, CLAP},
+            {1, CLAP},
             {2, CLAP},
             {3, CLAP},
         }, 4
@@ -712,6 +716,13 @@ int main(int argc, const char** argv) {
 
         double musicTimestamp = BASS_ChannelBytes2Seconds(bassStream, BASS_ChannelGetPosition(bassStream, BASS_POS_BYTE)) + 0.1;
         BASS_ChannelSetPosition(bassStreamDecoded, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp), BASS_POS_BYTE);
+
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            BASS_ChannelSetPosition(bassStream, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp - 0.5), BASS_POS_BYTE);
+        } else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            BASS_ChannelSetPosition(bassStream, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp + 0.5), BASS_POS_BYTE);
+        }
+
         BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
         avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
         float bassBrightness = 0.0f;
@@ -765,11 +776,17 @@ int main(int argc, const char** argv) {
             }
         }
 
-        lightRimAnimation.update(deltaTime);
-        lightRimObject.model = lightRimAnimation.get().to_matrix();
+        float animationTime = static_cast<float>(
+            (musicTimestamp + BEAT_OFFSET) * BEATS_PER_SECOND
+        );
 
-        centerCubeOffset.update(deltaTime);
-        centerCubeRotation.update(deltaTime);
+        lightRimAnimation.update(animationTime);
+        centerCubeOffset.update(animationTime + 0.1f); // clap offset
+        centerCubeRotation.update(animationTime);
+        cameraPosition.update(animationTime);
+        cameraFocus.update(animationTime);
+
+        lightRimObject.model = lightRimAnimation.get().to_matrix();
 
         mat4 centerCubeBase =
             Placement({0, 2, 0}, {0.5, 0.5, 0.5}, {}).to_matrix();
@@ -800,8 +817,6 @@ int main(int argc, const char** argv) {
 
         glm::mat4 viewMatrix;
         if (useAnimatedCamera) {
-            cameraPosition.update(deltaTime);
-            cameraFocus.update(deltaTime);
             viewMatrix = glm::lookAt(
                 glm::mix(cameraPosition.get(), cameraFocus.get(), -0.02),
                 cameraFocus.get(),
