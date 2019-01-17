@@ -14,6 +14,7 @@ uniform sampler2D gWorldPosTex;
 uniform sampler2D gNormalTex;
 uniform sampler2D gEmissionTex;
 uniform sampler2D gDepthTex;
+uniform sampler2D lowResDepthTex;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -79,9 +80,11 @@ void main() {
                     samplePosImageSpace.y <= 1.0f
                 ) {
                     float sampleDepth = texelFetch(
-                        gDepthTex,
-                        ivec2(samplePosImageSpace.xy * textureSize(gDepthTex, 0)),
-                        0
+                        lowResDepthTex,
+                        ivec2(
+                            samplePosImageSpace.xy *
+                            textureSize(lowResDepthTex, 0)
+                        ), 0
                     ).r;
 
                     c += vec4(
