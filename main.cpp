@@ -10,7 +10,6 @@
 #include <tuple>
 #include <array>
 
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -163,6 +162,7 @@ int main(int argc, const char** argv) {
 
     DWORD bassStream;
     bassStream = BASS_StreamCreateFile(FALSE, "music/music1cut.mp3", 0, 0, BASS_SAMPLE_LOOP);
+    DWORD bassStreamDecoded = BASS_StreamCreateFile(FALSE, "music/music1cut.mp3", 0, 0, BASS_SAMPLE_LOOP | BASS_STREAM_PRESCAN | BASS_STREAM_DECODE);
     if (!bassStream) {
         return 0;
     }
@@ -702,8 +702,9 @@ int main(int argc, const char** argv) {
         float deltaTime = frameTime - lastFrameTime;
         lastFrameTime = frameTime;
 
-        double musicTimestamp = BASS_ChannelBytes2Seconds(bassStream, BASS_ChannelGetPosition(bassStream, BASS_POS_BYTE));
-        BASS_ChannelGetData(bassStream, fft, BASS_DATA_FFT2048);
+        double musicTimestamp = BASS_ChannelBytes2Seconds(bassStream, BASS_ChannelGetPosition(bassStream, BASS_POS_BYTE)) + 0.1;
+        BASS_ChannelSetPosition(bassStreamDecoded, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp), BASS_POS_BYTE);
+        BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
         avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
         float bassBrightness = 0.0f;
         if (avgBass > 0.02f) {
