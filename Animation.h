@@ -93,7 +93,7 @@ Animation<T>::Animation(std::initializer_list<Command<T> > commands, float durat
 
 template<class T>
 void Animation<T>::update(float time) {
-    time = std::fmod(time, duration);
+    //time = std::fmod(time, duration); No loops
     this->time = time;
 
     if (index > 0 && keyFrames[index - 1].time > time) {

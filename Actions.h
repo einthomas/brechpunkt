@@ -51,16 +51,19 @@ static Action<Placement> HORIZONTAL_OFF {
 
 static Action<glm::vec3> CLAP {
     {
+        {0, {0.8, 0.8, 0.8}, HandleType::STOP},
         {0, {0.8, 0.8, 0.8}, HandleType::SMOOTH_OUT},
         {0.1f, {0.5, 0.5, 0.5}, HandleType::SMOOTH_IN},
         {0.1f, {0.5, 0.5, 0.5}, HandleType::STOP},
         {0.3f, {0.5, 0.5, 0.5}, HandleType::STOP},
         {1, {0.8, 0.8, 0.8}, HandleType::SMOOTH_IN},
+        {1, {0.8, 0.8, 0.8}, HandleType::STOP},
     }, 1, ActionType::STRETCH
 };
 
 static Action<glm::vec3> RUBIKS_X {
     {
+        {0, {0, 0, 0}, HandleType::STOP},
         {0, {0, 0, 0}, HandleType::SMOOTH_OUT},
         {1, {glm::radians(90.0f), 0, 0}, HandleType::STOP},
         {1, {0, 0, 0}, HandleType::STOP},
@@ -69,6 +72,7 @@ static Action<glm::vec3> RUBIKS_X {
 
 static Action<glm::vec3> RUBIKS_Y {
     {
+        {0, {0, 0, 0}, HandleType::STOP},
         {0, {0, 0, 0}, HandleType::SMOOTH_OUT},
         {1, {0, glm::radians(90.0f), 0}, HandleType::STOP},
         {1, {0, 0, 0}, HandleType::STOP},
@@ -77,6 +81,7 @@ static Action<glm::vec3> RUBIKS_Y {
 
 static Action<glm::vec3> RUBIKS_Z {
     {
+        {0, {0, 0, 0}, HandleType::STOP},
         {0, {0, 0, 0}, HandleType::SMOOTH_OUT},
         {1, {0, 0, glm::radians(90.0f)}, HandleType::STOP},
         {1, {0, 0, 0}, HandleType::STOP},

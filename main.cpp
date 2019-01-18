@@ -77,7 +77,7 @@ static Program gBufferRefractiveShader;
 static Program gBufferLayer2Shader;
 static Mesh lightMesh;
 static bool muteSong = false;
-static bool useAnimatedCamera = false;
+static bool useAnimatedCamera = true;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;
 
@@ -399,7 +399,7 @@ int main(int argc, const char** argv) {
         musicCubes[i] = Mesh(
             musicCubeMeshInfo,
             model,
-            glm::vec3(0.0f),
+            glm::vec3(1.0f),
             0.0f,
             color
         );
@@ -440,57 +440,91 @@ int main(int argc, const char** argv) {
     );
 
     Animation<glm::vec3> cameraPosition{
-        {0, {0, 60.0, -2.4}, HandleType::STOP},
-        {18, {-3.7, 0.8, -3.4}, HandleType::STOP},
-        {20, {-3.7, 0.8, -3.4}, HandleType::STOP},
+        {0, {34, 3, -35}, HandleType::SMOOTH_OUT},
+        {8, {34, 1.5, -25}, HandleType::SMOOTH},
+        {16, {32, 1, -10}, HandleType::SMOOTH_IN},
 
-        {10, {8.5, 1.5, -10.0}, HandleType::SMOOTH_OUT},
-        {30, {8.5, 1.5, 0.0}, HandleType::SMOOTH_IN},
+        {16, {34, 3.7, 0}, HandleType::SMOOTH_OUT},
+        {32, {10, 3.7, 0}, HandleType::SMOOTH_IN},
 
-        {30, {4.9, 2.8, -1.1}, HandleType::STOP},
-        {40, {4.9, 2.8, -1.1}, HandleType::STOP},
+        {32, {25, 2, -36}, HandleType::SMOOTH_OUT},
+        {48, {-25, 2, -36}, HandleType::SMOOTH_IN},
+
+        {48, {-17, 1.5, -1}, HandleType::SMOOTH_OUT},
+        {64, {17, 1.5, -1}, HandleType::SMOOTH_IN},
+
+        {64 + 0, {2.5, 5, -2.2}, HandleType::SMOOTH_OUT},
+        {64 + 8, {3.6, 1.1, 3.6}, HandleType::SMOOTH_IN},
+        {64 + 8, {3.6, 1.1, -2.2}, HandleType::SMOOTH_OUT},
+        {64 + 16, {2.5, 5, 3.6}, HandleType::SMOOTH_IN},
+
+        {64 + 16, {34, 3.7, 0}, HandleType::SMOOTH_OUT},
+        {64 + 32, {10, 3.7, 0}, HandleType::SMOOTH_IN},
     };
 
     Animation<glm::vec3> cameraFocus{
-        {0, {0, 2, 0}, HandleType::STOP},
-        {20, {-0.8, 2, -1}, HandleType::STOP},
+        {0, {34, 0, -33}, HandleType::SMOOTH_OUT},
+        {8, {32, 0, -23}, HandleType::SMOOTH},
+        {16, {20, 0, 0}, HandleType::SMOOTH_IN},
 
-        {10, {4, 0.0, -8.0}, HandleType::SMOOTH_OUT},
-        {30, {4, 0.0, -2.0}, HandleType::SMOOTH_IN},
+        {16, {20, 3.7, 0}, HandleType::SMOOTH_OUT},
+        {32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
 
-        {30, {-19, 2.8, -1.1}, HandleType::STOP},
-        {34, {-19, 2.8, -1.1}, HandleType::STOP},
-        {36, {0.8, 2.8, -1.1}, HandleType::STOP},
-        {40, {0.8, 2.8, -1.1}, HandleType::STOP},
+        {32, {25, 2, -10}, HandleType::SMOOTH_OUT},
+        {48, {-25, 2, -10}, HandleType::SMOOTH_IN},
+
+        {48, {-17, 0, -7}, HandleType::SMOOTH_OUT},
+        {64, {17, 0, -7}, HandleType::SMOOTH_IN},
+
+        {64 + 0, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {64 + 16, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {64 + 16, {20, 3.7, 0}, HandleType::SMOOTH_OUT},
+        {64 + 32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
     };
 
     Animation<Placement> lightRimAnimation{
         {
-            {0, DOWN_SWEEP},
-            {2, DOWN_SWEEP},
-            {4, FORWARD_SWEEP},
-            {6, SIDEWAYS_SWEEP},
-            {8, HORIZONTAL_ON},
+            {0, HORIZONTAL_ON},
+            {15, HORIZONTAL_OFF},
+            {16, HORIZONTAL_ON},
             {31, HORIZONTAL_OFF},
-        }, 32
+        }
     };
 
     Animation<vec3> centerCubeOffset{
         {
-            {0, CLAP},
-            {1, CLAP},
-            {2, CLAP},
-            {3, CLAP},
-        }, 4
+            {24, CLAP},
+
+            {64 + 0, CLAP},
+            {64 + 2, CLAP},
+            {64 + 6, CLAP},
+            {64 + 8, CLAP},
+            {64 + 10, CLAP},
+            {64 + 14, CLAP},
+        }
     };
 
     Animation<vec3> centerCubeRotation{
         {
-            {0, RUBIKS_X},
-            {1, RUBIKS_Y},
-            {2, RUBIKS_X},
-            {3, RUBIKS_Z},
-        }, 4
+            {29, RUBIKS_Y},
+            {30, RUBIKS_X},
+            {31, RUBIKS_Z},
+
+            {64 + 4, RUBIKS_Z},
+            {64 + 5, RUBIKS_X},
+            {64 + 12, RUBIKS_Z},
+            {64 + 13, RUBIKS_X},
+        }
+    };
+
+    Animation<float> beatLight{
+        {
+            {0, 0, HandleType::STOP},
+            {32, 0, HandleType::STOP},
+            {32, 1, HandleType::STOP},
+            {64, 1, HandleType::STOP},
+        }
     };
 
     gBufferShader = Program("shaders/gBuffer.vert", "shaders/gBuffer.frag");
@@ -723,6 +757,17 @@ int main(int argc, const char** argv) {
             BASS_ChannelSetPosition(bassStream, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp + 0.5), BASS_POS_BYTE);
         }
 
+        float animationTime = static_cast<float>(
+            (musicTimestamp + BEAT_OFFSET) * BEATS_PER_SECOND
+        );
+
+        lightRimAnimation.update(animationTime);
+        centerCubeOffset.update(animationTime + 0.1f); // clap offset
+        centerCubeRotation.update(animationTime);
+        beatLight.update(animationTime);
+        cameraPosition.update(animationTime);
+        cameraFocus.update(animationTime);
+
         BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
         avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
         float bassBrightness = 0.0f;
@@ -731,7 +776,11 @@ int main(int argc, const char** argv) {
         } else {
             bassBrightness = 0.0f;
         }
-        lightRimObject.emissionColorBrightness = std::max(bassBrightness * 0.2f, 0.2f);
+        lightRimObject.emissionColorBrightness = mix(
+            1.0f,
+            std::max(bassBrightness * 0.2f, 0.2f),
+            beatLight.get()
+        );
         for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
             if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                 musicCubes[i].emissionColorBrightness = bassBrightness;
@@ -775,16 +824,6 @@ int main(int argc, const char** argv) {
                 }
             }
         }
-
-        float animationTime = static_cast<float>(
-            (musicTimestamp + BEAT_OFFSET) * BEATS_PER_SECOND
-        );
-
-        lightRimAnimation.update(animationTime);
-        centerCubeOffset.update(animationTime + 0.1f); // clap offset
-        centerCubeRotation.update(animationTime);
-        cameraPosition.update(animationTime);
-        cameraFocus.update(animationTime);
 
         lightRimObject.model = lightRimAnimation.get().to_matrix();
 
