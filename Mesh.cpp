@@ -223,7 +223,6 @@ void Mesh::setUniforms(Program &shader) {
 
     if (usePresetModelMatrix) {
         shader.setMatrix4("model", this->model);
-        usePresetModelMatrix = false;
     } else {
         auto model = glm::mat4(1.0f);
         model = glm::translate(model, position);

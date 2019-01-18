@@ -800,6 +800,22 @@ int main(int argc, const char** argv) {
                 pointLights[i].color = musicCubes[i].emissionColor;
             }
         }
+
+        BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
+        avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
+        float bassBrightness = 0.0f;
+        if (avgBass > 0.02f) {
+            bassBrightness = 3.0f * avgBass / 0.13f;
+        } else {
+            bassBrightness = 0.0f;
+        }
+
+        lightRimObject.emissionColorBrightness = mix(
+            1.0f,
+            std::max(bassBrightness * 0.2f, 0.2f),
+            beatLight.get()
+        );
+
         if (animationTime >= 96.0f) {
             if (!musicCubesInitialized) {
                 musicCubesInitialized = true;
@@ -810,21 +826,6 @@ int main(int argc, const char** argv) {
                     musicCubes[i].scale = { 1, musicCubes[i].maxHeight, 1 };
                 }
             }
-            BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
-            avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
-            float bassBrightness = 0.0f;
-            if (avgBass > 0.02f) {
-                bassBrightness = 3.0f * avgBass / 0.13f;
-            } else {
-                bassBrightness = 0.0f;
-            }
-
-            /*lightRimObject.emissionColorBrightness = mix(
-                1.0f,
-                std::max(bassBrightness * 0.2f, 0.2f),
-                beatLight.get()
-            );*/
-
             for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
                 if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                     musicCubes[i].emissionColorBrightness = bassBrightness;
