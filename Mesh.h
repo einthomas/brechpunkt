@@ -33,4 +33,8 @@ public:
     );
     void draw(Program &shader);
     void setUniforms(Program &shader);
+    void resetModelMatrix();
+
+private:
+    glm::mat4 modelUnchanged;
 };

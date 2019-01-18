@@ -155,6 +155,7 @@ Mesh::Mesh(
     emissionColor(emissionColor),
     emissionColorBrightness(emissionColorBrightness),
     model(model),
+    modelUnchanged(model),
     vao(meshInfo.VAO),
     count(meshInfo.numTriangles)
 {
@@ -221,4 +222,8 @@ void Mesh::setUniforms(Program &shader) {
     shader.setVector3f("diffuseColor", diffuseColor);
     shader.setFloat("emissionColorBrightness", emissionColorBrightness);
     shader.setVector3f("emissionColor", emissionColor);
+}
+
+void Mesh::resetModelMatrix() {
+    model = modelUnchanged;
 }

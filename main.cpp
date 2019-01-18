@@ -54,6 +54,7 @@ struct PointLight {
 };
 
 static bool debug_flag = false;
+static bool fullscreen = false;
 
 const int DEFAULT_WIDTH = 1920;
 const int DEFAULT_HEIGHT = 1080;
@@ -141,8 +142,15 @@ const float HALTON_POINTS[64 * 3] = {
 
 int main(int argc, const char** argv) {
     if (argc >= 2) {
-        if (strcmp(argv[1], "--debug") == 0) {
-            debug_flag = true;
+        for (int i = 0; i < argc; i++) {
+            if (strcmp(argv[i], "--debug") == 0) {
+                debug_flag = true;
+            } else if (strcmp(argv[i], "--mute") == 0) {
+                muteSong = true;
+                BASS_SetConfig(BASS_CONFIG_GVOL_STREAM, 0);
+            } else if (strcmp(argv[i], "--fullscreen") == 0) {
+                fullscreen = true;
+            }
         }
     }
 
@@ -383,28 +391,28 @@ int main(int argc, const char** argv) {
         0.0f,
         glm::vec3(0.0f)
     );
-    mainScene.glassObjects.insert(&bunnyGlassMesh);
+    //mainScene.glassObjects.insert(&bunnyGlassMesh);
 
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
         auto pos = glm::vec3(0.0f, 0.0f, -20.0f);
+        auto scale = glm::vec3(1.0f, sin(i / 2.0f) * 0.3f + 1.5f, 1.0f);
         auto model = glm::mat4(1.0f);
         model = glm::rotate(
             model, glm::radians(i * 10.0f), { 0, 1, 0 }
         );
         model = glm::translate(model, pos);
-
-        auto color = glm::rgbColor(glm::vec3((360.0f / 36.0f) * i, 0.9f, 1.0f));
+        model = glm::scale(model, scale);
 
         musicCubes[i] = Mesh(
             musicCubeMeshInfo,
             model,
             glm::vec3(1.0f),
-            0.0f,
-            color
+            1.0f,
+            glm::vec3(1.0f)
         );
         musicCubes[i].minHeight = sin(i / 2.0f) * 0.1f + 0.5f;
-        musicCubes[i].maxHeight = sin(i / 2.0f) * 0.3f + 1.5f;
+        musicCubes[i].maxHeight = scale.y;
         musicCubes[i].currentHeight = 1.0f;
 
         mainScene.objects.insert(&musicCubes[i]);
@@ -412,7 +420,7 @@ int main(int argc, const char** argv) {
 
         pointLights.push_back(PointLight(
             model * glm::vec4(0.0f, lightFloorOffset, 0.0f, 1.0f),
-            color,
+            glm::vec3(1.0f),
             1.0f,
             1.0f,
             0.07f,
@@ -730,6 +738,8 @@ int main(int argc, const char** argv) {
 
     BASS_ChannelPlay(bassStream, FALSE);
 
+    bool musicCubesInitialized = false;
+
     float lastTime = glfwGetTime();
     float lastFrameTime = lastTime;
     float frameTime = lastTime;
@@ -768,59 +778,79 @@ int main(int argc, const char** argv) {
         cameraPosition.update(animationTime);
         cameraFocus.update(animationTime);
 
-        BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
-        avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
-        float bassBrightness = 0.0f;
-        if (avgBass > 0.02f) {
-            bassBrightness = 3.0f * avgBass / 0.13f;
-        } else {
-            bassBrightness = 0.0f;
-        }
-        lightRimObject.emissionColorBrightness = mix(
-            1.0f,
-            std::max(bassBrightness * 0.2f, 0.2f),
-            beatLight.get()
-        );
-        for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
-            if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
-                musicCubes[i].emissionColorBrightness = bassBrightness;
-                glm::vec3 particleSpawnPos = musicCubes[i].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f) + glm::vec4(0.0f, 0.1f, 0.0f, 0.0f);
-                array<Particle, 10> newParticles;
-                for (unsigned int k = 0; k < 10; k++) {
-                    newParticles[k] = {
-                        particleSpawnPos,
-                        glm::normalize(glm::quat(
-                            normalFloats(random),
-                            normalFloats(random),
-                            normalFloats(random),
-                            normalFloats(random)
-                        )),
-                        glm::normalize(-particleSpawnPos) + glm::vec3(
-                            normalFloats(random) * 1.0f,
-                            -0.03f,
-                            normalFloats(random) * 1.0f
-                        ) * 3.0f
-                    };
-                }
-                particles.add(&*newParticles.begin(), &*newParticles.end());
-            } else {
-                    musicCubes[i].emissionColorBrightness *= 0.7f;
+        if (animationTime >= 80.0f && animationTime <= 96.0f) {
+            for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
+                musicCubes[i].currentHeight *= 0.995f;
+                musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, 0.995f, 1.0f));
+                musicCubes[i].emissionColor *= 0.975f;
+                pointLights[i].color *= 0.975f;
             }
-        }
-        for (int i = 0; i < pointLights.size(); i++) {
-            if (i < pointLights.size() * (avgBass / 0.13f)) {
-                pointLights[i].brightness = bassBrightness;
-                if (musicCubes[i].currentHeight < musicCubes[i].maxHeight) {
-                    float growthFactor = 1.15f;
-                    musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, growthFactor, 1.0f));
-                    musicCubes[i].currentHeight *= growthFactor;
+        } else if (animationTime >= 96.0f) {
+            if (!musicCubesInitialized) {
+                musicCubesInitialized = true;
+                for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
+                    glm::vec3 color = glm::rgbColor(glm::vec3((360.0f / 36.0f) * i, 0.9f, 1.0f));
+                    musicCubes[i].emissionColor = color;
+                    pointLights[i].color = color;
+                    musicCubes[i].currentHeight = musicCubes[i].maxHeight;
+                    musicCubes[i].resetModelMatrix();
+                    //musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, 0.6f, 1.0f));
                 }
+            }
+            BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
+            avgBass = (fft[1] * 0.4f + avgBass * 0.6f);
+            float bassBrightness = 0.0f;
+            if (avgBass > 0.02f) {
+                bassBrightness = 3.0f * avgBass / 0.13f;
             } else {
-                pointLights[i].brightness = 0.0f;
-                if (musicCubes[i].currentHeight > musicCubes[i].minHeight) {
-                    float shrinkFactor = 0.97f;
-                    musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, shrinkFactor, 1.0f));
-                    musicCubes[i].currentHeight *= shrinkFactor;
+                bassBrightness = 0.0f;
+            }
+            lightRimObject.emissionColorBrightness = mix(
+                1.0f,
+                std::max(bassBrightness * 0.2f, 0.2f),
+                beatLight.get()
+            );
+            for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
+                if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
+                    musicCubes[i].emissionColorBrightness = bassBrightness;
+                    glm::vec3 particleSpawnPos = musicCubes[i].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f) + glm::vec4(0.0f, 0.1f, 0.0f, 0.0f);
+                    array<Particle, 10> newParticles;
+                    for (unsigned int k = 0; k < 10; k++) {
+                        newParticles[k] = {
+                            particleSpawnPos,
+                            glm::normalize(glm::quat(
+                                normalFloats(random),
+                                normalFloats(random),
+                                normalFloats(random),
+                                normalFloats(random)
+                            )),
+                            glm::normalize(-particleSpawnPos) + glm::vec3(
+                                normalFloats(random) * 1.0f,
+                                -0.03f,
+                                normalFloats(random) * 1.0f
+                            ) * 3.0f
+                        };
+                    }
+                    particles.add(&*newParticles.begin(), &*newParticles.end());
+                } else {
+                    musicCubes[i].emissionColorBrightness *= 0.7f;
+                }
+            }
+            for (int i = 0; i < pointLights.size(); i++) {
+                if (i < pointLights.size() * (avgBass / 0.13f)) {
+                    pointLights[i].brightness = bassBrightness;
+                    if (musicCubes[i].currentHeight < musicCubes[i].maxHeight) {
+                        float growthFactor = 1.15f;
+                        musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, growthFactor, 1.0f));
+                        musicCubes[i].currentHeight *= growthFactor;
+                    }
+                } else {
+                    pointLights[i].brightness *= 0.7f;
+                    if (musicCubes[i].currentHeight > musicCubes[i].minHeight) {
+                        float shrinkFactor = 0.97f;
+                        musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, shrinkFactor, 1.0f));
+                        musicCubes[i].currentHeight *= shrinkFactor;
+                    }
                 }
             }
         }
@@ -1146,19 +1176,18 @@ GLFWwindow *initGLFW() {
     frameRate = mode->refreshRate;
     GLFWwindow *window;
 
-    if (debug_flag) {
+    if (fullscreen) {
+        window = glfwCreateWindow(
+            windowWidth, windowHeight, "Brechpunkt", monitor, nullptr
+        );
+    } else {
         windowWidth = DEFAULT_WIDTH;
         windowHeight = DEFAULT_HEIGHT;
 
         window = glfwCreateWindow(
             windowWidth, windowHeight, "Brechpunkt", nullptr, nullptr
         );
-    } else {
-        window = glfwCreateWindow(
-            windowWidth, windowHeight, "Brechpunkt", monitor, nullptr
-        );
     }
-
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
