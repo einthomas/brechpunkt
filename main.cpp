@@ -338,27 +338,31 @@ int main(int argc, const char** argv) {
     MeshInfo bunnyGlassMeshInfo("scenes/scene3/", "Bunny.vbo");
 
     Mesh lightRimObject = Mesh(
-        lightRimInfo, glm::translate(
-            glm::mat4(1.0f), glm::vec3(0, 0, 0)
-        ), {}, 0.0f, { 2, 2, 2 }
+        lightRimInfo,
+        glm::vec3(0.0f),
+        0.0f,
+        glm::vec3(2.0f)
     );
 
     mainScene.objects.insert(&lightRimObject);
     environmentScene.objects.insert(&lightRimObject);
 
+
     Mesh floorObject = Mesh(
         floorMeshInfo,
-        glm::mat4(glm::mat3(80/144.0f)),
         glm::vec3(1.0f),
         0.0f,
-        glm::vec3(0.0f)
+        glm::vec3(0.0f),
+        glm::vec3(0.0f),
+        glm::vec3(80.0f / 144.0f)
     );
     Mesh mirrorsObject = Mesh(
         mirrorsMeshInfo,
-        glm::mat4(glm::mat3(80/144.0f)),
         glm::vec3(0.1f),
         0.0f,
-        glm::vec3(0.0f)
+        glm::vec3(0.0f),
+        glm::vec3(0.0f),
+        glm::vec3(80.0f / 144.0f)
     );
 
     mainScene.objects.insert(&floorObject);
@@ -386,42 +390,42 @@ int main(int argc, const char** argv) {
 
     Mesh bunnyGlassMesh = Mesh(
         bunnyGlassMeshInfo,
-        glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, 0.0f)),
         glm::vec3(1.0f, 1.0f, 1.0f),
         0.0f,
-        glm::vec3(0.0f)
+        glm::vec3(0.0f),
+        glm::vec3(10.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f)
     );
     //mainScene.glassObjects.insert(&bunnyGlassMesh);
 
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
-        auto pos = glm::vec3(0.0f, 0.0f, -20.0f);
+        auto pos = glm::vec3(sinf(glm::radians(i * 10.0f)) * 20.0f, 0.0f, cosf(glm::radians(i * 10.0f)) * 20.0f);
         auto scale = glm::vec3(1.0f, sin(i / 2.0f) * 0.3f + 1.5f, 1.0f);
-        auto model = glm::mat4(1.0f);
-        model = glm::rotate(
-            model, glm::radians(i * 10.0f), { 0, 1, 0 }
-        );
-        model = glm::translate(model, pos);
-        model = glm::scale(model, scale);
+        auto rotation = glm::radians(i * 10.0f);
 
         musicCubes[i] = Mesh(
             musicCubeMeshInfo,
-            model,
             glm::vec3(1.0f),
             1.0f,
-            glm::vec3(1.0f)
+            glm::vec3(1.0f),
+            pos,
+            scale,
+            glm::vec3(0.0f, rotation, 0.0f)
         );
         musicCubes[i].minHeight = sin(i / 2.0f) * 0.1f + 0.5f;
         musicCubes[i].maxHeight = scale.y;
-        musicCubes[i].currentHeight = 1.0f;
 
         mainScene.objects.insert(&musicCubes[i]);
         environmentScene.objects.insert(&musicCubes[i]);
 
+        auto model = glm::mat4(1.0f);
+        model = glm::translate(model, pos);
+        model = glm::scale(model, scale);
         pointLights.push_back(PointLight(
             model * glm::vec4(0.0f, lightFloorOffset, 0.0f, 1.0f),
             glm::vec3(1.0f),
-            1.0f,
+            2.0f,
             1.0f,
             0.07f,
             4.0f
@@ -430,13 +434,12 @@ int main(int argc, const char** argv) {
 
     Mesh centerCubes[8];
     for (int i = 0; i < 8; i++) {
-        centerCubes[i] = {
+        centerCubes[i] = Mesh(
             centerCubeMeshInfo,
-            mat4(1),
             glm::vec3(1.0f, 1.0f, 1.0f) * 2.0f,
             0.0f,
             glm::vec3(0.0f)
-        };
+        );
         mainScene.objects.insert(&centerCubes[i]);
     }
 
@@ -529,9 +532,17 @@ int main(int argc, const char** argv) {
     Animation<float> beatLight{
         {
             {0, 0, HandleType::STOP},
-            {32, 0, HandleType::STOP},
-            {32, 1, HandleType::STOP},
-            {64, 1, HandleType::STOP},
+            {96, 1, HandleType::STOP},
+        }
+    };
+
+    Animation<float> introMusicCubeAnimation{
+        {
+            {0, 1, HandleType::STOP},
+            {80, 1, HandleType::STOP},
+            {80, 1, HandleType::STOP},
+            {96, 0, HandleType::STOP},
+            {96, 0, HandleType::STOP},
         }
     };
 
@@ -777,24 +788,26 @@ int main(int argc, const char** argv) {
         beatLight.update(animationTime);
         cameraPosition.update(animationTime);
         cameraFocus.update(animationTime);
+        introMusicCubeAnimation.update(animationTime);
 
-        if (animationTime >= 80.0f && animationTime <= 96.0f) {
+        if (introMusicCubeAnimation.get() > 0.0f) {
+            musicCubesInitialized = false;
             for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
-                musicCubes[i].currentHeight *= 0.995f;
-                musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, 0.995f, 1.0f));
-                musicCubes[i].emissionColor *= 0.975f;
-                pointLights[i].color *= 0.975f;
+                musicCubes[i].scale.y = musicCubes[i].maxHeight * introMusicCubeAnimation.get();
+                musicCubes[i].emissionColor = glm::vec3(1.0f);
+                musicCubes[i].emissionColorBrightness = introMusicCubeAnimation.get() * introMusicCubeAnimation.get();
+                pointLights[i].brightness = musicCubes[i].emissionColorBrightness;
+                pointLights[i].color = musicCubes[i].emissionColor;
             }
-        } else if (animationTime >= 96.0f) {
+        }
+        if (animationTime >= 96.0f) {
             if (!musicCubesInitialized) {
                 musicCubesInitialized = true;
                 for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
                     glm::vec3 color = glm::rgbColor(glm::vec3((360.0f / 36.0f) * i, 0.9f, 1.0f));
                     musicCubes[i].emissionColor = color;
                     pointLights[i].color = color;
-                    musicCubes[i].currentHeight = musicCubes[i].maxHeight;
-                    musicCubes[i].resetModelMatrix();
-                    //musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, 0.6f, 1.0f));
+                    musicCubes[i].scale = { 1, musicCubes[i].maxHeight, 1 };
                 }
             }
             BASS_ChannelGetData(bassStreamDecoded, fft, BASS_DATA_FFT2048);
@@ -805,15 +818,17 @@ int main(int argc, const char** argv) {
             } else {
                 bassBrightness = 0.0f;
             }
-            lightRimObject.emissionColorBrightness = mix(
+
+            /*lightRimObject.emissionColorBrightness = mix(
                 1.0f,
                 std::max(bassBrightness * 0.2f, 0.2f),
                 beatLight.get()
-            );
+            );*/
+
             for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
                 if (i < NUM_MUSIC_CUBES * (avgBass / 0.13f)) {
                     musicCubes[i].emissionColorBrightness = bassBrightness;
-                    glm::vec3 particleSpawnPos = musicCubes[i].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f) + glm::vec4(0.0f, 0.1f, 0.0f, 0.0f);
+                    glm::vec3 particleSpawnPos = musicCubes[i].position + glm::vec3(0.0f, 0.1f, 0.0f);
                     array<Particle, 10> newParticles;
                     for (unsigned int k = 0; k < 10; k++) {
                         newParticles[k] = {
@@ -839,23 +854,19 @@ int main(int argc, const char** argv) {
             for (int i = 0; i < pointLights.size(); i++) {
                 if (i < pointLights.size() * (avgBass / 0.13f)) {
                     pointLights[i].brightness = bassBrightness;
-                    if (musicCubes[i].currentHeight < musicCubes[i].maxHeight) {
-                        float growthFactor = 1.15f;
-                        musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, growthFactor, 1.0f));
-                        musicCubes[i].currentHeight *= growthFactor;
+                    if (musicCubes[i].scale.y < musicCubes[i].maxHeight) {
+                        musicCubes[i].scale.y *= 1.15f;
                     }
                 } else {
                     pointLights[i].brightness *= 0.7f;
-                    if (musicCubes[i].currentHeight > musicCubes[i].minHeight) {
-                        float shrinkFactor = 0.97f;
-                        musicCubes[i].model = glm::scale(musicCubes[i].model, glm::vec3(1.0f, shrinkFactor, 1.0f));
-                        musicCubes[i].currentHeight *= shrinkFactor;
+                    if (musicCubes[i].scale.y > musicCubes[i].minHeight) {
+                        musicCubes[i].scale.y *= 0.97f;
                     }
                 }
             }
         }
 
-        lightRimObject.model = lightRimAnimation.get().to_matrix();
+        lightRimObject.setModelMatrix(lightRimAnimation.get().to_matrix());
 
         mat4 centerCubeBase =
             Placement({0, 2, 0}, {0.5, 0.5, 0.5}, {}).to_matrix();
@@ -879,9 +890,11 @@ int main(int argc, const char** argv) {
                 rotation =
                     rotate(rotation, centerCubeRotation.get().z, {0, 0, 1});
             }
-            centerCubes[i].model =
+
+            centerCubes[i].setModelMatrix(
                 centerCubeBase * rotation *
-                translate(mat4(1), offset * centerCubeOffset.get());
+                translate(mat4(1), offset * centerCubeOffset.get())
+            );
         }
 
         glm::mat4 viewMatrix;

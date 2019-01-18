@@ -148,14 +148,17 @@ MeshInfo::MeshInfo(const std::string& basedir, const std::string& fileName) {
 }
 
 Mesh::Mesh(
-    MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor,
-    float emissionColorBrightness, glm::vec3 emissionColor
+    MeshInfo meshInfo, glm::vec3 diffuseColor,
+    float emissionColorBrightness, glm::vec3 emissionColor,
+    glm::vec3 position, glm::vec3 scale,
+    glm::vec3 rotation
 ) :
     diffuseColor(diffuseColor),
     emissionColor(emissionColor),
     emissionColorBrightness(emissionColorBrightness),
-    model(model),
-    modelUnchanged(model),
+    position(position),
+    scale(scale),
+    rotation(rotation),
     vao(meshInfo.VAO),
     count(meshInfo.numTriangles)
 {
@@ -218,12 +221,25 @@ void Mesh::setUniforms(Program &shader) {
         shader.setInteger("useNormalTex", 0);
     }
 
-    shader.setMatrix4("model", model);
+    if (usePresetModelMatrix) {
+        shader.setMatrix4("model", this->model);
+        usePresetModelMatrix = false;
+    } else {
+        auto model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::rotate(model, rotation.x, { 1, 0, 0 });
+        model = glm::rotate(model, rotation.y, { 0, 1, 0 });
+        model = glm::rotate(model, rotation.z, { 0, 0, 1 });
+        model = glm::scale(model, scale);
+        shader.setMatrix4("model", model);
+    }
+
     shader.setVector3f("diffuseColor", diffuseColor);
     shader.setFloat("emissionColorBrightness", emissionColorBrightness);
     shader.setVector3f("emissionColor", emissionColor);
 }
 
-void Mesh::resetModelMatrix() {
-    model = modelUnchanged;
+void Mesh::setModelMatrix(glm::mat4 model) {
+    usePresetModelMatrix = true;
+    this->model = model;
 }

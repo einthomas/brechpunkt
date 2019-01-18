@@ -5,7 +5,7 @@ ParticleSystem::ParticleSystem(
     GLint forceAttribute
 ) : physicVbo(0), instanceVbo(0), nextIndex(0), capacity(capacity) {
     mesh = Mesh(
-        {"scenes/scene1/", "Particle.obj"}, glm::mat4(1), {1, 1, 1}, 0.0f, {0, 0, 0}
+        {"scenes/scene1/", "Particle.obj"}, {1, 1, 1}, 0.0f, {0, 0, 0}
     );
 
     glGenBuffers(1, &instanceVbo);

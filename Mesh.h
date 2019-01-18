@@ -17,24 +17,31 @@ struct MeshInfo {
 
 class Mesh {
 public:
+    glm::vec3 scale;
+    glm::vec3 rotation;
+    glm::vec3 position;
+
     float emissionColorBrightness;
 	glm::vec3 diffuseColor, emissionColor;
     bool useDiffuseTexture, useReflectionTexture, useNormalTexture;
     GLuint diffuseTexture, reflectionTexture, normalTexture;
-    glm::mat4 model;
+    //glm::mat4 model;
     GLuint vao;
     GLsizei count;
-    float minHeight, maxHeight, currentHeight;
+    float minHeight, maxHeight;
     
     Mesh() = default;
     Mesh(
-        MeshInfo meshInfo, glm::mat4 model, glm::vec3 diffuseColor,
-        float emissionColorBrightness, glm::vec3 emissionColor
+        MeshInfo meshInfo, glm::vec3 diffuseColor,
+        float emissionColorBrightness, glm::vec3 emissionColor,
+        glm::vec3 position = glm::vec3(0.0f),
+        glm::vec3 scale = glm::vec3(1.0f), glm::vec3 rotation = glm::vec3(0.0f)
     );
     void draw(Program &shader);
     void setUniforms(Program &shader);
-    void resetModelMatrix();
+    void setModelMatrix(glm::mat4 model);
 
 private:
-    glm::mat4 modelUnchanged;
+    bool usePresetModelMatrix = false;
+    glm::mat4 model;
 };
