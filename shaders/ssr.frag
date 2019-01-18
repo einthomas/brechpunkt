@@ -39,7 +39,7 @@ vec3 traceRay(vec3 rayOrigin, vec3 rayDir) {
         vec3 fetchedWorldPos = texelFetch(
             gWorldPosTex, ivec2(screenSpacePos.xy * size), 0
         ).xyz;
-        if (samplePos.z < fetchedWorldPos.z) {
+        if (samplePos.z < fetchedWorldPos.z && fetchedWorldPos.z - samplePos.z < 2.0f) {
             // binary search
             for (int k = 0; k < 6; k++) {
                 marchStep *= 0.25f;
