@@ -65,7 +65,6 @@ const double BEATS_PER_SECOND = 128.0 / 60.0;
 const double BEAT_OFFSET = -1.032;
 
 static int windowWidth = 0, windowHeight = 0;
-static float frameRate;
 static float animationTime;
 
 static vector<PointLight> pointLights;
@@ -143,16 +142,21 @@ const float HALTON_POINTS[64 * 3] = {
 
 int main(int argc, const char** argv) {
     if (argc >= 2) {
-        for (int i = 0; i < argc; i++) {
+        for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "--debug") == 0) {
                 debug_flag = true;
-            }
-            else if (strcmp(argv[i], "--mute") == 0) {
+            } else if (strcmp(argv[i], "--mute") == 0) {
                 muteSong = true;
                 BASS_SetConfig(BASS_CONFIG_GVOL_STREAM, 0);
-            }
-            else if (strcmp(argv[i], "--fullscreen") == 0) {
+            } else if (strcmp(argv[i], "--fullscreen") == 0) {
                 fullscreen = true;
+            } else {
+                std::string argument = argv[i];
+                int found = argument.find("x");
+                if (found != std::string::npos) {
+                    windowWidth = std::stoi(argument.substr(2, found - 2));
+                    windowHeight = std::stoi(argument.substr(found + 1));
+                }
             }
         }
     }
@@ -333,6 +337,7 @@ int main(int argc, const char** argv) {
 
     Scene environmentScene, mainScene;
 
+    std::cout << "loading meshes...";
     MeshInfo musicCubeMeshInfo("scenes/scene1/", "MusicCube.obj");
     MeshInfo floorMeshInfo("scenes/scene1/", "Floor.obj");
     MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
@@ -340,6 +345,7 @@ int main(int argc, const char** argv) {
     MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
     MeshInfo dragonGlassMeshInfo("scenes/scene3/", "Suzanne.vbo");
     MeshInfo lucyGlassMeshInfo("scenes/scene3/", "Lucy.vbo");
+    std::cout << "done" << std::endl;
 
     Mesh lightRimObject = Mesh(
         lightRimInfo,
@@ -1511,18 +1517,19 @@ GLFWwindow *initGLFW() {
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    windowWidth = mode->width;
-    windowHeight = mode->height;
-    frameRate = mode->refreshRate;
     GLFWwindow *window;
 
     if (fullscreen) {
+        windowWidth = mode->width;
+        windowHeight = mode->height;
         window = glfwCreateWindow(
             windowWidth, windowHeight, "Brechpunkt", monitor, nullptr
         );
     } else {
-        windowWidth = DEFAULT_WIDTH;
-        windowHeight = DEFAULT_HEIGHT;
+        if (windowWidth == 0 && windowHeight == 0) {
+            windowWidth = DEFAULT_WIDTH;
+            windowHeight = DEFAULT_HEIGHT;
+        }
 
         window = glfwCreateWindow(
             windowWidth, windowHeight, "Brechpunkt", nullptr, nullptr
