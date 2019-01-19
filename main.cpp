@@ -521,6 +521,9 @@ int main(int argc, const char** argv) {
         {160 + 16, {17, 1.5, 4}, HandleType::SMOOTH_OUT},
         {160 + 32, {4, 1.5, 15}, HandleType::SMOOTH_IN},
 
+        {192, {-28.3626, 14.7267, -24.2202}, HandleType::SMOOTH_OUT},
+        {205, {-28.3626, 8.7267, -24.2202}, HandleType::SMOOTH_IN},
+
         // dragon descend
         {200, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
         {216, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
@@ -579,8 +582,11 @@ int main(int argc, const char** argv) {
         {160 + 16, {11, 0, 6}, HandleType::SMOOTH_OUT},
         {160 + 32, {2, 0, 17}, HandleType::SMOOTH_IN},
 
+        {192, {0, 0, 0}, HandleType::SMOOTH_OUT},
+        {205, {0, 0, 0}, HandleType::SMOOTH_IN},
+
         // dragon descend
-        {200, {10, 30, 0}, HandleType::STOP},
+        {205, {10, 30, 0}, HandleType::STOP},
         {216, {10, 1, 0}, HandleType::STOP},
         {232, {7.47423, 3.34526, 0.157206}, HandleType::STOP},
 
