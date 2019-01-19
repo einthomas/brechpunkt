@@ -497,9 +497,6 @@ int main(int argc, const char** argv) {
     Animation<Placement> lightRimAnimation{
         {
             {0, HORIZONTAL_ON},
-            {15, HORIZONTAL_OFF},
-            {16, HORIZONTAL_ON},
-            {31, HORIZONTAL_OFF},
         }
     };
 
@@ -529,10 +526,20 @@ int main(int argc, const char** argv) {
         }
     };
 
-    Animation<float> beatLight{
+    // https://jsfiddle.net/d6mj4tfo/
+    Animation<glm::vec3> beatLight{
         {
-            {0, 0, HandleType::STOP},
-            {96, 1, HandleType::STOP},
+            {0, {0.13,0.17,0.33 }, HandleType::STOP},
+            {15, {0.9,0.15,0.16}, HandleType::STOP},
+            {30, {1,1,1}, HandleType::STOP},
+        }
+    };
+
+    Animation<float> lightRimBrightnessAnimation{
+        {
+            {0, 1, HandleType::STOP},
+            {80, 1, HandleType::STOP},
+            {96, 0, HandleType::STOP},
         }
     };
 
@@ -782,6 +789,7 @@ int main(int argc, const char** argv) {
             (musicTimestamp + BEAT_OFFSET) * BEATS_PER_SECOND
         );
 
+        lightRimBrightnessAnimation.update(animationTime);
         lightRimAnimation.update(animationTime);
         centerCubeOffset.update(animationTime + 0.1f); // clap offset
         centerCubeRotation.update(animationTime);
@@ -810,11 +818,16 @@ int main(int argc, const char** argv) {
             bassBrightness = 0.0f;
         }
 
-        lightRimObject.emissionColorBrightness = mix(
-            1.0f,
-            std::max(bassBrightness * 0.2f, 0.2f),
-            beatLight.get()
-        );
+        //lightRimObject.emissionColorBrightness = mix(
+        //    1.0f,
+        //    std::max(bassBrightness * 0.2f, 0.2f),
+        //    beatLight.get()
+        //);
+
+        lightRimObject.emissionColorBrightness = lightRimBrightnessAnimation.get();
+        lightRimObject.emissionColor = beatLight.get();
+        lightRimObject.diffuseColor = beatLight.get();
+        std::cout << beatLight.get().x << " " << beatLight.get().y << " " << beatLight.get().z << std::endl;
 
         if (animationTime >= 96.0f) {
             if (!musicCubesInitialized) {
