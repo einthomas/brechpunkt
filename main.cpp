@@ -486,6 +486,7 @@ int main(int argc, const char** argv) {
         {64 + 16, {34, 3.7, 0}, HandleType::SMOOTH_OUT},
         {64 + 32, {10, 3.7, 0}, HandleType::SMOOTH_IN},
 
+        // 1st refrain
         {96, {28.9201, 3.66179, 2.78608}, HandleType::SMOOTH_OUT},
         {96 + 8, {3.02361, 28.411, 31.7517}, HandleType::SMOOTH_IN},
 
@@ -514,17 +515,15 @@ int main(int argc, const char** argv) {
         {160 + 8, {-4.5, 1.5, 0}},
         {160 + 16, {-0.5, 1.5, 4.5}, HandleType::SMOOTH_IN},
 
-        {96 + 32, {-13.1675, 1.35622, -12.8348}, HandleType::SMOOTH_OUT},
-        {96 + 40, {-7.43895, 52.3118, 9.91848}, HandleType::SMOOTH_IN},
-
         {160 + 16, {17, 1.5, 4}, HandleType::SMOOTH_OUT},
         {160 + 32, {4, 1.5, 15}, HandleType::SMOOTH_IN},
 
+        // 2nd verse
         {192, {-28.3626, 14.7267, -24.2202}, HandleType::SMOOTH_OUT},
-        {205, {-28.3626, 8.7267, -24.2202}, HandleType::SMOOTH_IN},
+        {208, {-28.3626, 8.7267, -24.2202}, HandleType::SMOOTH_IN},
 
         // dragon descend
-        {200, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
+        {208, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
         {216, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
         {232, {0, 3, -5}, HandleType::STOP},
 
@@ -543,12 +542,46 @@ int main(int argc, const char** argv) {
         {296, {2.01516, 2.5405, 4.53035}, HandleType::SMOOTH_OUT},
         {312, {2.01516, 5.5405, 4.53035}, HandleType::SMOOTH_IN},
 
-        {312, {34, 0.7, 1.5}, HandleType::SMOOTH_OUT},
-        {328, {10, 0.7, 1.5}, HandleType::SMOOTH_IN},
+        {312, {34, 0.7, 2.5}, HandleType::SMOOTH_OUT},
+        {328, {10, 0.7, 2.5}, HandleType::SMOOTH_IN},
 
         {328, {2.01516, 5.5405, 4.53035}, HandleType::SMOOTH_IN},
         {328, {-14.3007, 27.9264, -7.8107}, HandleType::SMOOTH_OUT},
         {344, {-14.3007, 1.7569, -7.8107}, HandleType::SMOOTH_IN},
+
+        // 2nd refrain
+        {344, {28.9201, 3.66179, 2.78608}, HandleType::SMOOTH_OUT},
+        {344 + 8, {3.02361, 28.411, 31.7517}, HandleType::SMOOTH_IN},
+
+        {344 + 8, {10.7965, 2.20677, 39.3255}, HandleType::SMOOTH_OUT},
+        {344 + 16, {7.54126, 33.2029, 31.4303}, HandleType::SMOOTH_IN},
+
+        {344 + 16, {-13.7066, 2.50239, -26.2294}, HandleType::SMOOTH_OUT},
+        {344 + 24, {-28.9809, 2.50239, 1.32618}, HandleType::SMOOTH_IN},
+
+        {344 + 24, {44, 3.7, 0}, HandleType::SMOOTH_OUT},
+        {344 + 32, {-44, 3.7, -10}, HandleType::SMOOTH_IN},
+
+        {376 + 0, {-13.1675, 1.35622, -12.8348}, HandleType::SMOOTH_OUT},
+        {376 + 8, {-7.43895, 52.3118, 9.91848}, HandleType::SMOOTH_IN},
+
+        {376 + 8, {-5.7, 11.3, -3}, HandleType::SMOOTH_OUT},
+        {376 + 12, {-10.1, 11.2, -4.7}, HandleType::SMOOTH},
+        {376 + 16, {-13.6, 10.5, 1.2}, HandleType::SMOOTH_IN},
+
+        {376 + 16, {3.5, 2.9, -5.6}, HandleType::SMOOTH_OUT},
+        {376 + 20, {2.5, 2.9, 0}},
+        {376 + 24, {4.8, 2.9, 7.6}, HandleType::SMOOTH_IN},
+
+        {376 + 24, {-5.7, 8, 0.3}, HandleType::SMOOTH_OUT},
+        {376 + 32, {-5.5, 0.9, 0.6}, HandleType::SMOOTH_IN},
+
+        {408 + 0, {0.5, 1.5, -4.5}, HandleType::SMOOTH_OUT},
+        {408 + 8, {-4.5, 1.5, 0}},
+        {408 + 16, {-0.5, 1.5, 4.5}, HandleType::SMOOTH_IN},
+
+        {408 + 16, {17, 1.5, 4}, HandleType::SMOOTH_OUT},
+        {408 + 32, {4, 1.5, 15}, HandleType::STOP},
     };
 
     Animation<glm::vec3> cameraFocus{
@@ -571,6 +604,7 @@ int main(int argc, const char** argv) {
         {64 + 16, {20, 3.7, 0}, HandleType::SMOOTH_OUT},
         {64 + 32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
 
+        // 1st refrain
         {96, {0, 0, 0}, HandleType::STOP},
         {96 + 16, {0, 0, 0}, HandleType::STOP},
 
@@ -598,6 +632,7 @@ int main(int argc, const char** argv) {
         {160 + 16, {11, 0, 6}, HandleType::SMOOTH_OUT},
         {160 + 32, {2, 0, 17}, HandleType::SMOOTH_IN},
 
+        // 2nd verse
         {192, {0, 0, 0}, HandleType::SMOOTH_OUT},
         {205, {0, 0, 0}, HandleType::SMOOTH_IN},
 
@@ -626,6 +661,34 @@ int main(int argc, const char** argv) {
 
         {328, { 6.28133, 3.99602, 2.71954}, HandleType::SMOOTH_IN},
         {328, {0, 0, 0}, HandleType::SMOOTH_OUT},
+
+        // 2nd refrain
+        {344, {0, 0, 0}, HandleType::STOP},
+        {344 + 16, {0, 0, 0}, HandleType::STOP},
+
+        {344 + 16, {-5.00671, 1.47447, -21.407}, HandleType::SMOOTH_OUT},
+        {344 + 24, {-20.281, 1.47447, 6.14859}, HandleType::SMOOTH_IN},
+
+        {344 + 24, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {344 + 32, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {376 + 0, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {376 + 8, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {376 + 8, {-8.6, 9.2, -1.7}, HandleType::SMOOTH_OUT},
+        {376 + 16, {-8.6, 8.6, -1.7}, HandleType::SMOOTH_IN},
+
+        {376 + 16, {6.8, 2.9, 0}, HandleType::SMOOTH_OUT},
+        {376 + 24, {6.8, 2.9, 0}, HandleType::SMOOTH_IN},
+
+        {376 + 24, {-8.6, 8, 0.3}, HandleType::SMOOTH_OUT},
+        {376 + 32, {-8.6, 0.9, 0.6}, HandleType::SMOOTH_IN},
+
+        {408 + 0, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {408 + 16, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {408 + 16, {11, 0, 6}, HandleType::SMOOTH_OUT},
+        {408 + 32, {2, 0, 17}, HandleType::STOP},
     };
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
