@@ -66,6 +66,7 @@ const double BEAT_OFFSET = -1.032;
 
 static int windowWidth = 0, windowHeight = 0;
 static float frameRate;
+static float animationTime;
 
 static vector<PointLight> pointLights;
 static Camera camera;
@@ -473,6 +474,21 @@ int main(int argc, const char** argv) {
 
         {64 + 16, {34, 3.7, 0}, HandleType::SMOOTH_OUT},
         {64 + 32, {10, 3.7, 0}, HandleType::SMOOTH_IN},
+
+        {96, {28.9201, 3.66179, 2.78608}, HandleType::SMOOTH_OUT},
+        {96 + 8, {3.02361, 28.411, 31.7517}, HandleType::SMOOTH_IN},
+
+        {96 + 8, {10.7965, 2.20677, 39.3255}, HandleType::SMOOTH_OUT},
+        {96 + 16, {7.54126, 33.2029, 31.4303}, HandleType::SMOOTH_IN},
+
+        {96 + 16, {-13.7066, 2.50239, -26.2294}, HandleType::SMOOTH_OUT},
+        {96 + 24, {-28.9809, 2.50239, 1.32618}, HandleType::SMOOTH_IN},
+
+        {96 + 24, {44, 3.7, 0}, HandleType::SMOOTH_OUT},
+        {96 + 32, {-44, 3.7, 0}, HandleType::SMOOTH_IN},
+
+        {96 + 32, {-13.1675, 1.35622, -12.8348}, HandleType::SMOOTH_OUT},
+        {96 + 40, {-7.43895, 52.3118, 9.91848}, HandleType::SMOOTH_IN},
     };
 
     Animation<glm::vec3> cameraFocus{
@@ -494,6 +510,15 @@ int main(int argc, const char** argv) {
 
         {64 + 16, {20, 3.7, 0}, HandleType::SMOOTH_OUT},
         {64 + 32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
+
+        {96, {0, 0, 0}, HandleType::STOP},
+        {96 + 18, {0, 0, 0}, HandleType::STOP},
+
+        {96 + 18, {-5.00671, 1.47447, -21.407}, HandleType::SMOOTH_OUT},
+        {96 + 24, {-20.281, 1.47447, 6.14859}, HandleType::SMOOTH_IN},
+
+        {96 + 24, {0, 0, 0}, HandleType::SMOOTH_OUT},
+        //{96 + 32, {-, 3.7, 0}, HandleType::SMOOTH_IN},
     };
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
@@ -844,7 +869,7 @@ int main(int argc, const char** argv) {
             BASS_ChannelSetPosition(bassStream, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp + 0.5), BASS_POS_BYTE);
         }
 
-        float animationTime = static_cast<float>(
+        animationTime = static_cast<float>(
             (musicTimestamp + BEAT_OFFSET) * BEATS_PER_SECOND
         );
 
@@ -887,7 +912,7 @@ int main(int argc, const char** argv) {
         lightRimObject.emissionColorBrightness = lightRimBrightnessAnimation.get();
         lightRimObject.emissionColor = lightRimColorAnimation.get() * lightRimBrightnessAnimation.get();
 
-        std::cout << animationTime << std::endl;
+        //std::cout << animationTime << std::endl;
 
         if (animationTime >= 96.0f) {
             if (!musicCubesInitialized) {
@@ -1227,7 +1252,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
 
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
-        std::cout << "Camera position: " << camera.pos.x << ", " << camera.pos.y << ", " << camera.pos.z << std::endl;
+        std::cout << "Animation time: " << animationTime << " Camera position: " << camera.pos.x << ", " << camera.pos.y << ", " << camera.pos.z << std::endl;
     }
 }
 
