@@ -524,19 +524,20 @@ int main(int argc, const char** argv) {
 
         // dragon descend
         {208, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
-        {216, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
-        {232, {0, 3, -5}, HandleType::STOP},
+        {208 + 16, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
+        {208 + 32, {0, 3, -5}, HandleType::STOP},
 
         // lucy descend
-        {232, {10, 9, 0}, HandleType::STOP},
-        {248, {10, 9, 0}, HandleType::STOP},
-        {264, {-10, 10, -10}, HandleType::STOP},
+        {240, {0, 9, 0}, HandleType::STOP},
+        {240 + 16, {0, 9, 0}, HandleType::STOP},
+        {240 + 24, {-3, 9, -7}},
+        {240 + 32, {-10, 10, -10}, HandleType::STOP},
 
-        {264, {25, 2, -36}, HandleType::SMOOTH_OUT},
-        {280, {-25, 2, -36}, HandleType::SMOOTH_IN},
+        {272, {15, 2, -36}, HandleType::SMOOTH_OUT},
+        {272 + 8, {-15, 2, -36}, HandleType::SMOOTH_IN},
 
         {280, {-14.9888, 3.52172, -1.13982}, HandleType::SMOOTH_OUT},
-        {288, {-10.5713, 6.68541, 4.54254}, HandleType::SMOOTH_IN},
+        {288, {-10.5713, 6.68541, 4.54254}},
         {296, {-4.56759, 9.84052, -0.222573}, HandleType::SMOOTH_IN},
 
         {296, {2.01516, 2.5405, 4.53035}, HandleType::SMOOTH_OUT},
@@ -634,23 +635,23 @@ int main(int argc, const char** argv) {
 
         // 2nd verse
         {192, {0, 0, 0}, HandleType::SMOOTH_OUT},
-        {205, {0, 0, 0}, HandleType::SMOOTH_IN},
+        {208, {0, 0, 0}, HandleType::SMOOTH_IN},
 
         // dragon descend
-        {205, {10, 30, 0}, HandleType::STOP},
-        {216, {10, 1, 0}, HandleType::STOP},
-        {232, {7.47423, 3.34526, 0.157206}, HandleType::STOP},
+        {208, {10, 30, 0}, HandleType::STOP},
+        {208 + 16, {10, 3.5, 0}, HandleType::STOP},
+        {208 + 32, {7.47423, 3.34526, 0.157206}, HandleType::STOP},
 
         // lucy descend
-        {232, {-10, 30, 0}, HandleType::STOP},
-        {248, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
-        {264, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
+        {240, {-10, 30, 0}, HandleType::STOP},
+        {240 + 16, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
+        {240 + 32, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
 
-        {264, {25, 2, -10}, HandleType::SMOOTH_OUT},
-        {280, {-25, 2, -10}, HandleType::SMOOTH_IN},
+        {272, {15, 2, -10}, HandleType::SMOOTH_OUT},
+        {272 + 8, {-15, 2, -10}, HandleType::SMOOTH_IN},
 
         {280, {-10.1789, 3.06619, -1.18164}, HandleType::SMOOTH_OUT},
-        {288, {-9.87901, 5.69849, 1.07871}, HandleType::SMOOTH_IN},
+        {288, {-9.87901, 5.69849, 1.07871}},
         {296, {-8.89624, 7.34594, -0.204375}, HandleType::SMOOTH_IN},
 
         {296, { 13.5958, 3.06248, -0.385165}, HandleType::SMOOTH_OUT},
@@ -859,14 +860,14 @@ int main(int argc, const char** argv) {
 
     Animation<glm::vec3> dragonAnimation{
         {
-            {200, {10, 50, 0}, HandleType::STOP},
-            {216, {10, 0, 0}, HandleType::STOP},
+            {208, {10, 50, 0}, HandleType::STOP},
+            {208 + 16, {10, 0, 0}, HandleType::STOP},
         }
     };
     Animation<glm::vec3> lucyAnimation{
         {
-            {232, {-10, 50, 0}, HandleType::STOP},
-            {248, {-10, 0, 0}, HandleType::STOP},
+            {240, {-10, 50, 0}, HandleType::STOP},
+            {240 + 16, {-10, 0, 0}, HandleType::STOP},
         }
     };
 
