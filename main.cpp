@@ -640,6 +640,12 @@ int main(int argc, const char** argv) {
             {64 + 8, CLAP},
             {64 + 10, CLAP},
             {64 + 14, CLAP},
+
+            {160 + 3, CLAP},
+            {160 + 6, CLAP},
+
+            {160 + 11, CLAP},
+            {160 + 14, CLAP},
         }
     };
 
@@ -653,6 +659,22 @@ int main(int argc, const char** argv) {
             {64 + 5, RUBIKS_X},
             {64 + 12, RUBIKS_Z},
             {64 + 13, RUBIKS_X},
+
+            {160 + 0, RUBIKS_Y},
+            {160 + 1, RUBIKS_Z},
+            {160 + 2, RUBIKS_X},
+
+            {160 + 4, RUBIKS_Y},
+            {160 + 5, RUBIKS_Z},
+            {160 + 7, RUBIKS_X},
+
+            {160 + 8, RUBIKS_Y},
+            {160 + 9, RUBIKS_Z},
+            {160 + 10, RUBIKS_X},
+
+            {160 + 12, RUBIKS_Y},
+            {160 + 13, RUBIKS_Z},
+            {160 + 15, RUBIKS_X},
         }
     };
 
@@ -949,24 +971,11 @@ int main(int argc, const char** argv) {
 
     bool musicCubesInitialized = false;
 
-    float lastTime = glfwGetTime();
-    float lastFrameTime = lastTime;
-    float frameTime = lastTime;
+    float lastTime = 0;
 
     float fft[1024];
     float avgBass = 0.0f;
     while (!glfwWindowShouldClose(window)) {
-        float currentTime = glfwGetTime();
-        float rawDeltaTime = currentTime - lastTime;
-        lastTime = currentTime;
-
-        // smooth out deltas
-        float alignedDelta = std::round(rawDeltaTime * frameRate) / frameRate;
-        frameTime += alignedDelta;
-        frameTime = glm::mix(frameTime, currentTime, 0.05f);
-        float deltaTime = frameTime - lastFrameTime;
-        lastFrameTime = frameTime;
-
         double musicTimestamp = BASS_ChannelBytes2Seconds(bassStream, BASS_ChannelGetPosition(bassStream, BASS_POS_BYTE)) + 0.1;
         BASS_ChannelSetPosition(bassStreamDecoded, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp), BASS_POS_BYTE);
 
@@ -975,6 +984,9 @@ int main(int argc, const char** argv) {
         } else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
             BASS_ChannelSetPosition(bassStream, BASS_ChannelSeconds2Bytes(bassStream, musicTimestamp + 0.5), BASS_POS_BYTE);
         }
+
+        float deltaTime = static_cast<float>(musicTimestamp) - lastTime;
+        lastTime = static_cast<float>(musicTimestamp);
 
         animationTime = static_cast<float>(
             (musicTimestamp + BEAT_OFFSET) * BEATS_PER_SECOND
@@ -1074,8 +1086,12 @@ int main(int argc, const char** argv) {
 
         lightRimObject.setModelMatrix(lightRimAnimation.get().to_matrix());
 
-        mat4 centerCubeBase =
-            Placement({0, 2, 0}, {0.5, 0.5, 0.5}, {}).to_matrix();
+        mat4 centerCubeBase = Placement(
+            {0, 2 + sin(animationTime * 1.0f) * 0.25f, 0}, {0.5, 0.5, 0.5},
+            angleAxis(
+                static_cast<float>(musicTimestamp), normalize(vec3{2, 3, 5})
+            )
+        ).to_matrix();
 
         for (int i = 0; i < 8; i++) {
             vec3 offset{
