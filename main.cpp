@@ -1031,10 +1031,10 @@ int main(int argc, const char** argv) {
 
     Animation<float> copyrightNoteAnimation{
         {
-            {0, 1, HandleType::STOP},
+            {0, 1.5, HandleType::STOP},
             {1, 0, HandleType::STOP},
             {15, 0, HandleType::STOP},
-            {16, 1, HandleType::STOP},
+            {16, 1.5, HandleType::STOP},
         }
     };
 
