@@ -338,7 +338,8 @@ int main(int argc, const char** argv) {
     MeshInfo mirrorsMeshInfo("scenes/scene1/", "Mirrors.obj");
     MeshInfo centerCubeMeshInfo("scenes/scene1/", "CenterCube.obj");
     MeshInfo lightRimInfo("scenes/scene1/", "LightRim.obj");
-    MeshInfo bunnyGlassMeshInfo("scenes/scene3/", "Bunny.vbo");
+    MeshInfo dragonGlassMeshInfo("scenes/scene3/", "Suzanne.vbo");
+    MeshInfo lucyGlassMeshInfo("scenes/scene3/", "Lucy.vbo");
 
     Mesh lightRimObject = Mesh(
         lightRimInfo,
@@ -391,15 +392,25 @@ int main(int argc, const char** argv) {
 
     Mesh musicCubes[NUM_MUSIC_CUBES];
 
-    Mesh bunnyGlassMesh = Mesh(
-        bunnyGlassMeshInfo,
+    Mesh dragonGlassMesh = Mesh(
+        dragonGlassMeshInfo,
         glm::vec3(1.0f, 1.0f, 1.0f),
         0.0f,
         glm::vec3(0.0f),
-        glm::vec3(10.0f, 0.0f, 0.0f),
+        glm::vec3(10.0f, 30.0f, 0.0f),
         glm::vec3(1.0f)
     );
-    //mainScene.glassObjects.insert(&bunnyGlassMesh);
+    Mesh lucyGlassMesh = Mesh(
+        lucyGlassMeshInfo,
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        0.0f,
+        glm::vec3(0.0f),
+        glm::vec3(10.0f, 30.0f, 0.0f),
+        glm::vec3(1.0f)
+    );
+    
+    mainScene.glassObjects.insert(&dragonGlassMesh);
+    mainScene.glassObjects.insert(&lucyGlassMesh);
 
     const float lightFloorOffset = 2.0f;
     for (int i = 0; i < 36; i++) {
@@ -489,6 +500,16 @@ int main(int argc, const char** argv) {
 
         {96 + 32, {-13.1675, 1.35622, -12.8348}, HandleType::SMOOTH_OUT},
         {96 + 40, {-7.43895, 52.3118, 9.91848}, HandleType::SMOOTH_IN},
+
+        // dragon descend
+        {200, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
+        {216, {13.1993, 6.39421, -9.93616}, HandleType::STOP},
+        {232, {0, 3, -5}, HandleType::STOP},
+
+        // lucy descend
+        {232, {10, 9, 0}, HandleType::STOP},
+        {248, {10, 9, 0}, HandleType::STOP},
+        {264, {-10, 10, -10}, HandleType::STOP},
     };
 
     Animation<glm::vec3> cameraFocus{
@@ -518,6 +539,15 @@ int main(int argc, const char** argv) {
         {96 + 24, {-20.281, 1.47447, 6.14859}, HandleType::SMOOTH_IN},
 
         {96 + 24, {0, 0, 0}, HandleType::SMOOTH_OUT},
+
+        // dragon descend
+        {200, {10, 30, 0}, HandleType::STOP},
+        {216, {10, 1, 0}, HandleType::STOP},
+        {232, {7.47423, 3.34526, 0.157206}, HandleType::STOP},
+
+        // lucy descend
+        {232, {-10, 30, 0}, HandleType::STOP},
+        {248, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
     };
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
@@ -549,6 +579,9 @@ int main(int argc, const char** argv) {
             {123, lightRimSwipeStart, HandleType::STOP},
             {124, lightRimSwipeEnd, HandleType::STOP},
             {124, lightRimSwipeStart, HandleType::STOP},
+
+            {192, lightRimSwipeStart, HandleType::STOP},
+            {200, {{ 0, 25, 0 }}, HandleType::STOP},
         }
     };
 
@@ -587,6 +620,9 @@ int main(int argc, const char** argv) {
             {118, {0,1,0}, HandleType::STOP},
             {124, {0,0,1}, HandleType::STOP},
             {124, {1,1,1}, HandleType::STOP},
+
+            {200, {1,1,1}, HandleType::STOP},
+            {264, {0.45, 0.75, 1}, HandleType::STOP},
         }
     };
 
@@ -623,6 +659,9 @@ int main(int argc, const char** argv) {
             {124, 0, HandleType::STOP},
             {124, 3, HandleType::STOP},
             {124, 0, HandleType::STOP},
+
+            {200, 0, HandleType::STOP},
+            {264, 4, HandleType::STOP},
         }
     };
 
@@ -644,6 +683,19 @@ int main(int argc, const char** argv) {
             {96, 1, HandleType::STOP},
             {192, 1, HandleType::STOP},
             {192, 0, HandleType::STOP},
+        }
+    };
+
+    Animation<glm::vec3> dragonAnimation{
+        {
+            {200, {10, 30, 0}, HandleType::STOP},
+            {216, {10, 0, 0}, HandleType::STOP},
+        }
+    };
+    Animation<glm::vec3> lucyAnimation{
+        {
+            {232, {-10, 30, 0}, HandleType::STOP},
+            {248, {-10, 0, 0}, HandleType::STOP},
         }
     };
 
@@ -892,6 +944,11 @@ int main(int argc, const char** argv) {
         cameraFocus.update(animationTime);
         introMusicCubeAnimation.update(animationTime);
         musicCubeAnimation.update(animationTime);
+        dragonAnimation.update(animationTime);
+        lucyAnimation.update(animationTime);
+
+        dragonGlassMesh.position = dragonAnimation.get();
+        lucyGlassMesh.position = lucyAnimation.get();
 
         if (introMusicCubeAnimation.get() > 0.0f) {
             for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
