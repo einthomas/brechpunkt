@@ -70,14 +70,14 @@ static float animationTime;
 static vector<PointLight> pointLights;
 static Camera camera;
 static float focus = 4;
-static Program gBufferShader, particleShader, composeShader, ssdoShader;
+static Program gBufferShader, particleShader;
 static Program environmentShader;
 static Program particleUpdateShader;
 
 static Program gBufferRefractiveShader;
 static Program gBufferLayer2Shader;
 static Mesh lightMesh;
-static bool muteSong = false;
+static bool muteSong = true;
 static bool useAnimatedCamera = true;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;
@@ -700,6 +700,8 @@ int main(int argc, const char** argv) {
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
     Placement lightRimSwipeEnd = {{ 0, 15, 0 }};
+    Placement lightRimSwipeStartX = {{ 0, -3, 0 }};
+    Placement lightRimSwipeEndX = {{ 0, 15, 0 }};
     Animation<Placement> lightRimAnimation{
         {
             {112, lightRimSwipeStart, HandleType::STOP},
@@ -1027,6 +1029,15 @@ int main(int argc, const char** argv) {
         }
     };
 
+    Animation<float> copyrightNoteAnimation{
+        {
+            {0, 1, HandleType::STOP},
+            {1, 0, HandleType::STOP},
+            {15, 0, HandleType::STOP},
+            {16, 1, HandleType::STOP},
+        }
+    };
+
     gBufferShader = Program("shaders/gBuffer.vert", "shaders/gBuffer.frag");
     environmentShader = Program(
         "shaders/environment.vert", "shaders/environment.geom",
@@ -1034,7 +1045,6 @@ int main(int argc, const char** argv) {
     );
     gBufferRefractiveShader = Program("shaders/gBufferRefractive.vert", "shaders/gBufferRefractive.frag");
     gBufferLayer2Shader = Program("shaders/gBufferDepthLayer2.vert", "shaders/gBufferDepthLayer2.frag");
-    composeShader = Program("shaders/compose.vert", "shaders/compose.frag");
 
     particleShader = Program("shaders/particle.vert", "shaders/particle.frag");
 
@@ -1175,10 +1185,12 @@ int main(int argc, const char** argv) {
         }
     );
 
+    GLuint copyrightNoteTexture = loadTexture("scenes/musicCredits.png");
     auto composePass = Effect(
         "shaders/compose.frag", windowWidth, windowHeight, {
             {"dofTex", GL_TEXTURE_2D, filteredBuffer},
             {"bloomTex", GL_TEXTURE_2D, bloomTexture},
+            {"noteTex", GL_TEXTURE_2D, copyrightNoteTexture},
         },
         0
     );
@@ -1264,6 +1276,7 @@ int main(int argc, const char** argv) {
         musicCubeAnimation.update(animationTime);
         dragonAnimation.update(animationTime);
         lucyAnimation.update(animationTime);
+        copyrightNoteAnimation.update(animationTime);
 
         dragonGlassMesh.position = dragonAnimation.get();
         lucyGlassMesh.position = lucyAnimation.get();
@@ -1596,6 +1609,10 @@ int main(int argc, const char** argv) {
         // need to clear because default FB has a depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        composePass.shader.use();
+        composePass.shader.setFloat(
+            "noteAnimation", copyrightNoteAnimation.get()
+        );
         composePass.render();
 
         glfwSwapBuffers(window);
