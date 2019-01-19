@@ -458,8 +458,8 @@ int main(int argc, const char** argv) {
         {8, {34, 1.5, -25}, HandleType::SMOOTH},
         {16, {32, 1, -10}, HandleType::SMOOTH_IN},
 
-        {16, {34, 3.7, 0}, HandleType::SMOOTH_OUT},
-        {32, {10, 3.7, 0}, HandleType::SMOOTH_IN},
+        {16, {34, 0.7, 1.5}, HandleType::SMOOTH_OUT},
+        {32, {10, 0.7, 1.5}, HandleType::SMOOTH_IN},
 
         {32, {25, 2, -36}, HandleType::SMOOTH_OUT},
         {48, {-25, 2, -36}, HandleType::SMOOTH_IN},
@@ -469,6 +469,7 @@ int main(int argc, const char** argv) {
 
         {64 + 0, {2.5, 5, -2.2}, HandleType::SMOOTH_OUT},
         {64 + 8, {3.6, 1.1, 3.6}, HandleType::SMOOTH_IN},
+
         {64 + 8, {3.6, 1.1, -2.2}, HandleType::SMOOTH_OUT},
         {64 + 16, {2.5, 5, 3.6}, HandleType::SMOOTH_IN},
 
@@ -485,19 +486,35 @@ int main(int argc, const char** argv) {
         {96 + 24, {-28.9809, 2.50239, 1.32618}, HandleType::SMOOTH_IN},
 
         {96 + 24, {44, 3.7, 0}, HandleType::SMOOTH_OUT},
-        {96 + 32, {-44, 3.7, 0}, HandleType::SMOOTH_IN},
+        {96 + 32, {-44, 3.7, -10}, HandleType::SMOOTH_IN},
 
-        {96 + 32, {-13.1675, 1.35622, -12.8348}, HandleType::SMOOTH_OUT},
-        {96 + 40, {-7.43895, 52.3118, 9.91848}, HandleType::SMOOTH_IN},
+        {128 + 0, {-13.1675, 1.35622, -12.8348}, HandleType::SMOOTH_OUT},
+        {128 + 8, {-7.43895, 52.3118, 9.91848}, HandleType::SMOOTH_IN},
+
+        {128 + 8, {10.5, 0.3, 14.0}, HandleType::SMOOTH_OUT},
+        {128 + 16, {10.5, 0.3, -14.0}, HandleType::SMOOTH_IN},
+
+        {128 + 16, {18, 8.2, 3.3}, HandleType::SMOOTH_OUT},
+        {128 + 24, {18, 8.2, 3.3}, HandleType::SMOOTH_IN},
+
+        {128 + 24, {6.5, 0.5, -24.6}, HandleType::SMOOTH_OUT},
+        {128 + 32, {-5.3, 0.5, 19}, HandleType::SMOOTH_IN},
+
+        {160 + 0, {0.5, 1.5, -4.5}, HandleType::SMOOTH_OUT},
+        {160 + 8, {-4.5, 1.5, 0}},
+        {160 + 16, {-0.5, 1.5, 4.5}, HandleType::SMOOTH_IN},
+
+        {160 + 16, {17, 1.5, 4}, HandleType::SMOOTH_OUT},
+        {160 + 32, {4, 1.5, 15}, HandleType::SMOOTH_IN},
     };
 
     Animation<glm::vec3> cameraFocus{
         {0, {34, 0, -33}, HandleType::SMOOTH_OUT},
-        {8, {32, 0, -23}, HandleType::SMOOTH},
+        {8, {32, 0, -23}},
         {16, {20, 0, 0}, HandleType::SMOOTH_IN},
 
-        {16, {20, 3.7, 0}, HandleType::SMOOTH_OUT},
-        {32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
+        {16, {20, 0.7, 1.5}, HandleType::SMOOTH_OUT},
+        {32, {-4, 0.7, 1.5}, HandleType::SMOOTH_IN},
 
         {32, {25, 2, -10}, HandleType::SMOOTH_OUT},
         {48, {-25, 2, -10}, HandleType::SMOOTH_IN},
@@ -512,12 +529,31 @@ int main(int argc, const char** argv) {
         {64 + 32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
 
         {96, {0, 0, 0}, HandleType::STOP},
-        {96 + 18, {0, 0, 0}, HandleType::STOP},
+        {96 + 16, {0, 0, 0}, HandleType::STOP},
 
-        {96 + 18, {-5.00671, 1.47447, -21.407}, HandleType::SMOOTH_OUT},
+        {96 + 16, {-5.00671, 1.47447, -21.407}, HandleType::SMOOTH_OUT},
         {96 + 24, {-20.281, 1.47447, 6.14859}, HandleType::SMOOTH_IN},
 
-        {96 + 24, {0, 0, 0}, HandleType::SMOOTH_OUT},
+        {96 + 24, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {96 + 32, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {128 + 0, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {128 + 8, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {128 + 8, {20, 3.3, 0}, HandleType::SMOOTH_OUT},
+        {128 + 16, {20, 3.3, 0}, HandleType::SMOOTH_IN},
+
+        {128 + 16, {19.5, 5.2, 3.3}, HandleType::SMOOTH_OUT},
+        {128 + 24, {19.5, 5.2, 3.3}, HandleType::SMOOTH_IN},
+
+        {128 + 24, {4.5, 0.5, -20.6}, HandleType::SMOOTH_OUT},
+        {128 + 32, {-4.3, 0.5, 20}, HandleType::SMOOTH_IN},
+
+        {160 + 0, {0, 2, 0}, HandleType::SMOOTH_OUT},
+        {160 + 16, {0, 2, 0}, HandleType::SMOOTH_IN},
+
+        {160 + 16, {11, 0, 6}, HandleType::SMOOTH_OUT},
+        {160 + 32, {2, 0, 17}, HandleType::SMOOTH_IN},
     };
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
