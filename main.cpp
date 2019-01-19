@@ -77,7 +77,7 @@ static Program particleUpdateShader;
 static Program gBufferRefractiveShader;
 static Program gBufferLayer2Shader;
 static Mesh lightMesh;
-static bool muteSong = true;
+static bool muteSong = false;
 static bool useAnimatedCamera = true;
 static GLuint blurFBO0, blurFBO1;
 static GLuint blurBuffer0, blurBuffer1;

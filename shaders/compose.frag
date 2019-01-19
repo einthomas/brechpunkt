@@ -17,7 +17,7 @@ void main() {
 
     vec2 uv = texCoord * vec2(16, 9) * vec2(0.25, -1) * 0.5 + vec2(-0.025, 1.1);
     uv += vec2(noteAnimation, 0);
-    vec3 note = texture(noteTex, uv).rgb;
+    vec3 note = pow(texture(noteTex, uv).rgb, vec3(2.2f));
 
     inColor = mix(inColor, note, bvec3(
         all(greaterThan(uv, vec2(0))) && all(lessThan(uv, vec2(1)))
