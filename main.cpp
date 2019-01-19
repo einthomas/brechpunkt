@@ -518,7 +518,6 @@ int main(int argc, const char** argv) {
         {96 + 24, {-20.281, 1.47447, 6.14859}, HandleType::SMOOTH_IN},
 
         {96 + 24, {0, 0, 0}, HandleType::SMOOTH_OUT},
-        //{96 + 32, {-, 3.7, 0}, HandleType::SMOOTH_IN},
     };
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
@@ -631,9 +630,20 @@ int main(int argc, const char** argv) {
         {
             {0, 1, HandleType::STOP},
             {80, 1, HandleType::STOP},
-            {80, 1, HandleType::STOP},
             {96, 0, HandleType::STOP},
+            {190, 0, HandleType::STOP},
+            {200, 1, HandleType::STOP},
+            {200, 0, HandleType::STOP},
+        }
+    };
+
+    Animation<float> musicCubeAnimation{
+        {
+            {0, 0, HandleType::STOP},
             {96, 0, HandleType::STOP},
+            {96, 1, HandleType::STOP},
+            {190, 1, HandleType::STOP},
+            {190, 0, HandleType::STOP},
         }
     };
 
@@ -881,9 +891,9 @@ int main(int argc, const char** argv) {
         cameraPosition.update(animationTime);
         cameraFocus.update(animationTime);
         introMusicCubeAnimation.update(animationTime);
+        musicCubeAnimation.update(animationTime);
 
         if (introMusicCubeAnimation.get() > 0.0f) {
-            musicCubesInitialized = false;
             for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
                 musicCubes[i].scale.y = musicCubes[i].maxHeight * introMusicCubeAnimation.get();
                 musicCubes[i].emissionColor = glm::vec3(1.0f);
@@ -903,18 +913,10 @@ int main(int argc, const char** argv) {
             bassBrightness = 0.0f;
         }
 
-        //lightRimObject.emissionColorBrightness = mix(
-        //    1.0f,
-        //    std::max(bassBrightness * 0.2f, 0.2f),
-        //    beatLight.get()
-        //);
-
         lightRimObject.emissionColorBrightness = lightRimBrightnessAnimation.get();
         lightRimObject.emissionColor = lightRimColorAnimation.get() * lightRimBrightnessAnimation.get();
 
-        //std::cout << animationTime << std::endl;
-
-        if (animationTime >= 96.0f) {
+        if (musicCubeAnimation.get()) {
             if (!musicCubesInitialized) {
                 musicCubesInitialized = true;
                 for (int i = 0; i < NUM_MUSIC_CUBES; i++) {
@@ -964,6 +966,8 @@ int main(int argc, const char** argv) {
                     pointLights[i].brightness *= 0.7f;
                 }
             }
+        } else {
+            musicCubesInitialized = false;
         }
 
         lightRimObject.setModelMatrix(lightRimAnimation.get().to_matrix());
