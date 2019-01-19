@@ -497,6 +497,9 @@ int main(int argc, const char** argv) {
     Animation<Placement> lightRimAnimation{
         {
             {0, HORIZONTAL_ON},
+            {15, HORIZONTAL_OFF},
+            {16, HORIZONTAL_ON},
+            {31, HORIZONTAL_OFF},
         }
     };
 
@@ -527,11 +530,9 @@ int main(int argc, const char** argv) {
     };
 
     // https://jsfiddle.net/d6mj4tfo/
-    Animation<glm::vec3> beatLight{
+    Animation<glm::vec3> lightRimColorAnimation{
         {
-            {0, {0.13,0.17,0.33 }, HandleType::STOP},
-            {15, {0.9,0.15,0.16}, HandleType::STOP},
-            {30, {1,1,1}, HandleType::STOP},
+            {0, {1,1,1}, HandleType::STOP},
         }
     };
 
@@ -793,7 +794,7 @@ int main(int argc, const char** argv) {
         lightRimAnimation.update(animationTime);
         centerCubeOffset.update(animationTime + 0.1f); // clap offset
         centerCubeRotation.update(animationTime);
-        beatLight.update(animationTime);
+        lightRimColorAnimation.update(animationTime);
         cameraPosition.update(animationTime);
         cameraFocus.update(animationTime);
         introMusicCubeAnimation.update(animationTime);
@@ -815,6 +816,7 @@ int main(int argc, const char** argv) {
         if (avgBass > 0.02f) {
             bassBrightness = 3.0f * avgBass / 0.13f;
         } else {
+            avgBass = 0.0f;
             bassBrightness = 0.0f;
         }
 
@@ -825,9 +827,8 @@ int main(int argc, const char** argv) {
         //);
 
         lightRimObject.emissionColorBrightness = lightRimBrightnessAnimation.get();
-        lightRimObject.emissionColor = beatLight.get();
-        lightRimObject.diffuseColor = beatLight.get();
-        std::cout << beatLight.get().x << " " << beatLight.get().y << " " << beatLight.get().z << std::endl;
+        lightRimObject.emissionColor = lightRimColorAnimation.get();
+        lightRimObject.diffuseColor = lightRimColorAnimation.get();
 
         if (animationTime >= 96.0f) {
             if (!musicCubesInitialized) {
@@ -861,21 +862,22 @@ int main(int argc, const char** argv) {
                         };
                     }
                     particles.add(&*newParticles.begin(), &*newParticles.end());
+
+                    if (musicCubes[i].scale.y < musicCubes[i].maxHeight) {
+                        musicCubes[i].scale.y *= 1.15f;
+                    }
                 } else {
+                    if (musicCubes[i].scale.y > musicCubes[i].minHeight) {
+                        musicCubes[i].scale.y *= 0.97f;
+                    }
                     musicCubes[i].emissionColorBrightness *= 0.7f;
                 }
             }
             for (int i = 0; i < pointLights.size(); i++) {
                 if (i < pointLights.size() * (avgBass / 0.13f)) {
                     pointLights[i].brightness = bassBrightness;
-                    if (musicCubes[i].scale.y < musicCubes[i].maxHeight) {
-                        musicCubes[i].scale.y *= 1.15f;
-                    }
                 } else {
                     pointLights[i].brightness *= 0.7f;
-                    if (musicCubes[i].scale.y > musicCubes[i].minHeight) {
-                        musicCubes[i].scale.y *= 0.97f;
-                    }
                 }
             }
         }

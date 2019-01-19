@@ -37,14 +37,14 @@ static Action<Placement> SIDEWAYS_SWEEP {
     }, 2, ActionType::STRETCH
 };
 
-static Action<Placement> HORIZONTAL_ON {
+static Action<Placement> HORIZONTAL_ON{
     {
-        {0, {{0, 10, 0}, {1, 0, 1}}, HandleType::STOP},
-        {1, {{0, 10, 0}, {1, 1, 1}}, HandleType::STOP}
+        {0, {{0, 20, 0}, {1, 0, 1}}, HandleType::STOP},
+        {1, {{0, 20, 0}, {1, 1, 1}}, HandleType::STOP}
     }, 1, ActionType::STRETCH
 };
 
-static Action<Placement> HORIZONTAL_OFF {
+static Action<Placement> HORIZONTAL_OFF{
     {
         {0, {{0, 20, 0}, {1, 1, 1}}, HandleType::STOP},
         {1, {{0, 20, 0}, {1, 0, 1}}, HandleType::STOP}
