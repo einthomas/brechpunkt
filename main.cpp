@@ -145,10 +145,12 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < argc; i++) {
             if (strcmp(argv[i], "--debug") == 0) {
                 debug_flag = true;
-            } else if (strcmp(argv[i], "--mute") == 0) {
+            }
+            else if (strcmp(argv[i], "--mute") == 0) {
                 muteSong = true;
                 BASS_SetConfig(BASS_CONFIG_GVOL_STREAM, 0);
-            } else if (strcmp(argv[i], "--fullscreen") == 0) {
+            }
+            else if (strcmp(argv[i], "--fullscreen") == 0) {
                 fullscreen = true;
             }
         }
@@ -192,7 +194,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, gDepth, GL_DEPTH_COMPONENT24},
         }, {
         }
-    );
+        );
 
     GLuint lowResDepth;
     GLuint lowResFramebuffer = generateFramebuffer(
@@ -223,7 +225,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, gDepthRefractive, GL_DEPTH_COMPONENT24},
         }, {
         }
-    );
+        );
 
     GLuint gWorldPosLayer2, gNormalLayer2, gDepthLayer2;
     GLuint gBufferLayer2 = generateFramebuffer(
@@ -233,7 +235,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, gDepthLayer2, GL_DEPTH_COMPONENT24},
         }, {
         }
-    );
+        );
 
     GLuint environmentColor, environmentDepth;
     GLuint cubemapFramebuffer = generateFramebuffer(
@@ -242,7 +244,7 @@ int main(int argc, const char** argv) {
             {GL_DEPTH_ATTACHMENT, environmentDepth, GL_DEPTH_COMPONENT24},
         }, {
         }
-    );
+        );
 
     GLuint multisampleColor, multisampleDepth;
     GLuint multisampleBuffer = generateFramebufferMultisample(
@@ -251,7 +253,7 @@ int main(int argc, const char** argv) {
         }, {
             {GL_DEPTH_ATTACHMENT, multisampleDepth, GL_DEPTH_COMPONENT24},
         }
-    );
+        );
 
     GLuint blurredEnvironmentColor;
     GLuint blurredEnvironment = generateFramebuffer(
@@ -269,35 +271,35 @@ int main(int argc, const char** argv) {
 
     tuple<vec2, vec3, float> cubeMesh[24] = {
         // X+
-        tuple<vec2, vec3, float>{{-1, -1}, {+1, +1, +1}, 0},
-        tuple<vec2, vec3, float>{{+1, -1}, {+1, +1, -1}, 0},
-        tuple<vec2, vec3, float>{{-1, +1}, {+1, -1, +1}, 0},
-        tuple<vec2, vec3, float>{{+1, +1}, {+1, -1, -1}, 0},
+        tuple<vec2, vec3, float>{ {-1, -1}, {+1, +1, +1}, 0},
+        tuple<vec2, vec3, float>{ {+1, -1}, {+1, +1, -1}, 0},
+        tuple<vec2, vec3, float>{ {-1, +1}, {+1, -1, +1}, 0},
+        tuple<vec2, vec3, float>{ {+1, +1}, {+1, -1, -1}, 0},
         // X-
-        tuple<vec2, vec3, float>{{-1, -1}, {-1, +1, -1}, 1},
-        tuple<vec2, vec3, float>{{+1, -1}, {-1, +1, +1}, 1},
-        tuple<vec2, vec3, float>{{-1, +1}, {-1, -1, -1}, 1},
-        tuple<vec2, vec3, float>{{+1, +1}, {-1, -1, +1}, 1},
+        tuple<vec2, vec3, float>{ {-1, -1}, {-1, +1, -1}, 1},
+        tuple<vec2, vec3, float>{ {+1, -1}, {-1, +1, +1}, 1},
+        tuple<vec2, vec3, float>{ {-1, +1}, {-1, -1, -1}, 1},
+        tuple<vec2, vec3, float>{ {+1, +1}, {-1, -1, +1}, 1},
         // Y+
-        tuple<vec2, vec3, float>{{-1, -1}, {-1, +1, -1}, 2},
-        tuple<vec2, vec3, float>{{+1, -1}, {+1, +1, -1}, 2},
-        tuple<vec2, vec3, float>{{-1, +1}, {-1, +1, +1}, 2},
-        tuple<vec2, vec3, float>{{+1, +1}, {+1, +1, +1}, 2},
+        tuple<vec2, vec3, float>{ {-1, -1}, {-1, +1, -1}, 2},
+        tuple<vec2, vec3, float>{ {+1, -1}, {+1, +1, -1}, 2},
+        tuple<vec2, vec3, float>{ {-1, +1}, {-1, +1, +1}, 2},
+        tuple<vec2, vec3, float>{ {+1, +1}, {+1, +1, +1}, 2},
         // Y-
-        tuple<vec2, vec3, float>{{-1, -1}, {-1, -1, +1}, 3},
-        tuple<vec2, vec3, float>{{+1, -1}, {+1, -1, +1}, 3},
-        tuple<vec2, vec3, float>{{-1, +1}, {-1, -1, -1}, 3},
-        tuple<vec2, vec3, float>{{+1, +1}, {+1, -1, -1}, 3},
+        tuple<vec2, vec3, float>{ {-1, -1}, {-1, -1, +1}, 3},
+        tuple<vec2, vec3, float>{ {+1, -1}, {+1, -1, +1}, 3},
+        tuple<vec2, vec3, float>{ {-1, +1}, {-1, -1, -1}, 3},
+        tuple<vec2, vec3, float>{ {+1, +1}, {+1, -1, -1}, 3},
         // Z+
-        tuple<vec2, vec3, float>{{-1, -1}, {-1, +1, +1}, 4},
-        tuple<vec2, vec3, float>{{+1, -1}, {+1, +1, +1}, 4},
-        tuple<vec2, vec3, float>{{-1, +1}, {-1, -1, +1}, 4},
-        tuple<vec2, vec3, float>{{+1, +1}, {+1, -1, +1}, 4},
+        tuple<vec2, vec3, float>{ {-1, -1}, {-1, +1, +1}, 4},
+        tuple<vec2, vec3, float>{ {+1, -1}, {+1, +1, +1}, 4},
+        tuple<vec2, vec3, float>{ {-1, +1}, {-1, -1, +1}, 4},
+        tuple<vec2, vec3, float>{ {+1, +1}, {+1, -1, +1}, 4},
         // Z-
-        tuple<vec2, vec3, float>{{-1, -1}, {+1, +1, -1}, 5},
-        tuple<vec2, vec3, float>{{+1, -1}, {-1, +1, -1}, 5},
-        tuple<vec2, vec3, float>{{-1, +1}, {+1, -1, -1}, 5},
-        tuple<vec2, vec3, float>{{+1, +1}, {-1, -1, -1}, 5},
+        tuple<vec2, vec3, float>{ {-1, -1}, {+1, +1, -1}, 5},
+        tuple<vec2, vec3, float>{ {+1, -1}, {-1, +1, -1}, 5},
+        tuple<vec2, vec3, float>{ {-1, +1}, {+1, -1, -1}, 5},
+        tuple<vec2, vec3, float>{ {+1, +1}, {-1, -1, -1}, 5},
     };
     unsigned char cubeIndex[36] = {
         0, 1, 2, 2, 1, 3,  4, 5, 6, 6, 5, 7,
@@ -406,7 +408,7 @@ int main(int argc, const char** argv) {
 
         musicCubes[i] = Mesh(
             musicCubeMeshInfo,
-            glm::vec3(1.0f),
+            glm::vec3(0.0f),
             1.0f,
             glm::vec3(1.0f),
             pos,
@@ -494,12 +496,35 @@ int main(int argc, const char** argv) {
         {64 + 32, {-4, 3.7, 0}, HandleType::SMOOTH_IN},
     };
 
+    Placement lightRimSwipeStart = {{ 0, -3, 0 }};
+    Placement lightRimSwipeEnd = {{ 0, 15, 0 }};
     Animation<Placement> lightRimAnimation{
         {
-            {0, HORIZONTAL_ON},
-            {15, HORIZONTAL_OFF},
-            {16, HORIZONTAL_ON},
-            {31, HORIZONTAL_OFF},
+            {112, lightRimSwipeStart, HandleType::STOP},
+            {113, lightRimSwipeEnd, HandleType::STOP},
+            {113, lightRimSwipeStart, HandleType::STOP},
+            {114, lightRimSwipeEnd, HandleType::STOP},
+            {114, lightRimSwipeStart, HandleType::STOP},
+            {115, lightRimSwipeEnd, HandleType::STOP},
+            {115, lightRimSwipeStart, HandleType::STOP},
+            {116, lightRimSwipeEnd, HandleType::STOP},
+            {116, lightRimSwipeStart, HandleType::STOP},
+            {117, lightRimSwipeEnd, HandleType::STOP},
+            {117, lightRimSwipeStart, HandleType::STOP},
+            {118, lightRimSwipeEnd, HandleType::STOP},
+            {118, lightRimSwipeStart, HandleType::STOP},
+            {119, lightRimSwipeEnd, HandleType::STOP},
+            {119, lightRimSwipeStart, HandleType::STOP},
+            {120, lightRimSwipeEnd, HandleType::STOP},
+            {120, lightRimSwipeStart, HandleType::STOP},
+            {121, lightRimSwipeEnd, HandleType::STOP},
+            {121, lightRimSwipeStart, HandleType::STOP},
+            {122, lightRimSwipeEnd, HandleType::STOP},
+            {122, lightRimSwipeStart, HandleType::STOP},
+            {123, lightRimSwipeEnd, HandleType::STOP},
+            {123, lightRimSwipeStart, HandleType::STOP},
+            {124, lightRimSwipeEnd, HandleType::STOP},
+            {124, lightRimSwipeStart, HandleType::STOP},
         }
     };
 
@@ -533,6 +558,11 @@ int main(int argc, const char** argv) {
     Animation<glm::vec3> lightRimColorAnimation{
         {
             {0, {1,1,1}, HandleType::STOP},
+            {112, {1,1,1}, HandleType::STOP},
+            {112, {1,0,0}, HandleType::STOP},
+            {118, {0,1,0}, HandleType::STOP},
+            {124, {0,0,1}, HandleType::STOP},
+            {124, {1,1,1}, HandleType::STOP},
         }
     };
 
@@ -541,6 +571,34 @@ int main(int argc, const char** argv) {
             {0, 1, HandleType::STOP},
             {80, 1, HandleType::STOP},
             {96, 0, HandleType::STOP},
+            {112, 0, HandleType::STOP},
+
+            {112, 3, HandleType::STOP},
+            {113, 0, HandleType::STOP},
+            {113, 3, HandleType::STOP},
+            {114, 0, HandleType::STOP},
+            {114, 3, HandleType::STOP},
+            {115, 0, HandleType::STOP},
+            {115, 3, HandleType::STOP},
+            {116, 0, HandleType::STOP},
+            {116, 3, HandleType::STOP},
+            {117, 0, HandleType::STOP},
+            {117, 3, HandleType::STOP},
+            {118, 0, HandleType::STOP},
+            {118, 3, HandleType::STOP},
+            {119, 0, HandleType::STOP},
+            {119, 3, HandleType::STOP},
+            {120, 0, HandleType::STOP},
+            {120, 3, HandleType::STOP},
+            {121, 0, HandleType::STOP},
+            {121, 3, HandleType::STOP},
+            {122, 0, HandleType::STOP},
+            {122, 3, HandleType::STOP},
+            {123, 0, HandleType::STOP},
+            {123, 3, HandleType::STOP},
+            {124, 0, HandleType::STOP},
+            {124, 3, HandleType::STOP},
+            {124, 0, HandleType::STOP},
         }
     };
 
@@ -827,8 +885,9 @@ int main(int argc, const char** argv) {
         //);
 
         lightRimObject.emissionColorBrightness = lightRimBrightnessAnimation.get();
-        lightRimObject.emissionColor = lightRimColorAnimation.get();
-        lightRimObject.diffuseColor = lightRimColorAnimation.get();
+        lightRimObject.emissionColor = lightRimColorAnimation.get() * lightRimBrightnessAnimation.get();
+
+        std::cout << animationTime << std::endl;
 
         if (animationTime >= 96.0f) {
             if (!musicCubesInitialized) {
