@@ -631,7 +631,7 @@ int main(int argc, const char** argv) {
             {0, 1, HandleType::STOP},
             {80, 1, HandleType::STOP},
             {96, 0, HandleType::STOP},
-            {190, 0, HandleType::STOP},
+            {192, 0, HandleType::STOP},
             {200, 1, HandleType::STOP},
             {200, 0, HandleType::STOP},
         }
@@ -642,8 +642,8 @@ int main(int argc, const char** argv) {
             {0, 0, HandleType::STOP},
             {96, 0, HandleType::STOP},
             {96, 1, HandleType::STOP},
-            {190, 1, HandleType::STOP},
-            {190, 0, HandleType::STOP},
+            {192, 1, HandleType::STOP},
+            {192, 0, HandleType::STOP},
         }
     };
 
