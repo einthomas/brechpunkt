@@ -351,7 +351,6 @@ int main(int argc, const char** argv) {
     mainScene.objects.insert(&lightRimObject);
     environmentScene.objects.insert(&lightRimObject);
 
-
     Mesh floorObject = Mesh(
         floorMeshInfo,
         glm::vec3(1.0f),
@@ -533,6 +532,23 @@ int main(int argc, const char** argv) {
         {232, {10, 9, 0}, HandleType::STOP},
         {248, {10, 9, 0}, HandleType::STOP},
         {264, {-10, 10, -10}, HandleType::STOP},
+
+        {264, {25, 2, -36}, HandleType::SMOOTH_OUT},
+        {280, {-25, 2, -36}, HandleType::SMOOTH_IN},
+
+        {280, {-14.9888, 3.52172, -1.13982}, HandleType::SMOOTH_OUT},
+        {288, {-10.5713, 6.68541, 4.54254}, HandleType::SMOOTH_IN},
+        {296, {-4.56759, 9.84052, -0.222573}, HandleType::SMOOTH_IN},
+
+        {296, {2.01516, 2.5405, 4.53035}, HandleType::SMOOTH_OUT},
+        {312, {2.01516, 5.5405, 4.53035}, HandleType::SMOOTH_IN},
+
+        {312, {34, 0.7, 1.5}, HandleType::SMOOTH_OUT},
+        {328, {10, 0.7, 1.5}, HandleType::SMOOTH_IN},
+
+        {328, {2.01516, 5.5405, 4.53035}, HandleType::SMOOTH_IN},
+        {328, {-14.3007, 27.9264, -7.8107}, HandleType::SMOOTH_OUT},
+        {344, {-14.3007, 1.7569, -7.8107}, HandleType::SMOOTH_IN},
     };
 
     Animation<glm::vec3> cameraFocus{
@@ -593,6 +609,23 @@ int main(int argc, const char** argv) {
         // lucy descend
         {232, {-10, 30, 0}, HandleType::STOP},
         {248, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
+        {264, {-9.4947, 4.94998, -0.39352}, HandleType::STOP},
+
+        {264, {25, 2, -10}, HandleType::SMOOTH_OUT},
+        {280, {-25, 2, -10}, HandleType::SMOOTH_IN},
+
+        {280, {-10.1789, 3.06619, -1.18164}, HandleType::SMOOTH_OUT},
+        {288, {-9.87901, 5.69849, 1.07871}, HandleType::SMOOTH_IN},
+        {296, {-8.89624, 7.34594, -0.204375}, HandleType::SMOOTH_IN},
+
+        {296, { 13.5958, 3.06248, -0.385165}, HandleType::SMOOTH_OUT},
+        {312, { 6.28133, 3.99602, 2.71954}, HandleType::SMOOTH_IN},
+
+        {312, {20, 0.7, 1.5}, HandleType::SMOOTH_OUT},
+        {328, {-4, 0.7, 1.5}, HandleType::SMOOTH_IN},
+
+        {328, { 6.28133, 3.99602, 2.71954}, HandleType::SMOOTH_IN},
+        {328, {0, 0, 0}, HandleType::SMOOTH_OUT},
     };
 
     Placement lightRimSwipeStart = {{ 0, -3, 0 }};
@@ -707,6 +740,9 @@ int main(int argc, const char** argv) {
 
             {200, 0, HandleType::STOP},
             {216, 2.5, HandleType::STOP},
+
+            {328, 2.5, HandleType::STOP},
+            {344, 0, HandleType::STOP},
         }
     };
 
@@ -718,6 +754,9 @@ int main(int argc, const char** argv) {
             {192, 0, HandleType::STOP},
             {200, 1, HandleType::STOP},
             {200, 0, HandleType::STOP},
+            {328, 0, HandleType::STOP},
+            {328, 1, HandleType::STOP},
+            {344, 0, HandleType::STOP},
         }
     };
 
@@ -728,6 +767,8 @@ int main(int argc, const char** argv) {
             {96, 1, HandleType::STOP},
             {192, 1, HandleType::STOP},
             {192, 0, HandleType::STOP},
+            {344, 0, HandleType::STOP},
+            {344, 1, HandleType::STOP},
         }
     };
 
