@@ -667,7 +667,7 @@ int main(int argc, const char** argv) {
             {124, {1,1,1}, HandleType::STOP},
 
             {200, {1,1,1}, HandleType::STOP},
-            {264, {0.45, 0.75, 1}, HandleType::STOP},
+            {216, {0.45, 0.75, 1}, HandleType::STOP},
         }
     };
 
@@ -706,7 +706,7 @@ int main(int argc, const char** argv) {
             {124, 0, HandleType::STOP},
 
             {200, 0, HandleType::STOP},
-            {264, 4, HandleType::STOP},
+            {216, 2.5, HandleType::STOP},
         }
     };
 
@@ -733,13 +733,13 @@ int main(int argc, const char** argv) {
 
     Animation<glm::vec3> dragonAnimation{
         {
-            {200, {10, 30, 0}, HandleType::STOP},
+            {200, {10, 50, 0}, HandleType::STOP},
             {216, {10, 0, 0}, HandleType::STOP},
         }
     };
     Animation<glm::vec3> lucyAnimation{
         {
-            {232, {-10, 30, 0}, HandleType::STOP},
+            {232, {-10, 50, 0}, HandleType::STOP},
             {248, {-10, 0, 0}, HandleType::STOP},
         }
     };
