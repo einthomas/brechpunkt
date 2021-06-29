@@ -18,6 +18,8 @@
 #include <stb_image.h>
 #include <bass.h>
 
+#include "ge1/editor/editor_camera.h"
+
 #undef near
 #undef far
 
@@ -33,6 +35,8 @@
 
 using namespace std;
 using namespace glm;
+
+ge1::editor_camera editor_camera;
 
 struct PointLight {
     glm::vec3 pos;
