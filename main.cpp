@@ -19,6 +19,16 @@
 #include <bass.h>
 
 #include "ge1/editor/editor_camera.h"
+#include "ge1/editor/introspection.h"
+#include "ge1/editor/introspection_glm.h"
+#include "ge1/editor/backends/ge1_imgui.h"
+
+#include "imgui.cpp"
+#include "imgui_draw.cpp"
+#include "imgui_tables.cpp"
+#include "imgui_widgets.cpp"
+#include "backends/imgui_impl_opengl3.h"
+#include "backends/imgui_impl_glfw.h"
 
 #undef near
 #undef far
@@ -95,6 +105,14 @@ void drawScreenQuad(GLuint screenQuadVAO);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos);
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+template<>
+constexpr const auto ge1::accessor<Camera> = ge1::make_struct_accessor(
+    ge1::member<&Camera::pos>("pos"),
+    ge1::member<&Camera::front>("front"),
+    ge1::member<&Camera::right>("right"),
+    ge1::member<&Camera::up>("up")
+);
 
 glm::vec3 getHemisphereSample(glm::vec2 u) {
     // source: "Physically Based Rendering: From Theory to Implementation" [Pharr and Humphreys, 2016]
@@ -176,6 +194,12 @@ int main(int argc, const char** argv) {
     glfwSetScrollCallback(window, scrollCallback);
     glfwSetKeyCallback(window, keyCallback);
     glEnable(GL_DEPTH_TEST);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 
     if (!BASS_Init(-1, 44100, 0, glfwGetWin32Window(window), NULL)) {
         std::cout << "Can't initialize bass";
@@ -1619,11 +1643,26 @@ int main(int argc, const char** argv) {
         );
         composePass.render();
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Inspector");
+        auto value = ge1::make_value(camera);
+        ge1::tree_node(value);
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     BASS_Free();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
     return 0;
 }
