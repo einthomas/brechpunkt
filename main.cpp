@@ -114,6 +114,36 @@ constexpr const auto ge1::accessor<Camera> = ge1::make_struct_accessor(
     ge1::member<&Camera::up>("up")
 );
 
+template<>
+constexpr const auto ge1::accessor<Scene> = ge1::make_struct_accessor(
+    ge1::member<&Scene::objects>("objects"),
+    ge1::member<&Scene::glassObjects>("glassObjects")
+);
+
+template<>
+constexpr const auto ge1::accessor<Mesh> = ge1::make_struct_accessor(
+    ge1::member<&Mesh::scale>("scale"),
+    ge1::member<&Mesh::rotation>("rotation"),
+    ge1::member<&Mesh::position>("position"),
+    ge1::member<&Mesh::emissionColorBrightness>("emissionColorBrightness"),
+    ge1::member<&Mesh::diffuseColor>("diffuseColor"),
+    ge1::member<&Mesh::emissionColor>("emissionColor"),
+    ge1::member<&Mesh::useDiffuseTexture>("useDiffuseTexture"),
+    ge1::member<&Mesh::useReflectionTexture>("useReflectionTexture"),
+    ge1::member<&Mesh::useNormalTexture>("useNormalTexture"),
+    ge1::member<&Mesh::diffuseTexture>("diffuseTexture"),
+    ge1::member<&Mesh::reflectionTexture>("reflectionTexture"),
+    ge1::member<&Mesh::normalTexture>("normalTexture"),
+    ge1::member<&Mesh::vao>("vao"),
+    ge1::member<&Mesh::count>("count"),
+    ge1::member<&Mesh::minHeight>("minHeight"),
+    ge1::member<&Mesh::maxHeight>("maxHeight")
+);
+
+template<typename T>
+constexpr const auto ge1::accessor<std::unordered_set<T>> =
+    ge1::range_accessor_t<std::unordered_set<T>>{};
+
 glm::vec3 getHemisphereSample(glm::vec2 u) {
     // source: "Physically Based Rendering: From Theory to Implementation" [Pharr and Humphreys, 2016]
     float r = std::sqrt(u.x);
@@ -1648,7 +1678,7 @@ int main(int argc, const char** argv) {
         ImGui::NewFrame();
 
         ImGui::Begin("Inspector");
-        auto value = ge1::make_value(camera);
+        auto value = ge1::make_value(mainScene);
         ge1::tree_node(value);
         ImGui::End();
 
